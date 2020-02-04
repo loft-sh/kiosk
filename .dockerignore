@@ -1,0 +1,7 @@
+.vscode/
+.devspace/
+bin/
+chart/
+config/
+hack/
+devspace.yaml

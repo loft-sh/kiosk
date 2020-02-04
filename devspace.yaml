@@ -1,0 +1,91 @@
+version: v1beta6
+images:
+  controller:
+    image: mynamespace/devspace
+    build:
+      docker:
+        options:
+          target: builder
+deployments:
+  - name: kiosk
+    helm:
+      chart:
+        name: ./chart
+      values:
+        image: mynamespace/devspace
+        manager:
+          command: ["/workspace/manager"]
+        apiserver:
+          command: ["/workspace/apiserver"]
+commands:
+  - name: dev-manager
+    command: "devspace dev -n kiosk -d --profile dev-manager"
+  - name: dev-apiserver
+    command: "devspace dev -n kiosk -d --profile dev-apiserver"
+  - name: deploy
+    command: "devspace deploy --profile deploy -n kiosk -d"
+  - name: clean
+    command: "(kubectl delete validatingwebhookconfiguration default-kiosk || true) && (kubectl delete apiservice v1alpha1.tenancy.kiosk.sh || true)"
+profiles:
+  - name: dev-manager
+    patches:
+      - op: replace
+        path: deployments[0].helm.values.manager.command
+        value: ["sleep"]
+      - op: add
+        path: deployments[0].helm.values.manager.args
+        value: ["99999999999"]
+    replace:
+      dev:
+        interactive:
+          defaultEnabled: true
+          terminal:
+            imageName: controller
+            containerName: manager
+        sync:
+          - imageName: controller
+            containerName: manager
+            excludePaths:
+              - hack/
+              - config/
+              - bin/
+              - .vscode/
+              - chart/
+              - /helm
+  - name: dev-apiserver
+    patches:
+      - op: replace
+        path: deployments[0].helm.values.apiserver.command
+        value: ["sleep"]
+      - op: add
+        path: deployments[0].helm.values.apiserver.args
+        value: ["99999999999"]
+    replace:
+      dev:
+        interactive:
+          defaultEnabled: true
+          terminal:
+            imageName: controller
+            containerName: apiserver
+        sync:
+          - imageName: controller
+            containerName: apiserver
+            excludePaths:
+              - hack/
+              - config/
+              - bin/
+              - .vscode/
+              - chart/
+              - /helm
+  - name: deploy
+    replace:
+      images:
+        controller:
+          image: mynamespace/devspace
+      deployments:
+        - name: kiosk
+          helm:
+            chart:
+              name: ./chart
+            values:
+              image: mynamespace/devspace

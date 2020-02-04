@@ -1,0 +1,16 @@
+domain: kiosk.sh
+repo: github.com/kiosk-sh/kiosk
+resources:
+- group: config
+  kind: Account
+  version: v1alpha1
+- group: config
+  kind: Template
+  version: v1alpha1
+- group: config
+  kind: TemplateInstance
+  version: v1alpha1
+- group: config
+  kind: AccountQuota
+  version: v1alpha1
+version: "2"

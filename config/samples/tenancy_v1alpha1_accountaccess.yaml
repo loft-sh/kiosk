@@ -1,0 +1,7 @@
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: AccountAccess
+metadata:
+  name: accountaccess-sample
+spec:
+  # Add fields here
+  foo: bar

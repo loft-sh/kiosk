@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiosk-edit
+rules:
+- apiGroups: ["tenancy.kiosk.sh"]
+  resources: ["spaces"]
+  verbs: ["get", "watch", "list", "create", "update", "delete"]
+- apiGroups: ["tenancy.kiosk.sh"]
+  resources: ["accounts"]
+  verbs: ["get", "watch", "list"]

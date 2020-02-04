@@ -1,0 +1,109 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: templateinstances.config.kiosk.sh
+spec:
+  group: config.kiosk.sh
+  preserveUnknownFields: false
+  names:
+    kind: TemplateInstance
+    listKind: TemplateInstanceList
+    plural: templateinstances
+    singular: templateinstance
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: TemplateInstance is the Schema for the templatesinstance API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: TemplateInstanceSpec holds the expected cluster status of the
+            template instance
+          properties:
+            template:
+              description: The template to instantiate. This is an immutable field
+              type: string
+          required:
+          - template
+          type: object
+        status:
+          description: TemplateInstanceStatus describes the current status of the
+            template instance in the cluster
+          properties:
+            message:
+              description: A human readable message indicating details about why the
+                namespace is in this condition.
+              type: string
+            observedAt:
+              description: LastAppliedAt indicates when the template was last applied
+              format: date-time
+              type: string
+            reason:
+              description: A brief CamelCase message indicating details about why
+                the namespace is in this state.
+              type: string
+            resources:
+              description: Resources holds the status of the deployed resources
+              items:
+                description: ResourceStatus holds the current status of a resource
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  resourceVersion:
+                    type: string
+                  uid:
+                    description: UID is a type that holds unique ID values, including
+                      UUIDs.  Because we don't ONLY use UUIDs, this is an alias to
+                      string.  Being a type captures intent and helps make sure that
+                      UIDs and names do not get conflated.
+                    type: string
+                  version:
+                    type: string
+                type: object
+              type: array
+            status:
+              description: Status holds the template instances status
+              type: string
+            templateResourceVersion:
+              description: TemplateResourceVersion is the resource version of the
+                template that was applied
+              type: string
+          required:
+          - status
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "kiosk.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "kiosk.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "kiosk.fullname" . }}
+      release: {{ .Release.Name }}
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "kiosk.fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      terminationGracePeriodSeconds: 10
+      serviceAccountName: {{ template "kiosk.serviceAccountName" . }}
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ .Values.certSecret }}
+      - name: cert-apiservice
+        secret:
+          defaultMode: 420
+          secretName: {{ .Values.certSecret }}-apiservice
+      containers:
+      - command:
+        {{- range $f := .Values.apiserver.command }}
+        - {{ $f | quote }}
+        {{- end }}
+        args:
+        {{- range $f := .Values.apiserver.args }}
+        - {{ $f | quote }}
+        {{- end }}
+        image: "{{ .Values.image }}"
+        name: apiserver
+        volumeMounts:
+        - mountPath: /tmp/k8s-apiserver/serving-certs
+          name: cert-apiservice
+          readOnly: true
+        resources:
+{{ toYaml .Values.apiserver.resources | indent 10 }}
+      - command:
+        {{- range $f := .Values.manager.command }}
+        - {{ $f | quote }}
+        {{- end }}
+        args:
+        {{- range $f := .Values.manager.args }}
+        - {{ $f | quote }}
+        {{- end }}
+        image: "{{ .Values.image }}"
+        name: manager
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+        resources:
+{{ toYaml .Values.manager.resources | indent 10 }}

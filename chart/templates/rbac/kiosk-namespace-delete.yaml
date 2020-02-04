@@ -1,0 +1,10 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiosk-namespace-delete
+  labels:
+    rbac.kiosk.sh/aggregate-to-space-admin: "true"
+rules:
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["delete"]

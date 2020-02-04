@@ -1,0 +1,20 @@
+{{- if .Values.apiService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "kiosk.fullname" . }}-apiservice
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "kiosk.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    app: {{ template "kiosk.fullname" . }}
+    release: {{ .Release.Name }}
+{{- end }}

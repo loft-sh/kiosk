@@ -1,0 +1,7 @@
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: NamespaceInitializer
+metadata:
+  name: namespaceinitializer-sample
+spec:
+  # Add fields here
+  foo: bar
