@@ -17,7 +17,6 @@ limitations under the License.
 package auth
 
 import (
-	"fmt"
 	"strings"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -133,30 +132,4 @@ func NonResourceURLMatches(rule *rbacv1.PolicyRule, requestedURL string) bool {
 	}
 
 	return false
-}
-
-// subjectsStrings returns users, groups, serviceaccounts, unknown for display purposes.
-func SubjectsStrings(subjects []rbacv1.Subject) ([]string, []string, []string, []string) {
-	users := []string{}
-	groups := []string{}
-	sas := []string{}
-	others := []string{}
-
-	for _, subject := range subjects {
-		switch subject.Kind {
-		case rbacv1.ServiceAccountKind:
-			sas = append(sas, fmt.Sprintf("%s/%s", subject.Namespace, subject.Name))
-
-		case rbacv1.UserKind:
-			users = append(users, subject.Name)
-
-		case rbacv1.GroupKind:
-			groups = append(groups, subject.Name)
-
-		default:
-			others = append(others, fmt.Sprintf("%s/%s/%s", subject.Kind, subject.Namespace, subject.Name))
-		}
-	}
-
-	return users, groups, sas, others
 }

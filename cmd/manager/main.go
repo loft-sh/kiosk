@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// Add required indices
-	err = controllers.AddManagerIndices(mgr)
+	err = controllers.AddManagerIndices(mgr.GetCache())
 	if err != nil {
 		setupLog.Error(err, "unable to set manager indices")
 		os.Exit(1)
