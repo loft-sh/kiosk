@@ -16,8 +16,26 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// Helm defines a public interface for executing a template command
+type Helm interface {
+	Template(client client.Client, name, namespace string, config *configv1alpha1.HelmConfiguration) ([]*unstructured.Unstructured, error)
+}
+
+type helm struct {
+	runner runFunc
+}
+
+type runFunc func(args []string) (string, error)
+
+// NewHelmRunner creates a new helm runner
+func NewHelmRunner() Helm {
+	return &helm{
+		runner: run,
+	}
+}
+
 // Template executes a helm template command
-func Template(client client.Client, name, namespace string, config *configv1alpha1.HelmConfiguration) ([]*unstructured.Unstructured, error) {
+func (h *helm) Template(client client.Client, name, namespace string, config *configv1alpha1.HelmConfiguration) ([]*unstructured.Unstructured, error) {
 	releaseName := config.ReleaseName
 	if releaseName == "" {
 		releaseName = name
@@ -79,7 +97,7 @@ func Template(client client.Client, name, namespace string, config *configv1alph
 		args = append(args, "--values", p)
 	}
 
-	out, err := run(args)
+	out, err := h.runner(args)
 	if err != nil {
 		return nil, err
 	}

@@ -106,7 +106,7 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 
 	// Gather objects from helm
 	if template.Resources.Helm != nil {
-		objs, err := helm.Template(r, template.Name, templateInstance.Namespace, template.Resources.Helm)
+		objs, err := helm.NewHelmRunner().Template(r, template.Name, templateInstance.Namespace, template.Resources.Helm)
 		if err != nil {
 			return r.setFailed(ctx, templateInstance, "ErrorHelm", fmt.Sprintf("Error during helm template: %v", err))
 		}
