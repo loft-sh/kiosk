@@ -23,7 +23,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -31,9 +31,9 @@ var (
 )
 
 // registerIndices adds the needed manager indices for faster listing of resources
-func registerIndices(ctrlCache ctrlcache.Cache) error {
+func registerIndices(indexer client.FieldIndexer) error {
 	// Index account by subjects
-	if err := ctrlCache.IndexField(&tenancyv1alpha1.Account{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&tenancyv1alpha1.Account{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
 		// grab the namespace object, extract the owner...
 		account := rawObj.(*tenancyv1alpha1.Account)
 		subjects := []string{}
@@ -50,7 +50,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index namespaces by account
-	if err := ctrlCache.IndexField(&corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
 		// grab the namespace object, extract the owner...
 		namespace := rawObj.(*corev1.Namespace)
 		if namespace.Annotations != nil && namespace.Annotations[tenancy.SpaceAnnotationAccount] != "" {
@@ -63,7 +63,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index rolebinding by subject
-	if err := ctrlCache.IndexField(&rbacv1.RoleBinding{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.RoleBinding{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
 		binding := rawObj.(*rbacv1.RoleBinding)
 
 		subjects := []string{}
@@ -80,7 +80,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index rolebinding by role ref
-	if err := ctrlCache.IndexField(&rbacv1.RoleBinding{}, constants.IndexByRole, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.RoleBinding{}, constants.IndexByRole, func(rawObj runtime.Object) []string {
 		binding := rawObj.(*rbacv1.RoleBinding)
 		if binding.RoleRef.APIGroup == rbacv1.GroupName && binding.RoleRef.Kind == "Role" {
 			return []string{binding.Namespace + "/" + binding.RoleRef.Name}
@@ -92,7 +92,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index rolebinding by cluster role ref
-	if err := ctrlCache.IndexField(&rbacv1.RoleBinding{}, constants.IndexByClusterRole, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.RoleBinding{}, constants.IndexByClusterRole, func(rawObj runtime.Object) []string {
 		binding := rawObj.(*rbacv1.RoleBinding)
 		if binding.RoleRef.APIGroup == rbacv1.GroupName && binding.RoleRef.Kind == "ClusterRole" {
 			return []string{binding.RoleRef.Name}
@@ -104,7 +104,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index cluster role bindings by subjects
-	if err := ctrlCache.IndexField(&rbacv1.ClusterRoleBinding{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.ClusterRoleBinding{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
 		binding := rawObj.(*rbacv1.ClusterRoleBinding)
 
 		subjects := []string{}
@@ -121,7 +121,7 @@ func registerIndices(ctrlCache ctrlcache.Cache) error {
 	}
 
 	// Index cluster role bindings by cluster role
-	if err := ctrlCache.IndexField(&rbacv1.ClusterRoleBinding{}, constants.IndexByClusterRole, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.ClusterRoleBinding{}, constants.IndexByClusterRole, func(rawObj runtime.Object) []string {
 		binding := rawObj.(*rbacv1.ClusterRoleBinding)
 		if binding.RoleRef.APIGroup == rbacv1.GroupName && binding.RoleRef.Kind == "ClusterRole" {
 			return []string{binding.RoleRef.Name}
