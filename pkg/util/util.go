@@ -63,3 +63,25 @@ func IsNamespaceInitializing(namespace metav1.Object) bool {
 
 	return annotations[tenancy.SpaceAnnotationInitializing] == "true"
 }
+
+// StringsEqual checks if two string arrays are equal
+func StringsEqual(a []string, b []string) bool {
+	// Check if all namespaces are there
+	if len(a) != len(b) {
+		return false
+	}
+	for _, namespace := range a {
+		found := false
+		for _, expected := range b {
+			if expected == namespace {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+
+	return true
+}

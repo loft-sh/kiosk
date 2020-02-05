@@ -25,7 +25,6 @@ import (
 
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +38,7 @@ import (
 )
 
 var (
-	resyncPeriod = time.Hour
+	resyncPeriod = time.Hour * 10
 )
 
 // EnqueueSubject is the function that enqueues a subject to the work queue
@@ -60,7 +59,7 @@ type authCache struct {
 	client client.Client
 	cache  ctrlcache.Cache
 
-	accessor              *Accessor
+	accessor              Accessor
 	allowedNamespaceStore cache.ThreadSafeStore
 	allowedAccountStore   cache.ThreadSafeStore
 
@@ -110,7 +109,7 @@ func NewAuthCache(client client.Client, ctrlCache ctrlcache.Cache, log logr.Logg
 	a := &authCache{
 		client:                client,
 		cache:                 ctrlCache,
-		accessor:              &Accessor{client: client},
+		accessor:              &accessor{client: client},
 		allowedNamespaceStore: cache.NewThreadSafeStore(map[string]cache.IndexFunc{}, map[string]cache.Index{}),
 		allowedAccountStore:   cache.NewThreadSafeStore(map[string]cache.IndexFunc{}, map[string]cache.Index{}),
 
@@ -305,19 +304,19 @@ func (a *authCache) invalidateSubjectNamespaceCache(subject string) error {
 
 func (a *authCache) invalidateSubjectAccountCache(subject string) error {
 	ctx := context.Background()
-	viewAccounts, err := a.getAccountsForSubject(ctx, subject, "get")
+	viewAccounts, err := a.accessor.RetrieveAllowedAccounts(ctx, subject, "get")
 	if err != nil {
 		return err
 	}
-	createAccounts, err := a.getAccountsForSubject(ctx, subject, "create")
+	createAccounts, err := a.accessor.RetrieveAllowedAccounts(ctx, subject, "create")
 	if err != nil {
 		return err
 	}
-	updateAccounts, err := a.getAccountsForSubject(ctx, subject, "update")
+	updateAccounts, err := a.accessor.RetrieveAllowedAccounts(ctx, subject, "update")
 	if err != nil {
 		return err
 	}
-	deleteAccounts, err := a.getAccountsForSubject(ctx, subject, "delete")
+	deleteAccounts, err := a.accessor.RetrieveAllowedAccounts(ctx, subject, "delete")
 	if err != nil {
 		return err
 	}
@@ -391,52 +390,6 @@ func (a *authCache) getAllowedFromStore(subject string, store cache.ThreadSafeSt
 	}
 
 	return &Allowed{}, nil
-}
-
-func (a *authCache) getAccountsForSubject(ctx context.Context, subject, verb string) ([]string, error) {
-	accountsMap := map[string]bool{}
-	allowedAccounts, err := a.accessor.RetrieveAllowedAccounts(ctx, subject, verb)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, account := range allowedAccounts {
-		if account == rbacv1.ResourceAll {
-			accountsMap[rbacv1.ResourceAll] = true
-		}
-
-		accountObj := configv1alpha1.Account{}
-		err := a.client.Get(ctx, types.NamespacedName{Name: account}, &accountObj)
-		if err != nil {
-			if kerrors.IsNotFound(err) {
-				continue
-			}
-
-			return nil, err
-		}
-
-		accountsMap[accountObj.Name] = true
-	}
-
-	// Get other subject Accounts for viewing
-	if verb == "list" || verb == "get" || verb == "watch" {
-		accountList := &configv1alpha1.AccountList{}
-		err = a.client.List(ctx, accountList, client.MatchingFields{constants.IndexBySubjects: subject})
-		if err != nil {
-			return nil, err
-		}
-
-		for _, account := range accountList.Items {
-			accountsMap[account.Name] = true
-		}
-	}
-
-	retAccounts := make([]string, 0, len(accountsMap))
-	for account := range accountsMap {
-		retAccounts = append(retAccounts, account)
-	}
-
-	return retAccounts, nil
 }
 
 func (a *authCache) GetAccountsForUser(user user.Info, verb string) ([]string, error) {

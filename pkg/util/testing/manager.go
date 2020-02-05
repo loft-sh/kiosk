@@ -7,7 +7,6 @@ import (
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/cache/informertest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -19,7 +18,7 @@ var _ manager.Manager = &FakeManager{}
 type FakeManager struct {
 	Scheme *runtime.Scheme
 	Client client.Client
-	Cache  *informertest.FakeInformers
+	Cache  *FakeInformers
 	Mapper meta.RESTMapper
 }
 

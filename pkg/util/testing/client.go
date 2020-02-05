@@ -13,7 +13,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"sigs.k8s.io/controller-runtime/pkg/cache/informertest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -38,8 +37,8 @@ func NewFakeClient(scheme *runtime.Scheme) *FakeIndexClient {
 }
 
 // NewFakeCache creates a new fake cache
-func NewFakeCache(scheme *runtime.Scheme) *informertest.FakeInformers {
-	return &informertest.FakeInformers{
+func NewFakeCache(scheme *runtime.Scheme) *FakeInformers {
+	return &FakeInformers{
 		Scheme: scheme,
 	}
 }

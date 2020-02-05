@@ -29,13 +29,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// Accessor finds the allowed namespaces and accounts for a given subject
-type Accessor struct {
+// Accessor is the interface for the accessor that retrieves the allowed namespaces & accounts
+type Accessor interface {
+	RetrieveAllowedNamespaces(ctx context.Context, subject, verb string) ([]string, error)
+	RetrieveAllowedAccounts(ctx context.Context, subject, verb string) ([]string, error)
+}
+
+// accessor finds the allowed namespaces and accounts for a given subject
+type accessor struct {
 	client client.Client
 }
 
 // RetrieveAllowedNamespaces returns all namespaces the given subject is allowed to access
-func (a *Accessor) RetrieveAllowedNamespaces(ctx context.Context, subject, verb string) ([]string, error) {
+func (a *accessor) RetrieveAllowedNamespaces(ctx context.Context, subject, verb string) ([]string, error) {
 	namespaces := map[string]bool{}
 
 	// Retrieve Cluster Roles
@@ -134,7 +140,7 @@ func (a *Accessor) RetrieveAllowedNamespaces(ctx context.Context, subject, verb 
 }
 
 // RetrieveAllowedAccounts returns all accounts the given subject is allowed to access by cluster roles
-func (a *Accessor) RetrieveAllowedAccounts(ctx context.Context, subject, verb string) ([]string, error) {
+func (a *accessor) RetrieveAllowedAccounts(ctx context.Context, subject, verb string) ([]string, error) {
 	accounts := map[string]bool{}
 
 	// Retrieve Cluster Roles
@@ -171,10 +177,22 @@ func (a *Accessor) RetrieveAllowedAccounts(ctx context.Context, subject, verb st
 
 	delete(accounts, "")
 
-	// Map to []string
+	// Get other subject Accounts for viewing
+	if verb == "list" || verb == "get" || verb == "watch" {
+		accountList := &configv1alpha1.AccountList{}
+		err := a.client.List(ctx, accountList, client.MatchingFields{constants.IndexBySubjects: subject})
+		if err != nil {
+			return nil, err
+		}
+
+		for _, account := range accountList.Items {
+			accounts[account.Name] = true
+		}
+	}
+
 	retAccounts := make([]string, 0, len(accounts))
-	for n := range accounts {
-		retAccounts = append(retAccounts, n)
+	for account := range accounts {
+		retAccounts = append(retAccounts, account)
 	}
 
 	return retAccounts, nil

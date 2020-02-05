@@ -21,6 +21,7 @@ type accessorTestCase struct {
 	roleBindings        []*rbacv1.RoleBinding
 	clusterRoles        []*rbacv1.ClusterRole
 	clusterRoleBindings []*rbacv1.ClusterRoleBinding
+	accounts            []*configv1alpha1.Account
 
 	expected      []string
 	expectedError bool
@@ -166,7 +167,7 @@ func TestAllowedNamespaces(t *testing.T) {
 	scheme := testingutil.NewScheme()
 	for testName, test := range tests {
 		client := testingutil.NewFakeClient(scheme)
-		accessor := &Accessor{
+		accessor := &accessor{
 			client: client,
 		}
 
@@ -326,13 +327,61 @@ func TestAllowedAccounts(t *testing.T) {
 			},
 			expected: []string{},
 		},
+		"Account allowed through account subject": &accessorTestCase{
+			subject: "user:foo",
+			verb:    "get",
+			accounts: []*configv1alpha1.Account{
+				&configv1alpha1.Account{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "testaccount",
+					},
+				},
+			},
+			clusterRoles: []*rbacv1.ClusterRole{
+				&rbacv1.ClusterRole{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Rules: []rbacv1.PolicyRule{
+						rbacv1.PolicyRule{
+							Verbs:         []string{"create"},
+							APIGroups:     []string{configv1alpha1.GroupVersion.Group},
+							Resources:     []string{"accounts"},
+							ResourceNames: []string{"test"},
+						},
+					},
+				},
+			},
+			clusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				&rbacv1.ClusterRoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.SchemeGroupVersion.Group,
+						Kind:     "ClusterRole",
+						Name:     "test",
+					},
+				},
+			},
+			expected: []string{"testaccount"},
+		},
 	}
 
 	scheme := testingutil.NewScheme()
 	for testName, test := range tests {
 		client := testingutil.NewFakeClient(scheme)
-		accessor := &Accessor{
+		accessor := &accessor{
 			client: client,
+		}
+
+		// Add accounts
+		if len(test.accounts) > 0 {
+			objs := []runtime.Object{}
+			for _, o := range test.accounts {
+				objs = append(objs, o)
+			}
+			client.SetIndexValue(configv1alpha1.GroupVersion.WithKind("Account"), constants.IndexBySubjects, test.subject, objs)
 		}
 
 		// Add cluster role bindings
