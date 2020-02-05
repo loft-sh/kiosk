@@ -102,7 +102,7 @@ func (h *helm) Template(client client.Client, name, namespace string, config *co
 		return nil, err
 	}
 
-	return convert.YAML(out)
+	return convert.StringToUnstructuredArray(out)
 }
 
 func readSecret(client client.Client, secretRef *configv1alpha1.HelmSecretRef) (string, error) {

@@ -49,9 +49,6 @@ type Cache interface {
 	GetAccountsForUser(user user.Info, verb string) ([]string, error)
 	GetNamespacesForUser(user user.Info, verb string) ([]string, error)
 
-	GetAccounts(ctx context.Context, accounts []string) ([]*configv1alpha1.Account, error)
-	GetNamespaces(ctx context.Context, namespaces []string) ([]*corev1.Namespace, error)
-
 	Run(stop <-chan struct{})
 }
 
@@ -191,8 +188,8 @@ func (a *authCache) waitForCache() error {
 	return err
 }
 
-// GetAccounts is a convienience method to retrieve the objects from the given account names
-func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*configv1alpha1.Account, error) {
+// GetAccounts retrieves account objs for the given names
+func GetAccounts(ctx context.Context, client client.Client, accounts []string) ([]*configv1alpha1.Account, error) {
 	if len(accounts) == 0 {
 		return nil, nil
 	}
@@ -202,7 +199,7 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	// Should we get all?
 	if accounts[0] == rbacv1.ResourceAll {
 		accountList := &configv1alpha1.AccountList{}
-		err := a.client.List(ctx, accountList)
+		err := client.List(ctx, accountList)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +211,7 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	} else {
 		for _, account := range accounts {
 			accountCopy := &configv1alpha1.Account{}
-			err := a.client.Get(ctx, types.NamespacedName{Name: account}, accountCopy)
+			err := client.Get(ctx, types.NamespacedName{Name: account}, accountCopy)
 			if err != nil {
 				if kerrors.IsNotFound(err) {
 					continue
@@ -230,8 +227,8 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	return retList, nil
 }
 
-// GetNamespaces is a convienience method to retrieve the objects from the given namespace names
-func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*corev1.Namespace, error) {
+// GetNamespaces retrieves namespace objs for the given names
+func GetNamespaces(ctx context.Context, client client.Client, namespaces []string) ([]*corev1.Namespace, error) {
 	if len(namespaces) == 0 {
 		return nil, nil
 	}
@@ -241,7 +238,7 @@ func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*
 	// Should we get all?
 	if namespaces[0] == rbacv1.ResourceAll {
 		namespaceList := &corev1.NamespaceList{}
-		err := a.client.List(ctx, namespaceList)
+		err := client.List(ctx, namespaceList)
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +250,7 @@ func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*
 	} else {
 		for _, namespace := range namespaces {
 			namespaceCopy := &corev1.Namespace{}
-			err := a.client.Get(ctx, types.NamespacedName{Name: namespace}, namespaceCopy)
+			err := client.Get(ctx, types.NamespacedName{Name: namespace}, namespaceCopy)
 			if err != nil {
 				if kerrors.IsNotFound(err) {
 					continue

@@ -13,6 +13,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/user"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -21,11 +22,11 @@ type cacheGetTest struct {
 	expected []string
 
 	objs     []runtime.Object
-	retrieve func(*authCache, []string) ([]string, error)
+	retrieve func(client.Client, []string) ([]string, error)
 }
 
-func getNamespaces(cache *authCache, namespaces []string) ([]string, error) {
-	objs, err := cache.GetNamespaces(context.TODO(), namespaces)
+func getNamespaces(client client.Client, namespaces []string) ([]string, error) {
+	objs, err := GetNamespaces(context.TODO(), client, namespaces)
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +39,8 @@ func getNamespaces(cache *authCache, namespaces []string) ([]string, error) {
 	return strings, nil
 }
 
-func getAccounts(cache *authCache, accounts []string) ([]string, error) {
-	objs, err := cache.GetAccounts(context.TODO(), accounts)
+func getAccounts(client client.Client, accounts []string) ([]string, error) {
+	objs, err := GetAccounts(context.TODO(), client, accounts)
 	if err != nil {
 		return nil, err
 	}
@@ -117,10 +118,6 @@ func TestRetrieveFromCache(t *testing.T) {
 	scheme := testingutil.NewScheme()
 	for testName, test := range tests {
 		client := testingutil.NewFakeClient(scheme)
-		authCache := &authCache{
-			client: client,
-		}
-
 		for _, obj := range test.objs {
 			err := client.Create(context.TODO(), obj)
 			if err != nil {
@@ -128,7 +125,7 @@ func TestRetrieveFromCache(t *testing.T) {
 			}
 		}
 
-		real, err := test.retrieve(authCache, test.in)
+		real, err := test.retrieve(client, test.in)
 		if err != nil {
 			t.Fatal(err)
 		}

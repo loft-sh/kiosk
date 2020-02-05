@@ -95,7 +95,7 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 	// Gather objects from manifest
 	if len(template.Resources.Manifests) > 0 {
 		for _, manifest := range template.Resources.Manifests {
-			objs, err := convert.YAML(string(manifest.Raw))
+			objs, err := convert.StringToUnstructuredArray(string(manifest.Raw))
 			if err != nil {
 				return r.setFailed(ctx, templateInstance, "ErrorConvertingManifest", fmt.Sprintf("Error converting manifest %s: %v", string(manifest.Raw), err))
 			}

@@ -28,9 +28,9 @@ func NewScheme() *runtime.Scheme {
 }
 
 // NewFakeClient creates a new fake client for the standard schema
-func NewFakeClient(scheme *runtime.Scheme) *FakeIndexClient {
+func NewFakeClient(scheme *runtime.Scheme, objs ...runtime.Object) *FakeIndexClient {
 	return &FakeIndexClient{
-		Client:  fake.NewFakeClientWithScheme(scheme),
+		Client:  fake.NewFakeClientWithScheme(scheme, objs...),
 		scheme:  scheme,
 		indexes: map[schema.GroupVersionKind]map[string]map[string][]runtime.Object{},
 	}

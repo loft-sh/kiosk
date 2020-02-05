@@ -95,7 +95,7 @@ func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.Li
 		return nil, err
 	}
 
-	namespaceObjects, err := r.authCache.GetNamespaces(ctx, namespaces)
+	namespaceObjects, err := GetNamespaces(ctx, r.client, namespaces)
 	if err != nil {
 		return nil, err
 	}

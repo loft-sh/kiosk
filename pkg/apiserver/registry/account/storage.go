@@ -81,7 +81,7 @@ func (r *accountStorage) List(ctx context.Context, options *metainternalversion.
 		return nil, err
 	}
 
-	accountObjects, err := r.authCache.GetAccounts(ctx, accounts)
+	accountObjects, err := auth.GetAccounts(ctx, r.client, accounts)
 	if err != nil {
 		return nil, err
 	}
