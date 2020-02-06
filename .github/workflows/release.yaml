@@ -1,0 +1,29 @@
+name: Publish Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/v') == true
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v1
+      - uses: jerray/publish-docker-action@v1.0.3
+        with:
+          auto_tag: true
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: azure/setup-helm@v1
+        with:
+          version: 'v3.0.3'
+      - run: |
+          helm plugin install https://github.com/chartmuseum/helm-push
+          helm repo add chartmuseum $CHART_MUSEUM_URL --username $CHART_MUSEUM_USER --password $CHART_MUSEUM_PASSWORD
+          helm push . chartmuseum
+        env:
+          CHART_MUSEUM_URL: "https://charts.devspace.sh/"
+          CHART_MUSEUM_USER: ${{ secrets.CHART_MUSEUM_USER }}
+          CHART_MUSEUM_PASSWORD: ${{ secrets.CHART_MUSEUM_PASSWORD }}
