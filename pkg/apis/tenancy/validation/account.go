@@ -13,7 +13,7 @@ import (
 
 func verifySubjects(account *tenancy.Account) field.ErrorList {
 	subjects := []rbac.Subject{}
-	err := convert.ConvertObjects(account.Spec.Subjects, &subjects)
+	err := convert.ObjectToObject(account.Spec.Subjects, &subjects)
 	if err != nil {
 		return field.ErrorList{field.InternalError(field.NewPath("spec.subjects"), err)}
 	}

@@ -25,7 +25,7 @@ commands:
   - name: deploy
     command: "devspace deploy --profile deploy -n kiosk -d"
   - name: clean
-    command: "(kubectl delete validatingwebhookconfiguration default-kiosk || true) && (kubectl delete apiservice v1alpha1.tenancy.kiosk.sh || true)"
+    command: "(kubectl delete validatingwebhookconfiguration kiosk || true) && (kubectl delete apiservice v1alpha1.tenancy.kiosk.sh || true)"
 profiles:
   - name: dev-manager
     patches:

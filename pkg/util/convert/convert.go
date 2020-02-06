@@ -28,9 +28,8 @@ import (
 
 var diffSeparator = regexp.MustCompile(`\n---`)
 
-// YAML splits a YAML file into unstructured objects. Returns a list of all unstructured objects
-// found in the yaml. If any errors occurred, returns the first one
-func YAML(out string) ([]*unstructured.Unstructured, error) {
+// StringToUnstructuredArray splits a YAML file into unstructured objects. Returns a list of all unstructured objects
+func StringToUnstructuredArray(out string) ([]*unstructured.Unstructured, error) {
 	parts := diffSeparator.Split(out, -1)
 	var objs []*unstructured.Unstructured
 	var firstErr error
@@ -60,8 +59,8 @@ func YAML(out string) ([]*unstructured.Unstructured, error) {
 	return objs, firstErr
 }
 
-// Single expects a single object via string and parses it into an unstructured object
-func Single(out string) (*unstructured.Unstructured, error) {
+// StringToUnstructured expects a single object via string and parses it into an unstructured object
+func StringToUnstructured(out string) (*unstructured.Unstructured, error) {
 	var obj unstructured.Unstructured
 	err := yaml.Unmarshal([]byte(out), &obj)
 	if err != nil {
@@ -70,8 +69,8 @@ func Single(out string) (*unstructured.Unstructured, error) {
 	return &obj, nil
 }
 
-// ConvertObjects converts one object into another
-func ConvertObjects(from interface{}, to interface{}) error {
+// ObjectToObject converts one object into another
+func ObjectToObject(from interface{}, to interface{}) error {
 	fromBytes, err := yaml.Marshal(from)
 	if err != nil {
 		return err
@@ -85,8 +84,8 @@ func ConvertObjects(from interface{}, to interface{}) error {
 	return nil
 }
 
-// Convert converts a given byte array into the object
-func Convert(from []byte, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
+// BytesToObject converts a given byte array into the object
+func BytesToObject(from []byte, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
 	new, err := scheme.New(to)
 	if err != nil {
 		return nil, err
@@ -100,8 +99,8 @@ func Convert(from []byte, to schema.GroupVersionKind, scheme *runtime.Scheme) (r
 	return new, nil
 }
 
-// ConvertFromUnstructured converts a given unstructured object into a runtime object
-func ConvertFromUnstructured(from *unstructured.Unstructured, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
+// UnstructuredToObject converts a given unstructured object into a runtime object
+func UnstructuredToObject(from *unstructured.Unstructured, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
 	fromBytes, err := yaml.Marshal(from)
 	if err != nil {
 		return nil, err

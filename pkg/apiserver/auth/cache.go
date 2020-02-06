@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -49,9 +50,6 @@ type Cache interface {
 	GetAccountsForUser(user user.Info, verb string) ([]string, error)
 	GetNamespacesForUser(user user.Info, verb string) ([]string, error)
 
-	GetAccounts(ctx context.Context, accounts []string) ([]*configv1alpha1.Account, error)
-	GetNamespaces(ctx context.Context, namespaces []string) ([]*corev1.Namespace, error)
-
 	Run(stop <-chan struct{})
 }
 
@@ -70,8 +68,9 @@ type authCache struct {
 	clusterRoleBindingInformer ctrlcache.Informer
 
 	// Subjects that need to be synchronized
-	queue workqueue.RateLimitingInterface
-	log   logr.Logger
+	queueLock sync.RWMutex
+	queue     workqueue.RateLimitingInterface
+	log       logr.Logger
 }
 
 // Allowed holds the allowed resources for a certain subject
@@ -174,25 +173,8 @@ func (a *authCache) waitForCacheSync() error {
 	return err
 }
 
-// TODO: Is this necessary and/or is there a better way of doing this?
-func (a *authCache) waitForCache() error {
-	err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
-		if a.queue.Len() > 0 {
-			return false, nil
-		}
-
-		return true, nil
-	})
-
-	if err != nil {
-		log.Println("Waiting for cache sync failed: " + err.Error())
-	}
-
-	return err
-}
-
-// GetAccounts is a convienience method to retrieve the objects from the given account names
-func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*configv1alpha1.Account, error) {
+// GetAccounts retrieves account objs for the given names
+func GetAccounts(ctx context.Context, client client.Client, accounts []string) ([]*configv1alpha1.Account, error) {
 	if len(accounts) == 0 {
 		return nil, nil
 	}
@@ -202,7 +184,7 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	// Should we get all?
 	if accounts[0] == rbacv1.ResourceAll {
 		accountList := &configv1alpha1.AccountList{}
-		err := a.client.List(ctx, accountList)
+		err := client.List(ctx, accountList)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +196,7 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	} else {
 		for _, account := range accounts {
 			accountCopy := &configv1alpha1.Account{}
-			err := a.client.Get(ctx, types.NamespacedName{Name: account}, accountCopy)
+			err := client.Get(ctx, types.NamespacedName{Name: account}, accountCopy)
 			if err != nil {
 				if kerrors.IsNotFound(err) {
 					continue
@@ -230,8 +212,8 @@ func (a *authCache) GetAccounts(ctx context.Context, accounts []string) ([]*conf
 	return retList, nil
 }
 
-// GetNamespaces is a convienience method to retrieve the objects from the given namespace names
-func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*corev1.Namespace, error) {
+// GetNamespaces retrieves namespace objs for the given names
+func GetNamespaces(ctx context.Context, client client.Client, namespaces []string) ([]*corev1.Namespace, error) {
 	if len(namespaces) == 0 {
 		return nil, nil
 	}
@@ -241,7 +223,7 @@ func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*
 	// Should we get all?
 	if namespaces[0] == rbacv1.ResourceAll {
 		namespaceList := &corev1.NamespaceList{}
-		err := a.client.List(ctx, namespaceList)
+		err := client.List(ctx, namespaceList)
 		if err != nil {
 			return nil, err
 		}
@@ -253,7 +235,7 @@ func (a *authCache) GetNamespaces(ctx context.Context, namespaces []string) ([]*
 	} else {
 		for _, namespace := range namespaces {
 			namespaceCopy := &corev1.Namespace{}
-			err := a.client.Get(ctx, types.NamespacedName{Name: namespace}, namespaceCopy)
+			err := client.Get(ctx, types.NamespacedName{Name: namespace}, namespaceCopy)
 			if err != nil {
 				if kerrors.IsNotFound(err) {
 					continue
@@ -369,6 +351,9 @@ func (a *authCache) processCacheChange() bool {
 		return true
 	}
 
+	a.queueLock.Lock()
+	defer a.queueLock.Unlock()
+
 	err := a.invalidateSubjectNamespaceCache(*subjectStr)
 	if err != nil {
 		a.log.Error(err, "invalidate subject "+*subjectStr+" namespace cache")
@@ -401,11 +386,8 @@ func (a *authCache) GetNamespacesForUser(user user.Info, verb string) ([]string,
 }
 
 func (a *authCache) getAllowedFor(user user.Info, verb string, store cache.ThreadSafeStore) ([]string, error) {
-	// Wait till the queue is empty
-	err := a.waitForCache()
-	if err != nil {
-		return nil, err
-	}
+	a.queueLock.RLock()
+	defer a.queueLock.RUnlock()
 
 	// Gather subjects
 	retNames := map[string]bool{}

@@ -84,7 +84,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 	}
 
 	// We don't really care if the options fail to convert, then we will just pass nil
-	options, _ = convert.Single(string(req.Options.Raw))
+	options, _ = convert.StringToUnstructured(string(req.Options.Raw))
 
 	resource := schema.GroupVersionResource{
 		Group:    req.Resource.Group,
