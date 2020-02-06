@@ -516,8 +516,6 @@ spec:
 
 > If you are using ServiceAccounts instead of impersonation, adjust the `subjects` section of this Account similar to `account-sa.yaml` in 2.1.
 
-<br>
-
 Now, let's create a Space for this Account:
 ```bash
 # Run this as cluster admin:
