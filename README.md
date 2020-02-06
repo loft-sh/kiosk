@@ -148,9 +148,9 @@ An AccountQuotaSet defines a set of AccountQuotas which are managed by the Accou
 
 ### Custom Resources &amp; Resource Groups
 When installing kiosk in a Kubernetes cluster, these components will be added to the cluster:
-CRDs for Account, AccountQuota, AccountQuotaSet, Template, TemplateInstance
-Controller for kiosk Custom Resources (runs inside the cluster)
-API Server Extension (runs inside the cluster similar to the Controller)
+- CRDs for Account, AccountQuota, AccountQuotaSet, Template, TemplateInstance
+- Controller for kiosk Custom Resources (runs inside the cluster)
+- API Server Extension (runs inside the cluster similar to the Controller)
 
 ![kiosk Data Structure](docs/website/static/img/kiosk-data-structure-kubernetes-multi-tenancy-extension.png)
 
@@ -170,7 +170,7 @@ kiosk adds two groups of resources to extend the Standard API Groups of Kubernet
     <br>
     </details>
 2. **API Extension: tenancy.kiosk.sh**  
-   Virtual resources which are accessible via an API Server Extension and will not be persisted in etcd. These resources are similar to views in a relational database. The benefit of providing these resources instead of using CRDs only is that we can calculate access permissions dynamically for every request. That means that it does not only allow to list, edit and manage Spaces (which map 1-to-1 to Namespaces), it also allows to show a different set of Spaces for different Account Users depending on the Accounts they are associated with or in other words: this circumvents the current limitation of Kubernetes to show filtered lists of cluster-scoped resources based on access rights.
+   Virtual resources which are accessible via an API Server Extension and will not be persisted in etcd. These resources are similar to views in a relational database. The benefit of providing these resources instead of only using CRDs is that we can calculate access permissions dynamically for every request. That means that it does not only allow to list, edit and manage Spaces (which map 1-to-1 to Namespaces), it also allows to show a different set of Spaces for different Account Users depending on the Accounts they are associated with or in other words: this circumvents the current limitation of Kubernetes to show filtered lists of cluster-scoped resources based on access rights.
    <details>
     <summary><b>Show List of API Extension Resources</b></summary>
     <br>
@@ -445,8 +445,9 @@ apiVersion: tenancy.kiosk.sh/v1alpha1
 kind: Space
 metadata:
   name: johns-space
-spec:
-  account: johns-account
+spec: 
+  account: johns-account # this can be omitted if the current user only belongs to a single account
+                         # cluster admins can also create spaces for other accounts
 ```
 
 > As you can see in this example, every Space belongs to exactly one Account which is referenced by `spec.account`.
@@ -484,7 +485,7 @@ That's great, right? A user that did not have any access to the Kubernetes clust
 #### 3.5. Create Deletable Spaces
 To allow Account Users to delete all Spaces/Namespace that they create, you need to set the `spec.spaceClusterRole` field in the Account to `kiosk-space-admin`. 
 
-> When creating a Space, kiosk creates the according Namespace for the Space and then creates a RoleBinding within this Namespace which binds the standard Kubernetes ClusterRole `admin` to every Account User (i.e. all `subjects` listed in the Account). While this ClusterRole allows full access to this Namespace, it does **not** allow to delete the Space/Namespace.
+> When creating a Space, kiosk creates the according Namespace for the Space and then creates a RoleBinding within this Namespace which binds the standard Kubernetes ClusterRole `admin` to every Account User (i.e. all `subjects` listed in the Account). While this ClusterRole allows full access to this Namespace, it does **not** allow to delete the Space/Namespace. (The verb `delete` is missing in the default admin clusterrole)
 
 As `john` can be User of multiple Accounts, let's create a second Account which allows `john` to delete Spaces/Namespaces that belong to this Account:
 ```bash
@@ -645,7 +646,6 @@ If there are multiple AccountQuotas referencing the same Account via `spec.accou
 ### 5. Working with Templates
 Templates in kiosk are used to initialize Namespaces. When creating a Space, kiosk will use these Templates to populate the newly created Namespace for this Space. Templates:
 - can either contain one or more [Kubernetes manifests](#51-manifest-templates) or [alternatively a Helm chart](#52-helm-chart-templates)
-- can either be [mandatory or optional](#53-mandatory-vs-optional-templates) (depending on the Account configuration)
 - are being tracked by [TemplateInstances](#54-templateinstances) in each Namespace they are applied to
 
 ---
@@ -683,9 +683,9 @@ resources:
     spec:
       limits:
       - default:
-          cpu: 1
+          cpu: "1"
         defaultRequest:
-          cpu: 0.5
+          cpu: "0.5"
         type: Container
 ```
 
@@ -695,7 +695,7 @@ resources:
 ---
 
 #### 5.2. Helm Chart Templates
-Instead of manifests, a Template can specify a Helm chart that will be installed when the Template is being instantiated. Let's create a Template called `redis` which installs the `stable/redis` Helm chart:
+Instead of manifests, a Template can specify a Helm chart that will be installed (using `helm template`) when the Template is being instantiated. Let's create a Template called `redis` which installs the `stable/redis` Helm chart:
 ```bash
 # Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-helm.yaml
@@ -752,7 +752,7 @@ metadata:
 spec:
   spaceClusterRole: kiosk-space-admin
   spaceDefaultTemplates:
-  - space-restrictions
+  - template: space-restrictions
   subjects:
   - kind: User
     name: john
@@ -780,7 +780,7 @@ kind: Space
 metadata:
   name: johns-space-template-mandatory
 spec:
-  account: johns-account
+  account: johns-account # can be omitted if the user only has 1 account
 ```
 
 </details>
