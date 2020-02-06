@@ -2,7 +2,6 @@ package validation
 
 import (
 	"reflect"
-	"strings"
 
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"k8s.io/apimachinery/pkg/api/validation"
@@ -29,18 +28,7 @@ func ValidateName(name string, prefix bool) []string {
 // ValidateSpace tests required fields for a Space.
 func ValidateSpace(space *tenancy.Space) field.ErrorList {
 	result := validation.ValidateObjectMeta(&space.ObjectMeta, false, ValidateName, field.NewPath("metadata"))
-
-	// if !validateNoNewLineOrTab(space.Annotations[projectapi.ProjectDisplayName]) {
-	// 	result = append(result, field.Invalid(field.NewPath("metadata", "annotations").Key(projectapi.ProjectDisplayName),
-	//		project.Annotations[projectapi.ProjectDisplayName], "may not contain a new line or tab"))
-	// }
-
 	return result
-}
-
-// validateNoNewLineOrTab ensures a string has no new-line or tab
-func validateNoNewLineOrTab(s string) bool {
-	return !(strings.Contains(s, "\n") || strings.Contains(s, "\t"))
 }
 
 // ValidateSpaceUpdate tests to make sure a space update can be applied. Modifies newSpace with immutable fields.
