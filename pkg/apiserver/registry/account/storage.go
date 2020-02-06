@@ -162,7 +162,7 @@ func (r *accountStorage) Create(ctx context.Context, obj runtime.Object, createV
 
 	account, ok := obj.(*tenancy.Account)
 	if !ok {
-		return nil, fmt.Errorf("not a space: %#v", obj)
+		return nil, fmt.Errorf("not an account: %#v", obj)
 	}
 
 	// Validation phase
