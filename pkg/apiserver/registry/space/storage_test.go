@@ -1,3 +1,7 @@
 package space
 
-// TODO
+import "testing"
+
+func TestBasic(t *testing.T) {
+
+}

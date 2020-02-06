@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -67,8 +68,9 @@ type authCache struct {
 	clusterRoleBindingInformer ctrlcache.Informer
 
 	// Subjects that need to be synchronized
-	queue workqueue.RateLimitingInterface
-	log   logr.Logger
+	queueLock sync.RWMutex
+	queue     workqueue.RateLimitingInterface
+	log       logr.Logger
 }
 
 // Allowed holds the allowed resources for a certain subject
@@ -158,23 +160,6 @@ func (a *authCache) registerEventHandler() {
 func (a *authCache) waitForCacheSync() error {
 	err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
 		if !a.accountInformer.HasSynced() || !a.roleInformer.HasSynced() || !a.roleBindingInformer.HasSynced() || !a.clusterRoleInformer.HasSynced() || !a.clusterRoleBindingInformer.HasSynced() {
-			return false, nil
-		}
-
-		return true, nil
-	})
-
-	if err != nil {
-		log.Println("Waiting for cache sync failed: " + err.Error())
-	}
-
-	return err
-}
-
-// TODO: Is this necessary and/or is there a better way of doing this?
-func (a *authCache) waitForCache() error {
-	err := wait.PollImmediate(100*time.Millisecond, time.Minute, func() (bool, error) {
-		if a.queue.Len() > 0 {
 			return false, nil
 		}
 
@@ -366,6 +351,9 @@ func (a *authCache) processCacheChange() bool {
 		return true
 	}
 
+	a.queueLock.Lock()
+	defer a.queueLock.Unlock()
+
 	err := a.invalidateSubjectNamespaceCache(*subjectStr)
 	if err != nil {
 		a.log.Error(err, "invalidate subject "+*subjectStr+" namespace cache")
@@ -398,11 +386,8 @@ func (a *authCache) GetNamespacesForUser(user user.Info, verb string) ([]string,
 }
 
 func (a *authCache) getAllowedFor(user user.Info, verb string, store cache.ThreadSafeStore) ([]string, error) {
-	// Wait till the queue is empty
-	err := a.waitForCache()
-	if err != nil {
-		return nil, err
-	}
+	a.queueLock.RLock()
+	defer a.queueLock.RUnlock()
 
 	// Gather subjects
 	retNames := map[string]bool{}

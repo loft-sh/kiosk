@@ -43,13 +43,10 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/util/retry"
 
-	"sigs.k8s.io/apiserver-builder-alpha/pkg/builders"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type spaceStorage struct {
-	builders.DefaultStorageStrategy
-
 	scheme    *runtime.Scheme
 	authCache auth.Cache
 	client    client.Client
@@ -58,8 +55,6 @@ type spaceStorage struct {
 // NewSpaceStorage creates a new space storage that implements the rest interface
 func NewSpaceStorage(client client.Client, authCache auth.Cache, scheme *runtime.Scheme) rest.Storage {
 	return &spaceStorage{
-		DefaultStorageStrategy: builders.StorageStrategySingleton,
-
 		scheme:    scheme,
 		authCache: authCache,
 		client:    client,

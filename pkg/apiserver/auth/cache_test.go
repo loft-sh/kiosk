@@ -2,7 +2,9 @@ package auth
 
 import (
 	"context"
+	"sync"
 	"testing"
+	"time"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/util"
@@ -10,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/authentication/user"
@@ -168,7 +171,9 @@ func TestCache(t *testing.T) {
 	}
 
 	// Update accessor
+	fakeAccessor.lock.Lock()
 	fakeAccessor.allowedNamespaces["user:foo"] = []string{"test", "test2"}
+	fakeAccessor.lock.Unlock()
 
 	authcache.roleBindingInformer.(*testingutil.FakeInformer).Add(&rbacv1.RoleBinding{
 		Subjects: []rbacv1.Subject{
@@ -179,17 +184,19 @@ func TestCache(t *testing.T) {
 		},
 	})
 
-	err = authcache.waitForCache()
+	// Wait for cache
+	err = wait.Poll(time.Millisecond*10, time.Second*5, func() (bool, error) {
+		_, ok := authcache.allowedNamespaceStore.Get("user:foo")
+		return ok, nil
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, ok := authcache.allowedNamespaceStore.Get("user:foo"); !ok {
-		t.Fatal("user does not exist in cache")
-	}
-
 	// Update accessor
+	fakeAccessor.lock.Lock()
 	fakeAccessor.allowedAccounts["group:bar"] = []string{"foo", "bar"}
+	fakeAccessor.lock.Unlock()
 
 	authcache.accountInformer.(*testingutil.FakeInformer).Add(&configv1alpha1.Account{
 		Spec: configv1alpha1.AccountSpec{
@@ -202,13 +209,13 @@ func TestCache(t *testing.T) {
 		},
 	})
 
-	err = authcache.waitForCache()
+	// Wait for cache
+	err = wait.Poll(time.Millisecond*10, time.Second*5, func() (bool, error) {
+		_, ok := authcache.allowedAccountStore.Get("group:bar")
+		return ok, nil
+	})
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	if _, ok := authcache.allowedAccountStore.Get("group:bar"); !ok {
-		t.Fatal("group does not exist in cache")
 	}
 
 	// Check if we get the correct results
@@ -247,11 +254,16 @@ func TestCache(t *testing.T) {
 }
 
 type fakeAccessor struct {
+	lock sync.Mutex
+
 	allowedNamespaces map[string][]string
 	allowedAccounts   map[string][]string
 }
 
 func (f *fakeAccessor) RetrieveAllowedNamespaces(ctx context.Context, subject, verb string) ([]string, error) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	if f.allowedNamespaces == nil {
 		return nil, nil
 	}
@@ -260,6 +272,9 @@ func (f *fakeAccessor) RetrieveAllowedNamespaces(ctx context.Context, subject, v
 }
 
 func (f *fakeAccessor) RetrieveAllowedAccounts(ctx context.Context, subject, verb string) ([]string, error) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
 	if f.allowedAccounts == nil {
 		return nil, nil
 	}
