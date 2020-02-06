@@ -23,7 +23,7 @@ jobs:
       - run: |
           helm plugin install https://github.com/chartmuseum/helm-push
           helm repo add chartmuseum $CHART_MUSEUM_URL --username $CHART_MUSEUM_USER --password $CHART_MUSEUM_PASSWORD
-          helm push . chartmuseum
+          helm push ./chart chartmuseum
         env:
           CHART_MUSEUM_URL: "https://charts.devspace.sh/"
           CHART_MUSEUM_USER: ${{ secrets.CHART_MUSEUM_USER }}
