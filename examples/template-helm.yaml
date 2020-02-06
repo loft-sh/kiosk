@@ -8,5 +8,5 @@ resources:
     chart:
       repository:
         name: stable/redis
-    setValues:
+    values: |
       redisPort: 6379
