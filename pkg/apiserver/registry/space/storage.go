@@ -19,7 +19,6 @@ package space
 import (
 	"context"
 	"fmt"
-	"log"
 	"sort"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -29,7 +28,6 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/apiserver/registry/util"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 
-	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -253,7 +251,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 				}
 
 				if len(namespaceList.Items) >= *account.Spec.SpaceLimit {
-					return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("specified account cannot create more spaces"))
+					return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.SpaceLimit, account.Name))
 				}
 			}
 
@@ -291,8 +289,11 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		}
 	}
 
-	// Wait till we actually can access the namespace
-	// r.waitForAccess(ctx, namespace.Name, user.GetName())
+	// Wait till we have the namespace in the cache
+	err = r.waitForAccess(ctx, namespace.Name)
+	if err != nil {
+		return nil, err
+	}
 
 	return ConvertNamespace(namespace), nil
 }
@@ -375,34 +376,23 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 }
 
 // waitForAccess blocks until the apiserver says the user has access to the namespace
-func (r *spaceStorage) waitForAccess(ctx context.Context, namespace, username string) {
+func (r *spaceStorage) waitForAccess(ctx context.Context, namespace string) error {
 	backoff := retry.DefaultBackoff
 	backoff.Steps = 6 // this effectively waits for 6-ish seconds
 	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-		sar := &authorizationv1.SubjectAccessReview{
-			Spec: authorizationv1.SubjectAccessReviewSpec{
-				ResourceAttributes: &authorizationv1.ResourceAttributes{
-					Namespace: namespace,
-					Verb:      "get",
-					Group:     corev1.GroupName,
-					Resource:  "namespaces",
-					Name:      namespace,
-				},
-				User: username,
-			},
-		}
-
-		err := r.client.Create(ctx, sar)
+		err := r.client.Get(ctx, types.NamespacedName{Name: namespace}, &corev1.Namespace{})
 		if err != nil {
+			if kerrors.IsNotFound(err) {
+				return false, nil
+			}
+
 			return false, err
 		}
 
-		return sar.Status.Allowed, nil
+		return true, nil
 	})
 
-	if err != nil {
-		log.Printf("authorization cache failed to update for %v %v: %v", namespace, username, err)
-	}
+	return err
 }
 
 var _ = rest.Updater(&spaceStorage{})
