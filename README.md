@@ -94,7 +94,7 @@ Account Users perform actions within the Kubernetes cluster via API server reque
 <summary><b>Space</b></summary>
 <br>
 
-A Space is a non-persistent, virtual resource that represents exactly one Kubernetes Namespace. Every space belongs to exactly one Account which is the owner of this Space. When Account Users create a Space, they define which Account owns this Space. For all Account Users, a RoleBinding will be created that grants access rights for the Account Users regarding the newly created Space as well as regarding its underlying Namespace. Which access rights will be granted can be configured with an RBAC ClusterRole.  Spaces can be accessed if a user has rights to access the underlying namespace, hence besides Account Users, other actors (User, Group, ServiceAccount) can also access a namespace if an Account User or any other Cluster Admin grants this access via additional Kubernetes RBAC Roles and RoleBindings. To populate a Space with a predefined set of resources, Templates can be applied to the Space during Space creation. Certain Templates may be applied by default if a Cluster Admin configured them as defaultTemplates within the Account configuration.
+A Space is a non-persistent, virtual resource that represents exactly one Kubernetes namespace. Every space belongs to exactly one Account which is the owner of this Space. When Account Users create a Space, they define which Account owns this Space. For all Account Users, a RoleBinding will be created that grants access rights for the Account Users regarding the newly created Space as well as regarding its underlying Namespace. Which access rights will be granted can be configured with an RBAC ClusterRole. Spaces can be accessed if a user has rights to access the underlying Namespace, hence besides Account Users, other actors (User, Group, ServiceAccount) can also access a namespace if an Account User or any other Cluster Admin grants this access via additional Kubernetes RBAC Roles and RoleBindings. To populate a Space with a predefined set of resources, Templates can be applied to the Space during Space creation. Certain Templates may be applied by default if a Cluster Admin configured them as defaultTemplates within the Account configuration.
 
 <br>
 </details>
@@ -103,7 +103,7 @@ A Space is a non-persistent, virtual resource that represents exactly one Kubern
 <summary><b>Namespace</b></summary>
 <br>
 
-A Namespace is a regular Kubernetes namespace that can be accessed by anyone who has the appropriate RBAC rules to do so. Namespaces are provisioned and managed by kiosk and have a 1-to-1 relationship to the resource Space which is a custom resource of kiosk. By default, Account Users have the permission to operate within all Namespaces that are represented by Spaces which belong to one of their Accounts.
+A Namespace is a regular Kubernetes Namespace that can be accessed by anyone who has the appropriate RBAC rules to do so. Namespaces are provisioned and managed by kiosk and have a 1-to-1 relationship to the resource Space which is a custom resource of kiosk. By default, Account Users have the permission to operate within all Namespaces that are represented by Spaces which belong to one of their Accounts.
 
 <br>
 </details>
@@ -130,7 +130,7 @@ When a Template is applied to a Space, kiosk creates a TemplateInstance to keep 
 <summary><b>AccountQuota</b></summary>
 <br>
 
-AccountQuotas are defined and managed by Cluster Admins. AccountQuotas define cluster-wide aggregated limits for Accounts. The resources of all Spaces/Namespaces that belong to an Account count towards the aggregated limits defined in the AccountQuota. Similar to namespace which can be limited by multiple ResourceQuotas, an Account can be limited by multiple AccountQuotas. If the same limit (e.g. total CPU per Account) is defined by multiple AccountQuotas, the Account will be limited according to the lowest value.
+AccountQuotas are defined and managed by Cluster Admins. AccountQuotas define cluster-wide aggregated limits for Accounts. The resources of all Spaces/Namespaces that belong to an Account count towards the aggregated limits defined in the AccountQuota. Similar to Namespaces which can be limited by multiple ResourceQuotas, an Account can be limited by multiple AccountQuotas. If the same limit (e.g. total CPU per Account) is defined by multiple AccountQuotas, the Account will be limited according to the lowest value.
 
 <br>
 </details>
@@ -148,9 +148,9 @@ An AccountQuotaSet defines a set of AccountQuotas which are managed by the Accou
 
 ### Custom Resources &amp; Resource Groups
 When installing kiosk in a Kubernetes cluster, these components will be added to the cluster:
-CRDs for Account, AccountQuota, AccountQuotaSet, Template, TemplateInstance
-Controller for kiosk Custom Resources (runs inside the cluster)
-API Server Extension (runs inside the cluster similar to the Controller)
+- CRDs for Account, AccountQuota, AccountQuotaSet, Template, TemplateInstance
+- Controller for kiosk Custom Resources (runs inside the cluster)
+- API Server Extension (runs inside the cluster similar to the Controller)
 
 ![kiosk Data Structure](docs/website/static/img/kiosk-data-structure-kubernetes-multi-tenancy-extension.png)
 
@@ -202,7 +202,7 @@ kiosk adds two groups of resources to extend the Standard API Groups of Kubernet
 <summary><b>Docker Desktop Kubernetes</b></summary>
 <br>
 
-All ServiceAccounts have cluster-admin role by default which means that emulating users with ServiceAccounts is not a good idea. Use [impersonation](#2-configure-accounts) instead.
+All ServiceAccounts have cluster-admin role by default, which means that emulating users with ServiceAccounts is not a good idea. Use [impersonation](#2-configure-accounts) instead.
 
 <br>
 </details>
@@ -397,7 +397,7 @@ Spaces are the virtual representation of namespaces. Each Space represents exact
 ---
 
 #### 3.1. Allow Users To Create Spaces
-By default, Account Users **cannot** create Spaces themselves. They can only use the Spaces/Namespaces that belong to their Accounts. That means a cluster admins would need to create the Spaces for an Account and then the Account Users could work with these Spaces/Namespaces.
+By default, Account Users **cannot** create Spaces themselves. They can only use the Spaces/Namespaces that belong to their Accounts. That means a cluster admin would need to create the Spaces for an Account and then the Account Users could work with these Spaces/Namespaces.
 
 To allow all Account Users to create Spaces for their own Accounts, create the following RBAC ClusterRoleBinding:
 ```bash
@@ -793,7 +793,7 @@ Now, we can run the following command to see that the two resources (PodSecurity
 kubectl get podsecuritypolicy,limitrange -n johns-space-template-mandatory
 ```
 
-Mandatory Templates are generally used to enforce security restrictions and isolate namespaces from each other (= mandatory Templates) while Optional Templates often provide a set of default applications that a user might want to choose from when creating a Space/Namespace (see example in 5.2).
+Mandatory Templates are generally used to enforce security restrictions and isolate namespaces from each other while Optional Templates often provide a set of default applications that a user might want to choose from when creating a Space/Namespace (see example in 5.2).
 
 ---
 
@@ -823,7 +823,7 @@ helm delete kiosk -n kiosk
 To manage users in your cluster, you can either use vendor-neutral solutions such as [dex](https://github.com/dexidp/dex) or [DevSpace Cloud](https://devspace.cloud/) or alternatively, if you are in a public cloud, you may be able to use provider-specific solutions such as [AWS IAM for EKS](https://docs.aws.amazon.com/eks/latest/userguide/security-iam.html) or [GCP IAM for GKE](https://cloud.google.com/kubernetes-engine/docs/how-to/iam).
 
 ### Using ServiceAccounts For Authentication
-If you like to use ServiceAccounts for a small and easy to setup authentication and user management, you can use the following instructions to create new users / kube-configs.
+If you like to use ServiceAccounts for a small and easy to set up authentication and user management, you can use the following instructions to create new users / kube-configs.
 
 > Use `bash` to run the following commands.
 
@@ -912,13 +912,13 @@ There are many ways to get involved:
 - Open a pull request to contribute improvements to the code base or documentation
 - Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) for an invite to the bi-weekly conference call, to be added to the Slack channel or to find out more about the project and how to get involved
 
+For more detailed instructions, see our [Contributing Guide](CONTRIBUTING.md).
+
 > This is a very new project, so we are actively looking for contributors and maintainers. Reach out if you are interested.
 
 ---
 
 ### Dev Quickstart - Kubernetes-Based Dev Environment
-For more detailed instructions, see our [Contributing Guide](CONTRIBUTING.md).
-
 #### 1. Install [DevSpace](https://github.com/devspace-cloud/devspace#1-install-devspace)
 #### 2. Install cert manager with helm v3
 ```bash
@@ -937,8 +937,6 @@ go run -mod vendor main.go
 ---
 
 ### Dev Quickstart - Local Dev Environment (without webhooks & cert-manager)
-For more detailed instructions, see our [Contributing Guide](CONTRIBUTING.md).
-
 ```bash
 make
 make install
