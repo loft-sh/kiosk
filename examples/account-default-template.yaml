@@ -1,0 +1,12 @@
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: Account
+metadata:
+  name: johns-account-deletable-spaces
+spec:
+  spaceClusterRole: kiosk-space-admin
+  spaceDefaultTemplates:
+  - space-restrictions
+  subjects:
+  - kind: User
+    name: john
+    apiGroup: rbac.authorization.k8s.io

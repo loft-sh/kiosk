@@ -1,0 +1,12 @@
+apiVersion: config.kiosk.sh/v1alpha1
+kind: Template
+metadata:
+  name: redis
+resources:
+  helm:
+    releaseName: redis
+    chart:
+      repository:
+        name: stable/redis
+    setValues:
+      redisPort: 6379
