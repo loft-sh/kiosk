@@ -2,6 +2,8 @@ package helm
 
 import (
 	"context"
+	"io/ioutil"
+	"strings"
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -16,7 +18,7 @@ type templateTestCase struct {
 	config        *configv1alpha1.HelmConfiguration
 	secret        *corev1.Secret
 	expectedError bool
-	expectedArgs  *[]string
+	expectedArgs  string
 }
 
 func TestTemplate(t *testing.T) {
@@ -103,37 +105,44 @@ func TestTemplate(t *testing.T) {
 			expectedError: false,
 		},
 		"Add raw values": &templateTestCase{
-			name:      "test",
-			namespace: "test",
+			name:      "template-name",
+			namespace: "test-namespace",
 			config: &configv1alpha1.HelmConfiguration{
 				Values: "test",
 				Chart: configv1alpha1.HelmChart{
 					Repository: &configv1alpha1.HelmChartRepository{
 						Name:    "test-name",
-						RepoURL: "test",
+						RepoURL: "test-repourl",
 						Password: &configv1alpha1.HelmSecretRef{
-							Name:      "test",
-							Namespace: "test",
-							Key:       "test",
+							Name:      "test-name",
+							Namespace: "test-namespace",
+							Key:       "test-password",
 						},
 						Username: &configv1alpha1.HelmSecretRef{
-							Name:      "test",
-							Namespace: "test",
-							Key:       "test",
+							Name:      "test-name",
+							Namespace: "test-namespace",
+							Key:       "test-username",
 						},
+					},
+				},
+				SetValues: []configv1alpha1.HelmSetValue{
+					configv1alpha1.HelmSetValue{
+						Name:  "set-value-name",
+						Value: "set-value-value",
 					},
 				},
 			},
 			secret: &corev1.Secret{
 				Data: map[string][]byte{
-					"test": []byte{},
+					"test-username": []byte("test-username"),
+					"test-password": []byte("test-password"),
 				},
 				ObjectMeta: v1.ObjectMeta{
-					Name:      "test",
-					Namespace: "test",
+					Name:      "test-name",
+					Namespace: "test-namespace",
 				},
 			},
-			expectedArgs:  &[]string{"--repo", "--namespace", "test-name"},
+			expectedArgs:  "template template-name test-name --repo test-repourl --namespace test-namespace --username test-username --password test-password --set set-value-name=set-value-value --values /tmp/values-",
 			expectedError: false,
 		},
 	}
@@ -146,6 +155,18 @@ func TestTemplate(t *testing.T) {
 		h := NewHelmRunner().(*helm)
 		h.runner = func(args []string) (string, error) {
 			retArgs = args
+
+			if test.expectedArgs != "" {
+				valuesFileName := args[len(args)-1]
+				bs, err := ioutil.ReadFile(valuesFileName)
+				if err != nil {
+					t.Fatalf("Test %s: could not read values file: %s", testName, err)
+				}
+				if string(bs) != test.config.Values {
+					t.Fatalf("Test %s: expected file content: %s, but got: %s", testName, test.config.Values, string(bs))
+				}
+			}
+
 			return "", nil
 		}
 
@@ -157,24 +178,13 @@ func TestTemplate(t *testing.T) {
 		if test.expectedError && err == nil {
 			t.Fatalf("Test %s: expected error but got nil", testName)
 		} else if !test.expectedError && err != nil {
-			t.Fatalf("Test %s: expexted no error but got %v", testName, err)
+			t.Fatalf("Test %s: expected no error but got %v", testName, err)
 		}
 
-		if test.expectedArgs != nil {
-			for _, e := range *test.expectedArgs {
-				if !contains(retArgs, e) {
-					t.Fatalf("Test %s: expected args: %v to be in: %v", testName, test.expectedArgs, retArgs)
-				}
+		if test.expectedArgs != "" {
+			if strings.Index(strings.Join(retArgs, " "), test.expectedArgs) == -1 {
+				t.Fatalf("Test %s: expected args: %v to be in: %v", testName, test.expectedArgs, retArgs)
 			}
 		}
 	}
-}
-
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }
