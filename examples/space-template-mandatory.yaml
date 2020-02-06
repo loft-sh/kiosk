@@ -3,4 +3,4 @@ kind: Space
 metadata:
   name: johns-space-template-mandatory
 spec:
-  account: johns-account
+  account: johns-account-deletable-spaces

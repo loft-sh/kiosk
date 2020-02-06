@@ -10,6 +10,16 @@ resources:
       name: space-security-policy
     spec:
       privileged: false
+      seLinux:
+        rule: RunAsAny
+      supplementalGroups:
+        rule: RunAsAny
+      runAsUser:
+        rule: RunAsAny
+      fsGroup:
+        rule: RunAsAny
+      volumes:
+      - '*'
   - apiVersion: v1
     kind: LimitRange
     metadata:

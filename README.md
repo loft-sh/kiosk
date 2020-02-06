@@ -802,7 +802,8 @@ To keep track of resources created from Templates, kiosk creates a so-called Tem
 
 To view the TemplateInstances of the namespace `johns-space-template-mandatory`, run the following command:
 ```bash
-kubectl get templateinstances -n johns-space-template-mandatory --as=john
+# Run this as cluster admin:
+kubectl get templateinstances -n johns-space-template-mandatory
 ```
 
 TemplateInstances allow admins and user to see which Templates are being used within a Space/Namespace and they make it possible to upgrade the resources created by a Template if there is a newer version of the Template (coming soon).
