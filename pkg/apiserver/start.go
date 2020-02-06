@@ -162,9 +162,9 @@ func NewCommandStartServer(etcdPath string, out, errOut io.Writer, builders []*b
 	stopCh <-chan struct{}, title, version string, tweakConfigFuncs ...func(apiServer *apiserver.Config) error) (*cobra.Command, *ServerOptions) {
 	o := NewServerOptions(etcdPath, title, version, builders)
 
-	for pluginName := range AggregatedAdmissionPlugins {
-		o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, pluginName)
-	}
+	// for pluginName := range AggregatedAdmissionPlugins {
+	//	o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, pluginName)
+	// }
 
 	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
 	// Support overrides

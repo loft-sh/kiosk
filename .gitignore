@@ -6,3 +6,5 @@ default.etcd/
 /kubeconfig
 
 .devspace/
+/main
+/profile.out

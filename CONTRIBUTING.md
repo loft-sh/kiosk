@@ -24,7 +24,7 @@ This is just a short list of ideas, if you have other ideas for contributing ple
 
 We recommend to develop kiosk directly inside a kubernetes cluster. The easiest way is to use the local kubernetes cluster provided by Docker Desktop for Windows/Mac or minikube for Linux.
 
-After you setup the kubernetes cluster, you have to install [DevSpace](https://github.com/devspace-cloud/devspace), which will take care of the hot-reloading.
+After you setup the kubernetes cluster, you have to install [DevSpace](https://github.com/devspace-cloud/devspace#1-install-devspace), which will take care of the hot-reloading.
 
 Make sure you have cert-manager installed in your cluster via:
 

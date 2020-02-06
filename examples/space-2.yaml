@@ -1,0 +1,6 @@
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: Space
+metadata:
+  name: johns-space-2
+spec:
+  account: johns-account

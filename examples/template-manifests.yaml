@@ -1,0 +1,33 @@
+apiVersion: config.kiosk.sh/v1alpha1
+kind: Template
+metadata:
+  name: space-restrictions
+resources:
+  manifests:
+  - apiVersion: policy/v1beta1
+    kind: PodSecurityPolicy
+    metadata:
+      name: space-security-policy
+    spec:
+      privileged: false
+      seLinux:
+        rule: RunAsAny
+      supplementalGroups:
+        rule: RunAsAny
+      runAsUser:
+        rule: RunAsAny
+      fsGroup:
+        rule: RunAsAny
+      volumes:
+      - '*'
+  - apiVersion: v1
+    kind: LimitRange
+    metadata:
+      name: space-limit-range
+    spec:
+      limits:
+      - default:
+          cpu: 1
+        defaultRequest:
+          cpu: 0.5
+        type: Container

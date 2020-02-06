@@ -113,7 +113,7 @@ func (p *genericLister) List(selector labels.Selector) ([]runtime.Object, error)
 
 	ret := make([]runtime.Object, len(list.Items))
 	for i, item := range list.Items {
-		t, err := convert.ConvertFromUnstructured(&item, p.gvk, p.scheme)
+		t, err := convert.UnstructuredToObject(&item, p.gvk, p.scheme)
 		if err != nil {
 			return nil, err
 		}
@@ -134,7 +134,7 @@ func (p *genericLister) Get(name string) (runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	convertedPod, err := convert.ConvertFromUnstructured(pod, p.gvk, p.scheme)
+	convertedPod, err := convert.UnstructuredToObject(pod, p.gvk, p.scheme)
 	if err != nil {
 		return nil, err
 	}

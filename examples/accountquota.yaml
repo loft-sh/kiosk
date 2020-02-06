@@ -1,0 +1,10 @@
+apiVersion: config.kiosk.sh/v1alpha1
+kind: AccountQuota
+metadata:
+  name: default-user-limits
+spec:
+  account: johns-account
+  quota:
+    hard:
+      pods: "2"
+      limits.cpu: "4"
