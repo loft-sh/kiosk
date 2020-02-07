@@ -24,7 +24,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -32,9 +32,9 @@ var (
 )
 
 // AddManagerIndices adds the needed manager indices for faster listing of resources
-func AddManagerIndices(cache ctrlcache.Cache) error {
+func AddManagerIndices(indexer client.FieldIndexer) error {
 	// Index account quota by account
-	if err := cache.IndexField(&configv1alpha1.AccountQuota{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&configv1alpha1.AccountQuota{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
 		quota := rawObj.(*configv1alpha1.AccountQuota)
 		if quota.Spec.Account != "" {
 			return []string{quota.Spec.Account}
@@ -46,7 +46,7 @@ func AddManagerIndices(cache ctrlcache.Cache) error {
 	}
 
 	// Index namespaces by account
-	if err := cache.IndexField(&corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
 		// grab the namespace object, extract the owner...
 		namespace := rawObj.(*corev1.Namespace)
 		if namespace.Annotations != nil && namespace.Annotations[tenancy.SpaceAnnotationAccount] != "" {
@@ -59,7 +59,7 @@ func AddManagerIndices(cache ctrlcache.Cache) error {
 	}
 
 	// Index rolebinding by owner account
-	if err := cache.IndexField(&rbacv1.RoleBinding{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(&rbacv1.RoleBinding{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
 		// grab the rolebinding object, extract the owner...
 		cr := rawObj.(*rbacv1.RoleBinding)
 		owner := metav1.GetControllerOf(cr)
