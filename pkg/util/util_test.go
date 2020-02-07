@@ -16,18 +16,18 @@ type runTestCase struct {
 	command string
 	args    []string
 
-	expectedErr string
+	expectedErr bool
 }
 
 func TestRun(t *testing.T) {
 	testCases := []runTestCase{
 		{
 			name:        "Error in command",
-			expectedErr: "Error in command: exec: \"\": executable file not found in %PATH% => ",
+			expectedErr: true,
 		},
 		{
 			name:    "Successful command",
-			command: "echo",
+			command: "bash",
 			args:    []string{"hello"},
 		},
 	}
@@ -35,10 +35,10 @@ func TestRun(t *testing.T) {
 	for _, testCase := range testCases {
 		err := Run(testCase.command, testCase.args...)
 
-		if testCase.expectedErr == "" {
+		if testCase.expectedErr == false {
 			assert.NilError(t, err, "Unexpected error in testCase %s", testCase.name)
-		} else {
-			assert.Error(t, err, testCase.expectedErr, "No or wrong error in testCase %s", testCase.name)
+		} else if err == nil {
+			t.Fatalf("No error in testCase %s", testCase.name)
 		}
 	}
 }
@@ -49,7 +49,7 @@ type outputTestCase struct {
 	command string
 	args    []string
 
-	expectedErr    string
+	expectedErr    bool
 	expectedOutput string
 }
 
@@ -57,7 +57,7 @@ func TestOutput(t *testing.T) {
 	testCases := []outputTestCase{
 		{
 			name:        "Error in command",
-			expectedErr: "Error in command: exec: \"\": executable file not found in %PATH% => ",
+			expectedErr: true,
 		},
 		{
 			name:           "Successful command",
@@ -70,10 +70,10 @@ func TestOutput(t *testing.T) {
 	for _, testCase := range testCases {
 		output, err := Output(testCase.command, testCase.args...)
 
-		if testCase.expectedErr == "" {
+		if testCase.expectedErr == false {
 			assert.NilError(t, err, "Unexpected error in testCase %s", testCase.name)
-		} else {
-			assert.Error(t, err, testCase.expectedErr, "No or wrong error in testCase %s", testCase.name)
+		} else if err == nil {
+			t.Fatalf("No error in testCase %s", testCase.name)
 		}
 
 		assert.Equal(t, output, testCase.expectedOutput, "Unexpected output in testCase %s", testCase.name)

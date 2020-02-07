@@ -70,12 +70,14 @@ func StringsEqual(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
+	checkedIndexes := map[int]bool{}
 	for _, needle := range a {
 		found := false
 		for i, expected := range b {
-			if expected == needle {
+			if expected == needle && !checkedIndexes[i] {
 				found = true
-				b = append(b[:i], b[i+1:]...)
+				checkedIndexes[i] = true
 				break
 			}
 		}
