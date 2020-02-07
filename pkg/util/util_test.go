@@ -27,7 +27,7 @@ func TestRun(t *testing.T) {
 		},
 		{
 			name:    "Successful command",
-			command: "bash",
+			command: "echo",
 			args:    []string{"hello"},
 		},
 	}
@@ -63,7 +63,7 @@ func TestOutput(t *testing.T) {
 			name:           "Successful command",
 			command:        "echo",
 			args:           []string{"hello"},
-			expectedOutput: "hello",
+			expectedOutput: "hello\n",
 		},
 	}
 
