@@ -1,78 +1,35 @@
 package util
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
-	"gopkg.in/yaml.v2"
 	"gotest.tools/assert"
 )
 
-type getLockTestCase struct {
-	name string
-
-	lockCreatedAfterRead bool
-	getParallel          bool
-	lockBefore           sync.Locker
-
-	expectedLock sync.Locker
-}
-
 func TestGetLock(t *testing.T) {
-	testCases := []getLockTestCase{
-		getLockTestCase{
-			name:        "Get existing lock",
-			getParallel: true,
-			lockBefore: &fakeLock{
-				ID: 5,
-			},
-			expectedLock: &fakeLock{
-				ID: 5,
-			},
-		},
-		getLockTestCase{
-			name:         "Get new lock",
-			getParallel:  true,
-			expectedLock: &sync.Mutex{},
-		},
+	lockFactory := NewDefaultLockFactory()
+
+	returnedLocksChan := make(chan []sync.Locker)
+	for i := 0; i < 100; i++ {
+		go func() {
+			returnedLocks := make([]sync.Locker, 100)
+			for i := 0; i < 100; i++ {
+				returnedLocks[i] = lockFactory.GetLock(fmt.Sprintf("key%d", i))
+			}
+			returnedLocksChan <- returnedLocks
+		}()
 	}
 
-	for _, testCase := range testCases {
-		locks := map[string]sync.Locker{}
-		if testCase.lockBefore != nil {
-			locks["key"] = testCase.lockBefore
-		}
+	returnedLocks := make([][]sync.Locker, 100)
+	for i := 0; i < 100; i++ {
+		returnedLocks[i] = <-returnedLocksChan
+	}
 
-		lockFactory := &defaultLockFactory{
-			locks: locks,
-		}
-
-		parallelChan := make(chan sync.Locker)
-
-		if testCase.getParallel {
-			go func() {
-				parallelChan <- lockFactory.GetLock("key")
-			}()
-		}
-
-		lock := lockFactory.GetLock("key")
-
-		lockAsYaml, err := yaml.Marshal(lock)
-		assert.NilError(t, err, "Error parsing lock in testCase %s", testCase.name)
-		expectedAsYaml, err := yaml.Marshal(testCase.expectedLock)
-		assert.NilError(t, err, "Error parsing expectation in testCase %s", testCase.name)
-		assert.Equal(t, string(lockAsYaml), string(expectedAsYaml), "Unexpected lock in testCase %s", testCase.name)
-
-		if testCase.getParallel {
-			parallelLock := <-parallelChan
-			parallelAsYaml, err := yaml.Marshal(parallelLock)
-			assert.NilError(t, err, "Error parsing parallel lock in testCase %s", testCase.name)
-			assert.Equal(t, string(parallelAsYaml), string(expectedAsYaml), "Unexpected parallel lock in testCase %s", testCase.name)
+	for i := 1; i < 100; i++ {
+		for j := 0; i < 100; i++ {
+			assert.Equal(t, returnedLocks[0][j], returnedLocks[i][j], "Unequal locks for index %d/%d", i, j)
 		}
 	}
-}
-
-type fakeLock struct {
-	sync.Mutex
-	ID int
 }
