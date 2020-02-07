@@ -142,7 +142,7 @@ func TestTemplate(t *testing.T) {
 					Namespace: "test-namespace",
 				},
 			},
-			expectedArgs:  "template template-name test-name --repo test-repourl --namespace test-namespace --username test-username --password test-password --set set-value-name=set-value-value --values /tmp/values-",
+			expectedArgs:  "template template-name test-name --repo test-repourl --namespace test-namespace --username test-username --password test-password --set set-value-name=set-value-value --values",
 			expectedError: false,
 		},
 	}
