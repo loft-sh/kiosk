@@ -131,6 +131,14 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 	for _, object := range objects {
 		object.SetNamespace(templateInstance.Namespace)
 
+		// Set owner controller
+		if shouldSetOwner(templateInstance) {
+			err := ctrl.SetControllerReference(templateInstance, object, r.Scheme)
+			if err != nil {
+				return err
+			}
+		}
+
 		// Get group version
 		gv, err := schema.ParseGroupVersion(object.GetAPIVersion())
 		if err != nil {
@@ -160,6 +168,10 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 	}
 
 	return nil
+}
+
+func shouldSetOwner(templateInstance *configv1alpha1.TemplateInstance) bool {
+	return templateInstance.Annotations == nil || templateInstance.Annotations[configv1alpha1.TemplateInstanceNoOwnerAnnotation] != "true"
 }
 
 func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) error {
