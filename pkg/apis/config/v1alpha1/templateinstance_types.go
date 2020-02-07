@@ -20,6 +20,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// TemplateInstanceNoOwnerAnnotation if this annotation is set on a template instance,
+// the template instance is not setting itself as the owner of the created objects
+const TemplateInstanceNoOwnerAnnotation = "templateinstance.config.kiosk.sh/no-owner"
+
 // TemplateInstanceSpec holds the expected cluster status of the template instance
 type TemplateInstanceSpec struct {
 	// The template to instantiate. This is an immutable field
