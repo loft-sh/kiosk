@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -27,6 +28,7 @@ type templateInstanceContollerTest struct {
 	template         *configv1alpha1.Template
 	templateInstance *configv1alpha1.TemplateInstance
 	helmOutput       []runtime.Object
+	helmError        error
 
 	isFailed        bool
 	expectedObjects []expectedStatusObject
@@ -142,13 +144,10 @@ func TestTemplateInstanceController(t *testing.T) {
 					Name: "test",
 				},
 				Resources: configv1alpha1.TemplateResources{
-					Manifests: []runtime.RawExtension{
-						runtime.RawExtension{
-							Raw: []byte(`{"apiVersion":"v1","kind":"Pod"}`),
-						},
-					},
+					Helm: &configv1alpha1.HelmConfiguration{},
 				},
 			},
+			helmError: fmt.Errorf("TestError"),
 		},
 	}
 
@@ -156,6 +155,7 @@ func TestTemplateInstanceController(t *testing.T) {
 		fakeClient := testingutil.NewFakeClient(scheme, test.template, test.templateInstance)
 		fakeHelmRunner := &fakeHelmRunner{
 			out: test.helmOutput,
+			err: test.helmError,
 		}
 
 		controller := TemplateInstanceReconciler{
@@ -167,15 +167,7 @@ func TestTemplateInstanceController(t *testing.T) {
 
 		_, reconcileError := controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.templateInstance.Name, Namespace: test.templateInstance.Namespace}})
 		if reconcileError != nil {
-			// Check if the status is equal
-			err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: test.templateInstance.Name}, test.templateInstance)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if test.isFailed == true && test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusFailed {
-				t.Fatalf("Test %s: expected failed status, but got status %s and error %v", testName, test.templateInstance.Status.Status, reconcileError)
-			}
-			continue
+			t.Fatal(reconcileError)
 		}
 
 		// Check if the status is equal
@@ -183,8 +175,11 @@ func TestTemplateInstanceController(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusDeployed {
+		if test.isFailed == false && test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusDeployed {
 			t.Fatalf("Test %s: unexpected template instance status: %s", testName, test.templateInstance.Status.Status)
+		}
+		if test.isFailed == true && test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusFailed {
+			t.Fatalf("Test %s: expected failed status, but got status %s and error %v", testName, test.templateInstance.Status.Status, reconcileError)
 		}
 
 		// Check if the runtime objects exist
@@ -204,9 +199,14 @@ func TestTemplateInstanceController(t *testing.T) {
 
 type fakeHelmRunner struct {
 	out []runtime.Object
+	err error
 }
 
 func (f *fakeHelmRunner) Template(client client.Client, name, namespace string, config *configv1alpha1.HelmConfiguration) ([]*unstructured.Unstructured, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+
 	result := []*unstructured.Unstructured{}
 	err := convert.ObjectToObject(f.out, &result)
 	if err != nil {

@@ -26,8 +26,7 @@ type LockFactory interface {
 }
 
 type defaultLockFactory struct {
-	lock sync.RWMutex
-
+	lock  sync.RWMutex
 	locks map[string]sync.Locker
 }
 
