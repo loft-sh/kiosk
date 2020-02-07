@@ -70,11 +70,12 @@ func StringsEqual(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
-	for _, namespace := range a {
+	for _, needle := range a {
 		found := false
-		for _, expected := range b {
-			if expected == namespace {
+		for i, expected := range b {
+			if expected == needle {
 				found = true
+				b = append(b[:i], b[i+1:]...)
 				break
 			}
 		}
