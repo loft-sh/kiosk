@@ -17,6 +17,7 @@ limitations under the License.
 package convert
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -57,6 +58,16 @@ func StringToUnstructuredArray(out string) ([]*unstructured.Unstructured, error)
 		objs = append(objs, &obj)
 	}
 	return objs, firstErr
+}
+
+// RuntimeObjectToBytes converts a runtime object into a byte array
+func RuntimeObjectToBytes(obj runtime.Object) ([]byte, error) {
+	bytes, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
 
 // StringToUnstructured expects a single object via string and parses it into an unstructured object

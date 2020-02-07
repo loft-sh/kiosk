@@ -43,6 +43,8 @@ import (
 // TemplateInstanceReconciler reconciles a template instance object
 type TemplateInstanceReconciler struct {
 	client.Client
+	helm helm.Helm
+
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
@@ -76,7 +78,6 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 		if kerrors.IsNotFound(err) {
 			return ctrl.Result{}, r.setFailed(ctx, templateInstance, "TemplateNotFound", fmt.Sprintf("The specified template '%s' couldn't be found.", templateInstance.Spec.Template))
 		}
-
 		return ctrl.Result{}, err
 	}
 
@@ -106,7 +107,7 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 
 	// Gather objects from helm
 	if template.Resources.Helm != nil {
-		objs, err := helm.NewHelmRunner().Template(r, template.Name, templateInstance.Namespace, template.Resources.Helm)
+		objs, err := r.helm.Template(r, template.Name, templateInstance.Namespace, template.Resources.Helm)
 		if err != nil {
 			return r.setFailed(ctx, templateInstance, "ErrorHelm", fmt.Sprintf("Error during helm template: %v", err))
 		}
@@ -184,6 +185,7 @@ func (t *templateMapper) Map(obj handler.MapObject) []reconcile.Request {
 
 // SetupWithManager adds the controller to the manager
 func (r *TemplateInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.helm = helm.NewHelmRunner()
 	return ctrl.NewControllerManagedBy(mgr).
 		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: &templateMapper{client: r}}).
 		For(&configv1alpha1.TemplateInstance{}).

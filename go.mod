@@ -31,6 +31,7 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	go.uber.org/atomic v1.3.2
 	gomodules.xyz/jsonpatch v2.0.0+incompatible // indirect
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.17.1
 	k8s.io/apimachinery v0.17.1
 	k8s.io/apiserver v0.17.1
