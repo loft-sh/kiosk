@@ -28,7 +28,7 @@ func TestGetLock(t *testing.T) {
 	}
 
 	for i := 1; i < 100; i++ {
-		for j := 0; i < 100; i++ {
+		for j := 0; j < 100; j++ {
 			assert.Equal(t, returnedLocks[0][j], returnedLocks[i][j], "Unequal locks for index %d/%d", i, j)
 		}
 	}
