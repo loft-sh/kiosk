@@ -42,9 +42,9 @@ func setType(obj runtime.Object) runtime.Object {
 
 func TestHandle(t *testing.T) {
 	tests := map[string]*handleTestCase{
-		// "Is no update": &handleTestCase{
-		// 	operation: "TEST",
-		// },
+		"Is no update": &handleTestCase{
+			operation: "TEST",
+		},
 		"Is update": &handleTestCase{
 			accountQuota: &configv1alpha1.AccountQuota{
 				ObjectMeta: v1.ObjectMeta{Name: "test"},
