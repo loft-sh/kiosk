@@ -1,13 +1,14 @@
 package controllers
 
 import (
-	"strings"
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/kiosk-sh/kiosk/pkg/util"
 	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
+	"github.com/kiosk-sh/kiosk/pkg/util/testing/ptr"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,8 +26,7 @@ type addManagerIndicesTestCase struct {
 	key string
 	in  runtime.Object
 
-	expected    []string
-	expectedErr string
+	expected []string
 }
 
 func TestAddManagerIndices(t *testing.T) {
@@ -80,13 +80,13 @@ func TestAddManagerIndices(t *testing.T) {
 							Name:       "noController",
 							APIVersion: apiGVStr,
 							Kind:       "Account",
-							Controller: testingutil.BoolPointer(false),
+							Controller: ptr.Bool(false),
 						},
 						{
 							Name:       "myAccount3",
 							APIVersion: apiGVStr,
 							Kind:       "Account",
-							Controller: testingutil.BoolPointer(true),
+							Controller: ptr.Bool(true),
 						},
 					},
 				},
@@ -105,12 +105,8 @@ func TestAddManagerIndices(t *testing.T) {
 	for _, testCase := range testCases {
 		out, err := fakeIndexer.GetIndexValues(testCase.in, testCase.key)
 
-		if testCase.expectedErr == "" {
-			assert.NilError(t, err, "Unexpected error in testCase %s", testCase.name)
-		} else {
-			assert.Error(t, err, "No or wrong error in testCase %s", testCase.name)
-		}
-		assert.Equal(t, strings.Join(out, ", "), strings.Join(testCase.expected, ", "), "Unexpected output in testCase %s", testCase.name)
+		assert.NilError(t, err, "Unexpected error in testCase %s", testCase.name)
+		assert.Assert(t, util.StringsEqual(out, testCase.expected), "Unexpected output in testCase %s", testCase.name)
 	}
 }
 
