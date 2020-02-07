@@ -26,7 +26,7 @@ func validateSubjects(subjects []rbac.Subject) field.ErrorList {
 
 	subjectsPath := field.NewPath("spec.subjects")
 	for i, subject := range subjects {
-		allErrs = append(allErrs, rbacvalidation.ValidateRoleBindingSubject(subject, true, subjectsPath.Index(i))...)
+		allErrs = append(allErrs, rbacvalidation.ValidateRoleBindingSubject(subject, false, subjectsPath.Index(i))...)
 	}
 
 	return allErrs
