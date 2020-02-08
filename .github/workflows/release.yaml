@@ -46,9 +46,10 @@ jobs:
         with:
           version: "v3.0.3"
       - run: |
+          RELEASE_VERSION=$(echo $GITHUB_REF | sed -nE 's!refs/tags/v!!p')
           helm plugin install https://github.com/chartmuseum/helm-push
           helm repo add chartmuseum $CHART_MUSEUM_URL --username $CHART_MUSEUM_USER --password $CHART_MUSEUM_PASSWORD
-          helm push ./chart chartmuseum
+          helm push --version="$RELEASE_VERSION" ./chart chartmuseum
         env:
           CHART_MUSEUM_URL: "https://charts.devspace.sh/"
           CHART_MUSEUM_USER: ${{ secrets.CHART_MUSEUM_USER }}
