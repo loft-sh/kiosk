@@ -4,8 +4,6 @@
 
 replicaCount: 1
 
-image: kiosksh/kiosk:0.0.1
-
 manager:
   command: 
   - /manager
