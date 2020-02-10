@@ -7,6 +7,7 @@ resources:
     releaseName: redis
     chart:
       repository:
-        name: stable/redis
+        name: redis
+        repoUrl: https://kubernetes-charts.storage.googleapis.com
     values: |
       redisPort: 6379
