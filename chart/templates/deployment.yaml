@@ -40,7 +40,11 @@ spec:
         {{- range $f := .Values.apiserver.args }}
         - {{ $f | quote }}
         {{- end }}
+        {{- if .Values.image }}
         image: "{{ .Values.image }}"
+        {{- else }}
+        image: "kiosksh/kiosk:{{ .Chart.Version }}"
+        {{- end }}
         name: apiserver
         volumeMounts:
         - mountPath: /tmp/k8s-apiserver/serving-certs
@@ -56,7 +60,11 @@ spec:
         {{- range $f := .Values.manager.args }}
         - {{ $f | quote }}
         {{- end }}
+        {{- if .Values.image }}
         image: "{{ .Values.image }}"
+        {{- else }}
+        image: "kiosksh/kiosk:{{ .Chart.Version }}"
+        {{- end }}
         name: manager
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
