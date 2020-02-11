@@ -96,7 +96,13 @@ Account Users perform actions within the Kubernetes cluster via API server reque
 <summary><b>Space</b></summary>
 <br>
 
-A Space is a non-persistent, virtual resource that represents exactly one Kubernetes namespace. Every space belongs to exactly one Account which is the owner of this Space. When Account Users create a Space, they define which Account owns this Space. For all Account Users, a RoleBinding will be created that grants access rights for the Account Users regarding the newly created Space as well as regarding its underlying Namespace. Which access rights will be granted can be configured with an RBAC ClusterRole. Spaces can be accessed if a user has rights to access the underlying Namespace, hence besides Account Users, other actors (User, Group, ServiceAccount) can also access a namespace if an Account User or any other Cluster Admin grants this access via additional Kubernetes RBAC Roles and RoleBindings. To populate a Space with a predefined set of resources, Templates can be applied to the Space during Space creation. Certain Templates may be applied by default if a Cluster Admin configured them as defaultTemplates within the Account configuration.
+A Space is a non-persistent, virtual resource that represents exactly one Kubernetes namespace. Spaces have the following characteristics:
+- Every space can belong up to one Account which is the owner of this Space. Ownerless Spaces are possible.
+- If a user has rights to access the underlying Namespace, the user can access the Space in the same way. Hence besides Account Users, other actors (User, Group, ServiceAccount) can also access the Space if someone grants this access via additional Kubernetes RBAC.
+- Every User only sees the Spaces the User has access to. This is in contrast to regular namespaces, where Users can only list all namespaces or none
+- Space ownership can be changed, by changing the ownership annotation on the namespace
+- During Space creation (or Space ownership changes) a RoleBinding for the owning Account is created in the corresponding Space namespace. The referenced RBAC ClusterRole can be configured in the account
+- A Space can be prepopulated during creation with a predefined set of resources by configuring default Templates in the Account. Kiosk will make sure that these resources will be correctly deployed **before** the user gets access to the namespace.
 
 <br>
 </details>
@@ -393,7 +399,7 @@ kubectl get account johns-account -o yaml --as=john
 <br>
 
 ### 3. Working with Spaces
-Spaces are the virtual representation of namespaces. Each Space represents exactly one namespace. The reason why we use Spaces is that by introducing this virtual resource, we can allow users to create/list/delete this resource without having to give them cluster-wide access for the actual namespaces.
+Spaces are the virtual representation of namespaces. Each Space represents exactly one namespace. The reason why we use Spaces is that by introducing this virtual resource, we can allow Users to only operate on a subset of namespaces they have access to and hide other namespaces they shouldn't see. 
 
 ---
 
