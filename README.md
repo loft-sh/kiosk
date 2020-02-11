@@ -2,15 +2,17 @@
 
 ### **[Getting Started](#getting-started)** • **[Architecture](#architecture)** • **[Contributing](#contributing)** • **[Roadmap](#roadmap)**
 
-![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23FFD039)
-![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23FFD039)
+![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23D1374D)
+![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23D1374D)
 
 ## Multi-Tenancy Extension For Kubernetes
 - **Accounts & Account Users** to separate tenants in a shared Kubernetes cluster
 - **Self-Service Namespace Provisioning** for account users
 - **Account Limits** to ensure quality of service and fairness when sharing a cluster
 - **Namespace Templates** for secure tenant isolation and self-service namespace initialization
-- **Multi-Cluster Tenant Management** for sharing a pool of clusters ([soon](#roadmap))
+- **Multi-Cluster Tenant Management** for sharing a pool of clusters ([coming soon](#roadmap))
+
+<br>
 
 ![kiosk Demo Video](docs/website/static/img/kiosk-demo-readme.gif)
 
@@ -731,6 +733,7 @@ resources:
 #### 5.3. Using Templates
 By default, only admins can list Templates. To allow users to view templates, you need to set up RBAC accordingly. Run the following code to allow every cluster user to list and view all Templates:
 ```bash
+# Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-viewer.yaml
 ```
 
@@ -781,6 +784,7 @@ kubectl get templates --as=john
 
 To instantiate a Template, users need to have permission to create [TemplateInstances](#55-templateinstances) within their Namespaces. You can grant this permission by running this command:
 ```bash
+# Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-instance-admin.yaml
 ```
 
@@ -815,7 +819,7 @@ rules:
 
 After creating the ClusterRole `kiosk-template-admin` as shown above, users can instantiate templates inside their Namespaces by creating so-called [TemplateInstances](#55-templateinstances). The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates):
 ```bash
-kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
+kubectl apply --as=john -n johns-space -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
 ```
 
 <details>
