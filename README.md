@@ -66,7 +66,7 @@ The following diagram shows the main actors (Cluster Admins and Account Users) a
 Click on the following links to view the description for each of the actors and kiosk components:
 
 <details>
-<summary><b>Cluster Admins</b></summary>
+<summary><b>Cluster Admin</b></summary>
 <br>
 
 Cluster Admins have the permission to perform CRUD operations for cluster-wide / non-namespaced resources (especially RBAC related resources as well as the custom resources Account, AccountQuota, AccountQuotaSet, and Template). Cluster Admins configure kiosk by creating and managing Accounts, AccountQuotas, AccountQuotaSets, and Templates. They can also see and configure all Spaces owned by all Accounts.
