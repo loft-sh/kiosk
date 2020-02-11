@@ -399,7 +399,7 @@ kubectl get account johns-account -o yaml --as=john
 <br>
 
 ### 3. Working with Spaces
-Spaces are the virtual representation of namespaces. Each Space represents exactly one namespace. The reason why we use Spaces is that by introducing this virtual resource, we can allow Users to only operate on a subset of namespaces they have access to and hide other namespaces they shouldn't see. 
+Spaces are the virtual representation of namespaces. Each Space represents exactly one namespace. The reason why we use Spaces is that by introducing this virtual resource, we can allow users to only operate on a subset of namespaces they have access to and hide other namespaces they shouldn't see. 
 
 ---
 
