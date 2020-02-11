@@ -1,7 +1,7 @@
 version: v1beta6
 images:
   controller:
-    image: mynamespace/devspace
+    image: kiosksh/kiosktest
     build:
       docker:
         options:
@@ -81,11 +81,11 @@ profiles:
     replace:
       images:
         controller:
-          image: mynamespace/devspace
+          image: kiosksh/kiosktest
       deployments:
         - name: kiosk
           helm:
             chart:
               name: ./chart
             values:
-              image: mynamespace/devspace
+              image: kiosksh/kiosktest
