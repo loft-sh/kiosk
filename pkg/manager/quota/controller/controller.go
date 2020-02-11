@@ -432,9 +432,23 @@ func (rq *AccountQuotaController) replenishQuota(groupResource schema.GroupResou
 		return
 	}
 
+	// get namespace
+	namespaceObject := &v1.Namespace{}
+	err := rq.client.Get(context.Background(), types.NamespacedName{Name: namespace}, namespaceObject)
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("quota controller could not find Namespace: %s", namespace))
+		return
+	}
+
+	// check if namespace has an account
+	account := util.GetAccountFromNamespace(namespaceObject)
+	if account == "" {
+		return
+	}
+
 	// check if this namespace even has a quota...
 	accountQuotaList := &configv1alpha1.AccountQuotaList{}
-	err := rq.client.List(context.Background(), accountQuotaList)
+	err = rq.client.List(context.Background(), accountQuotaList, client.MatchingField(constants.IndexByAccount, account))
 	if errors.IsNotFound(err) {
 		utilruntime.HandleError(fmt.Errorf("quota controller could not find ResourceQuota associated with namespace: %s, could take up to %v before a quota replenishes", namespace, rq.resyncPeriod()))
 		return

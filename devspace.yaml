@@ -12,7 +12,7 @@ deployments:
       chart:
         name: ./chart
       values:
-        image: mynamespace/devspace
+        image: kiosksh/kiosktest
         manager:
           command: ["/workspace/manager"]
         apiserver:
@@ -50,6 +50,9 @@ profiles:
               - config/
               - bin/
               - .vscode/
+              - .git/
+              - docs/
+              - examples/
               - chart/
               - /helm
   - name: dev-apiserver
@@ -74,6 +77,9 @@ profiles:
               - hack/
               - config/
               - bin/
+              - .git/
+              - docs/
+              - examples/
               - .vscode/
               - chart/
               - /helm
