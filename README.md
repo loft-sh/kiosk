@@ -2,17 +2,19 @@
 
 ### **[Getting Started](#getting-started)** • **[Architecture](#architecture)** • **[Contributing](#contributing)** • **[Roadmap](#roadmap)**
 
-![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23FFD039)
-![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23FFD039)
+![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23D1374D)
+![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23D1374D)
 
 ## Multi-Tenancy Extension For Kubernetes
 - **Accounts & Account Users** to separate tenants in a shared Kubernetes cluster
 - **Self-Service Namespace Provisioning** for account users
 - **Account Limits** to ensure quality of service and fairness when sharing a cluster
 - **Namespace Templates** for secure tenant isolation and self-service namespace initialization
-- **Multi-Cluster Tenant Management** for sharing a pool of clusters ([soon](#roadmap))
+- **Multi-Cluster Tenant Management** for sharing a pool of clusters ([coming soon](#roadmap))
 
-#TODO: insert gif
+<br>
+
+![kiosk Demo Video](docs/website/static/img/kiosk-demo-readme.gif)
 
 <br>
 
@@ -40,7 +42,7 @@ Kubernetes is designed as a single-tenant platform, which makes it hard for clus
 
 While there are hundreds of ways of setting up multi-tenant Kubernetes clusters and many Kubernetes distributions provide their own tenancy logic, there is no lightweight, pluggable and customizable solution that allows admins to easily add multi-tenancy capabilities to any standard Kubernetes cluster. 
 
-### The Missing Multi-Tenancy Extension for Kubernetes
+### The Missing Multi-Tenancy Extension for Kubernetes [![> Tweet <](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fkiosk-sh%2Fkiosk)](https://twitter.com/intent/tweet?text=The%20Missing%20Multi-Tenancy%20Extension%20for%20%23Kubernetes%3A%20%23kiosk%20-%20https%3A//github.com/kiosk-sh/kiosk%20%23cncf)
 kiosk is designed to be:
 - **100% Open-Source**: CNCF compatible Apache 2.0 license
 - **Pluggable**: easy to install into any existing cluster and suitable for different use cases
@@ -336,7 +338,7 @@ spec:
   subjects:
   - kind: ServiceAccount
     name: john
-    namespace: john
+    namespace: kiosk
 ```
 
 </details>
@@ -370,7 +372,6 @@ roleRef:
   kind: ClusterRole
   name: kiosk-view
   apiGroup: rbac.authorization.k8s.io
-
 ```
 
 > Of course, you can also adjust this ClusterRoleBinding in a way that only certain subjects/users can list or view their Accounts. Just modify the `subjects` section.
@@ -445,9 +446,9 @@ apiVersion: tenancy.kiosk.sh/v1alpha1
 kind: Space
 metadata:
   name: johns-space
-spec: 
-  account: johns-account # this can be omitted if the current user only belongs to a single account
-                         # cluster admins can also create spaces for other accounts
+spec:
+  # spec.account can be omitted if the current user only belongs to a single account
+  account: johns-account
 ```
 
 > As you can see in this example, every Space belongs to exactly one Account which is referenced by `spec.account`.
@@ -505,9 +506,9 @@ metadata:
 spec:
   spaceClusterRole: kiosk-space-admin
   subjects:
-  - kind: ServiceAccount
+  - kind: User
     name: john
-    namespace: kiosk
+    apiGroup: rbac.authorization.k8s.io
 ```
 
 <br>
@@ -646,14 +647,14 @@ If there are multiple AccountQuotas referencing the same Account via `spec.accou
 ### 5. Working with Templates
 Templates in kiosk are used to initialize Namespaces. When creating a Space, kiosk will use these Templates to populate the newly created Namespace for this Space. Templates:
 - can either contain one or more [Kubernetes manifests](#51-manifest-templates) or [alternatively a Helm chart](#52-helm-chart-templates)
-- are being tracked by [TemplateInstances](#54-templateinstances) in each Namespace they are applied to
+- are being tracked by [TemplateInstances](#55-templateinstances) in each Namespace they are applied to
 
 ---
 
 #### 5.1. Manifest Templates
 The easiest option to define a Template is by specifying an array of Kubernetes manifests which should be applied when the Template is being instantiated.
 
-The following command will create a Template called `space-restrictions` which defined 2 manifests, a [PodSecurityPolicy](https://kubernetes.io/docs/concepts/policy/pod-security-policy/) which will make sure that the users of this Space/Namespace cannot create privileged containers and a [LimitRange for default CPU limits](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/) of containers in this Namespace:
+The following command will create a Template called `space-restrictions` which defined 2 manifests, a [Network Policy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) which will make sure that the users of this Space/Namespace cannot create privileged containers and a [LimitRange for default CPU limits](https://kubernetes.io/docs/tasks/administer-cluster/manage-resources/cpu-default-namespace/) of containers in this Namespace:
 ```bash
 # Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-manifests.yaml
@@ -670,12 +671,16 @@ metadata:
   name: space-restrictions
 resources:
   manifests:
-  - apiVersion: policy/v1beta1
-    kind: PodSecurityPolicy
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
     metadata:
-      name: space-security-policy
+      name: deny-cross-ns-traffic
     spec:
-      privileged: false
+      podSelector:
+        matchLabels:
+      ingress:
+      - from:
+        - podSelector: {}
   - apiVersion: v1
     kind: LimitRange
     metadata:
@@ -683,9 +688,9 @@ resources:
     spec:
       limits:
       - default:
-          cpu: "1"
+          cpu: 1
         defaultRequest:
-          cpu: "0.5"
+          cpu: 0.5
         type: Container
 ```
 
@@ -715,19 +720,123 @@ resources:
     releaseName: redis
     chart:
       repository:
-        name: stable/redis
-    values:
+        name: redis
+        repoUrl: https://kubernetes-charts.storage.googleapis.com
+    values: |
       redisPort: 6379
 ```
+<br>
+</details>
+
+---
 
 #### 5.3. Using Templates
-To get a list of available Templates, run the following command:
+By default, only admins can list Templates. To allow users to view templates, you need to set up RBAC accordingly. Run the following code to allow every cluster user to list and view all Templates:
+```bash
+# Run this as cluster admin:
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-viewer.yaml
+```
+
+<details>
+<summary><b>View: rbac-template-viewer.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiosk-template-view
+rules:
+- apiGroups:
+  - config.kiosk.sh
+  resources:
+  - templates
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kiosk-template-viewer
+subjects:
+- kind: Group
+  name: system:authenticated
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: kiosk-template-view
+  apiGroup: rbac.authorization.k8s.io
+```
+<br>
+</details>
+
+To view a list of available Templates, run the following command:
 ```bash
 kubectl get templates --as=john
 ```
 
+To instantiate a Template, users need to have permission to create [TemplateInstances](#55-templateinstances) within their Namespaces. You can grant this permission by running this command:
+```bash
+# Run this as cluster admin:
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-instance-admin.yaml
+```
+
+<details>
+<summary><b>View: rbac-instance-admin.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiosk-template-admin
+  labels:
+    rbac.kiosk.sh/aggregate-to-space-admin: "true"
+rules:
+- apiGroups:
+  - config.kiosk.sh
+  resources:
+  - templateinstances
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
+```
 <br>
 </details>
+
+After creating the ClusterRole `kiosk-template-admin` as shown above, users can instantiate templates inside their Namespaces by creating so-called [TemplateInstances](#55-templateinstances). The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates):
+```bash
+kubectl apply --as=john -n johns-space -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
+```
+
+<details>
+<summary><b>View: template-instance.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: config.kiosk.sh/v1alpha1
+kind: TemplateInstance
+metadata:
+  name: redis-instance
+spec:
+  template: redis
+```
+<br>
+</details>
+
 
 ---
 
@@ -806,7 +915,14 @@ To view the TemplateInstances of the namespace `johns-space-template-mandatory`,
 kubectl get templateinstances -n johns-space-template-mandatory
 ```
 
-TemplateInstances allow admins and user to see which Templates are being used within a Space/Namespace and they make it possible to upgrade the resources created by a Template if there is a newer version of the Template (coming soon).
+TemplateInstances allow admins and user to see which Templates are being used within a Space/Namespace and they make it possible to upgrade the resources created by a Template if there is a newer version of the Template ([coming soon](#roadmap)).
+
+<br>
+
+## Upgrade kiosk
+```bash
+helm upgrade kiosk -n kiosk
+```
 
 <br>
 
@@ -912,36 +1028,10 @@ There are many ways to get involved:
 - Open a pull request to contribute improvements to the code base or documentation
 - Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) for an invite to the bi-weekly conference call, to be added to the Slack channel or to find out more about the project and how to get involved
 
-For more detailed instructions, see our [Contributing Guide](CONTRIBUTING.md).
+For more detailed information, see our [Contributing Guide](CONTRIBUTING.md).
 
 > This is a very new project, so we are actively looking for contributors and maintainers. Reach out if you are interested.
 
----
-
-### Dev Quickstart - Kubernetes-Based Dev Environment
-#### 1. Install [DevSpace](https://github.com/devspace-cloud/devspace#1-install-devspace)
-#### 2. Install cert manager with helm v3
-```bash
-kubectl create namespace cert-manager
-helm install cert-manager cert-manager --repo https://charts.jetstack.io --version v0.12.0 --namespace cert-manager
-```
-#### 3. Start Development
-```bash
-# Start Development Mode
-devspace run dev
-
-# In the terminal start the application with
-go run -mod vendor main.go
-```
-
----
-
-### Dev Quickstart - Local Dev Environment (without webhooks & cert-manager)
-```bash
-make
-make install
-make run ENABLE_WEBHOOKzooS=false
-```
 
 <br>
 

@@ -4,22 +4,16 @@ metadata:
   name: space-restrictions
 resources:
   manifests:
-  - apiVersion: policy/v1beta1
-    kind: PodSecurityPolicy
+  - kind: NetworkPolicy
+    apiVersion: networking.k8s.io/v1
     metadata:
-      name: space-security-policy
+      name: deny-cross-ns-traffic
     spec:
-      privileged: false
-      seLinux:
-        rule: RunAsAny
-      supplementalGroups:
-        rule: RunAsAny
-      runAsUser:
-        rule: RunAsAny
-      fsGroup:
-        rule: RunAsAny
-      volumes:
-      - '*'
+      podSelector:
+        matchLabels:
+      ingress:
+      - from:
+        - podSelector: {}
   - apiVersion: v1
     kind: LimitRange
     metadata:
