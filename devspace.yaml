@@ -50,6 +50,9 @@ profiles:
               - config/
               - bin/
               - .vscode/
+              - .git/
+              - docs/
+              - examples/
               - chart/
               - /helm
   - name: dev-apiserver
@@ -74,6 +77,9 @@ profiles:
               - hack/
               - config/
               - bin/
+              - .git/
+              - docs/
+              - examples/
               - .vscode/
               - chart/
               - /helm

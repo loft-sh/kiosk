@@ -5,3 +5,5 @@ chart/
 config/
 hack/
 devspace.yaml
+.git/
+docs/

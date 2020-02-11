@@ -16,7 +16,6 @@ COPY cmd/manager/main.go cmd/manager/main.go
 COPY cmd/apiserver/main.go cmd/apiserver/main.go
 COPY pkg/ pkg/
 
-
 ENV GO111MODULE on
 ENV DEBUG true
 
