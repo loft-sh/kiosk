@@ -12,7 +12,7 @@ deployments:
       chart:
         name: ./chart
       values:
-        image: mynamespace/devspace
+        image: kiosksh/kiosktest
         manager:
           command: ["/workspace/manager"]
         apiserver:
