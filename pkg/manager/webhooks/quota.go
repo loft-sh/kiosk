@@ -26,10 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:verbs=create;update,path=/validate-pod,mutating=false,failurePolicy=fail,groups="",resources=pods,versions=v1,name=vpods.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-quota,mutating=false,failurePolicy=fail,groups="*",resources="*",versions="*",name=accountquota.kiosk.sh
 
-// PodValidator validates pods
-type PodValidator struct {
+// QuotaValidator validates pods
+type QuotaValidator struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
@@ -39,7 +39,7 @@ type PodValidator struct {
 }
 
 // Handle handles the admission request
-func (v *PodValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+func (v *QuotaValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	if v.AdmissionController == nil {
 		return admission.Denied("Admission controller is not ready")
 	} // We allow admissions we don't handle
@@ -62,14 +62,8 @@ func (v *PodValidator) Handle(ctx context.Context, req admission.Request) admiss
 	return admission.Allowed("")
 }
 
-// PodValidator implements inject.Client.
-// A client will be automatically injected.
-
-// PodValidator implements admission.DecoderInjector.
-// A decoder will be automatically injected.
-
 // InjectDecoder injects the decoder.
-func (v *PodValidator) InjectDecoder(d *admission.Decoder) error {
+func (v *QuotaValidator) InjectDecoder(d *admission.Decoder) error {
 	v.decoder = d
 	return nil
 }

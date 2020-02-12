@@ -32,19 +32,20 @@ webhooks:
     service:
       name: {{ template "kiosk.fullname" . }}
       namespace: {{ .Release.Namespace }}
-      path: /validate-pod
+      path: /validate-quota
   failurePolicy: Fail
-  name: vpods.kb.io
+  name: accountquota.kiosk.sh
   rules:
   - apiGroups:
-    - ""
+    - "*"
     apiVersions:
-    - v1
+    - "*"
     operations:
     - CREATE
     - UPDATE
     resources:
-    - pods
+    - "*"
+    scope: "Namespaced"
 - clientConfig:
     caBundle: Cg==
     service:

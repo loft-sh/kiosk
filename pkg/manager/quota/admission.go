@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
 	"github.com/kiosk-sh/kiosk/pkg/util"
 
 	corev1 "k8s.io/api/core/v1"
@@ -31,11 +32,11 @@ import (
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"k8s.io/kubernetes/pkg/quota/v1"
+	"k8s.io/kubernetes/pkg/quota/v1/generic"
 	"k8s.io/kubernetes/plugin/pkg/admission/resourcequota"
 	resourcequotaapi "k8s.io/kubernetes/plugin/pkg/admission/resourcequota/apis/resourcequota"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 // accountQuotaAdmission implements an admission controller that can enforce accountQuota constraints
@@ -63,13 +64,13 @@ const (
 // NewAccountResourceQuota configures an admission controller that can enforce accountQuota constraints
 // using the provided registry.  The registry must have the capability to handle group/kinds that
 // are persisted by the server this admission controller is intercepting
-func NewAccountResourceQuota(mgr manager.Manager) admission.ValidationInterface {
+func NewAccountResourceQuota(ctrlCtx *controllers.Context) admission.ValidationInterface {
 	return &accountQuotaAdmission{
 		Handler: admission.NewHandler(admission.Create, admission.Update),
 
-		config:      NewQuotaConfiguration(mgr),
-		client:      mgr.GetClient(),
-		cache:       mgr.GetCache(),
+		config:      NewQuotaConfiguration(generic.ListerFuncForResourceFunc(ctrlCtx.SharedInformers.ForResource)),
+		client:      ctrlCtx.Manager.GetClient(),
+		cache:       ctrlCtx.Manager.GetCache(),
 		lockFactory: util.NewDefaultLockFactory(),
 	}
 }
@@ -91,7 +92,7 @@ func (q *accountQuotaAdmission) Validate(ctx context.Context, a admission.Attrib
 
 	q.init.Do(func() {
 		accountQuotaAccessor := newQuotaAccessor(q.client)
-		q.evaluator = resourcequota.NewQuotaEvaluator(accountQuotaAccessor, q.config.IgnoredResources(), NewQuotaRegistry(q.config), q.lockAquisition, &resourcequotaapi.Configuration{}, numEvaluatorThreads, utilwait.NeverStop)
+		q.evaluator = resourcequota.NewQuotaEvaluator(accountQuotaAccessor, q.config.IgnoredResources(), generic.NewRegistry(q.config.Evaluators()), q.lockAquisition, &resourcequotaapi.Configuration{}, numEvaluatorThreads, utilwait.NeverStop)
 	})
 
 	return q.evaluator.Evaluate(a)
