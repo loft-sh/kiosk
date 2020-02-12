@@ -19,33 +19,45 @@ package quota
 import (
 	"time"
 
+	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
 	quotacontroller "github.com/kiosk-sh/kiosk/pkg/manager/quota/controller"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	kubectrlmgrconfigv1alpha1 "k8s.io/kube-controller-manager/config/v1alpha1"
+	"k8s.io/kubernetes/pkg/controller"
+	kubectrldefaults "k8s.io/kubernetes/pkg/controller/resourcequota/config/v1alpha1"
+	"k8s.io/kubernetes/pkg/quota/v1/generic"
 )
 
 // Register registers the quota controller
-func Register(mgr manager.Manager) error {
-	quotaConfiguration := NewQuotaConfiguration(mgr)
+func Register(ctrlCtx *controllers.Context) error {
+	controllerConfig := &kubectrlmgrconfigv1alpha1.ResourceQuotaControllerConfiguration{}
+	kubectrldefaults.RecommendedDefaultResourceQuotaControllerConfiguration(controllerConfig)
+
+	listerFuncForResource := generic.ListerFuncForResourceFunc(ctrlCtx.SharedInformers.ForResource)
+	quotaConfiguration := NewQuotaConfiguration(listerFuncForResource)
+
 	ctrlOptions := &quotacontroller.AccountQuotaControllerOptions{
-		Manager:                   mgr,
-		ResyncPeriod:              func() time.Duration { return time.Hour * 10 },
-		Registry:                  NewQuotaRegistry(quotaConfiguration),
-		IgnoredResourcesFunc:      func() map[schema.GroupResource]struct{} { return quotaConfiguration.IgnoredResources() },
-		ReplenishmentResyncPeriod: func() time.Duration { return time.Hour * 10 },
+		Manager:                   ctrlCtx.Manager,
+		ResyncPeriod:              controller.StaticResyncPeriodFunc(controllerConfig.ResourceQuotaSyncPeriod.Duration),
+		InformerFactory:           ctrlCtx.ObjectOrMetadataInformers,
+		ReplenishmentResyncPeriod: controllers.ResyncPeriod(),
+		DiscoveryFunc:             ctrlCtx.DiscoveryFunc,
+		IgnoredResourcesFunc:      quotaConfiguration.IgnoredResources,
+		InformersStarted:          ctrlCtx.InformersStarted,
+		Registry:                  generic.NewRegistry(quotaConfiguration.Evaluators()),
 	}
 
+	// Create the controller from options
 	controller, err := quotacontroller.NewAccountQuotaController(ctrlOptions)
 	if err != nil {
 		return err
 	}
 
 	// Start the controller
-	go func() {
-		mgr.GetCache().WaitForCacheSync(nil)
-		controller.Run(10, make(chan struct{}))
-	}()
+	go controller.Run(int(controllerConfig.ConcurrentResourceQuotaSyncs), ctrlCtx.StopChan)
+
+	// Periodically the quota controller to detect new resource types
+	go controller.Sync(ctrlCtx.DiscoveryFunc, 30*time.Second, ctrlCtx.StopChan)
 
 	return nil
 }

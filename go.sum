@@ -779,6 +779,7 @@ k8s.io/kube-aggregator v0.0.0-20191016112429-9587704a8ad4 h1:Tv+DHbQg2ozCJqmuw5p
 k8s.io/kube-aggregator v0.0.0-20191016112429-9587704a8ad4/go.mod h1:+aW0UZgSXdTSHTIFnWnueEuXjOqerDUxGIw6Ygr+vYY=
 k8s.io/kube-aggregator v0.17.0 h1:2/15hPpXp11GvQmtLeTlNP6WeZnmebs/uxckzZS3P9c=
 k8s.io/kube-aggregator v0.17.0/go.mod h1:Vw104PtCEuT12WTVuhRFWCHXGiVqXsTzFtrvoaHxpk4=
+k8s.io/kube-controller-manager v0.0.0-20191016114939-2b2b218dc1df h1:7zqJKTBHA7+oFKu6FLB/di2/zrx+2Khx1hBKJ5oOBcc=
 k8s.io/kube-controller-manager v0.0.0-20191016114939-2b2b218dc1df/go.mod h1:WgrTcPKYAfNa9C0LV1UeK+XqfbSOUH1WGq/vX5UiW40=
 k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf h1:EYm5AW/UUDbnmnI+gK0TJDVK9qPLhM+sRHYanNKw0EQ=
 k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf/go.mod h1:1TqjTSzOxsLGIKfj0lK8EeCP7K1iUG65v09OM0/WG5E=

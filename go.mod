@@ -36,6 +36,7 @@ require (
 	k8s.io/apiserver v0.17.1
 	k8s.io/client-go v0.17.1
 	k8s.io/klog v1.0.0
+	k8s.io/kube-controller-manager v0.0.0
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	k8s.io/kubernetes v1.16.2
 	sigs.k8s.io/apiserver-builder-alpha v0.0.0-20200103114340-ef5d9b9c01aa

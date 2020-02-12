@@ -17,32 +17,32 @@ limitations under the License.
 package webhooks
 
 import (
+	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
 	"github.com/kiosk-sh/kiosk/pkg/manager/quota"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // Register registers the webhooks to the manager
-func Register(mgr manager.Manager) error {
-	hookServer := mgr.GetWebhookServer()
+func Register(ctrlCtx *controllers.Context) error {
+	hookServer := ctrlCtx.Manager.GetWebhookServer()
 
 	// Create the admission controller
-	admissionController := quota.NewAccountResourceQuota(mgr)
+	admissionController := quota.NewAccountResourceQuota(ctrlCtx)
 	hookServer.Register("/validate-pod", &webhook.Admission{Handler: &PodValidator{
 		Log:                 ctrl.Log.WithName("webhooks").WithName("Pod"),
-		Scheme:              mgr.GetScheme(),
+		Scheme:              ctrlCtx.Manager.GetScheme(),
 		AdmissionController: admissionController,
 	}})
 
 	hookServer.Register("/validate-accountquota", &webhook.Admission{Handler: &AccountQuotaValidator{
 		Log:    ctrl.Log.WithName("webhooks").WithName("AccountQuota"),
-		Scheme: mgr.GetScheme(),
+		Scheme: ctrlCtx.Manager.GetScheme(),
 	}})
 
 	hookServer.Register("/validate-templateinstance", &webhook.Admission{Handler: &TemplateInstanceValidator{
 		Log:    ctrl.Log.WithName("webhooks").WithName("TemplateInstance"),
-		Scheme: mgr.GetScheme(),
+		Scheme: ctrlCtx.Manager.GetScheme(),
 	}})
 
 	return nil

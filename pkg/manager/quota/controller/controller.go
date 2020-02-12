@@ -23,13 +23,7 @@ import (
 	"sync"
 	"time"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	"github.com/kiosk-sh/kiosk/pkg/util"
-
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	v1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -46,10 +40,21 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/kubernetes/pkg/controller"
 	quota "k8s.io/kubernetes/pkg/quota/v1"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/kiosk-sh/kiosk/pkg/util"
 )
 
 // NamespacedResourcesFunc knows how to discover namespaced resources.
 type NamespacedResourcesFunc func() ([]*metav1.APIResourceList, error)
+
+// ReplenishmentFunc is a signal that a resource changed in specified namespace
+// that may require quota to be recalculated.
+type ReplenishmentFunc func(groupResource schema.GroupResource, namespace string)
 
 // AccountQuotaControllerOptions holds options for creating a quota controller
 type AccountQuotaControllerOptions struct {
@@ -59,19 +64,25 @@ type AccountQuotaControllerOptions struct {
 	ResyncPeriod controller.ResyncPeriodFunc
 	// Maintains evaluators that know how to calculate usage for group resource
 	Registry quota.Registry
+	// Discover list of supported resources on the server.
+	DiscoveryFunc NamespacedResourcesFunc
 	// A function that returns the list of resources to ignore
 	IgnoredResourcesFunc func() map[schema.GroupResource]struct{}
+	// InformersStarted knows if informers were started.
+	InformersStarted <-chan struct{}
+	// InformerFactory interfaces with informers.
+	InformerFactory controller.InformerFactory
 	// Controls full resync of objects monitored for replenishment.
 	ReplenishmentResyncPeriod controller.ResyncPeriodFunc
 }
 
 // AccountQuotaController is responsible for tracking quota usage status in the system
 type AccountQuotaController struct {
-	// Manager has access to the cache and informers
-	manager manager.Manager
 	// Client is used for accessing kubernetes objects
 	client client.Client
-	// ResourceQuota objects that need to be synchronized
+	// A list of functions that return true when their caches have synced
+	informerSyncedFuncs []cache.InformerSynced
+	// AccountQuota objects that need to be synchronized
 	queue workqueue.RateLimitingInterface
 	// missingUsageQueue holds objects that are missing the initial usage information
 	missingUsageQueue workqueue.RateLimitingInterface
@@ -91,25 +102,29 @@ type AccountQuotaController struct {
 
 // NewAccountQuotaController creates a quota controller with specified options
 func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*AccountQuotaController, error) {
-	// build the account quota controller
-	rq := &AccountQuotaController{
-		manager:           options.Manager,
-		client:            options.Manager.GetClient(),
-		queue:             workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resourcequota_primary"),
-		missingUsageQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resourcequota_priority"),
-		resyncPeriod:      options.ResyncPeriod,
-		registry:          options.Registry,
-	}
-	// set the synchronization handler
-	rq.syncHandler = rq.syncResourceQuotaFromKey
-
-	// Observe namespace changes
-	namespaceQuotaInformer, err := options.Manager.GetCache().GetInformer(&v1.Namespace{})
+	quotaInf, err := options.Manager.GetCache().GetInformer(&configv1alpha1.AccountQuota{})
 	if err != nil {
 		return nil, err
 	}
 
-	namespaceQuotaInformer.AddEventHandlerWithResyncPeriod(
+	namespaceInf, err := options.Manager.GetCache().GetInformer(&v1.Namespace{})
+	if err != nil {
+		return nil, err
+	}
+
+	// build the resource quota controller
+	rq := &AccountQuotaController{
+		client:              options.Manager.GetClient(),
+		informerSyncedFuncs: []cache.InformerSynced{quotaInf.HasSynced, namespaceInf.HasSynced},
+		queue:               workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "accountquota_primary"),
+		missingUsageQueue:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "accountquota_priority"),
+		resyncPeriod:        options.ResyncPeriod,
+		registry:            options.Registry,
+	}
+	// set the synchronization handler
+	rq.syncHandler = rq.syncAccountQuotaFromKey
+
+	namespaceInf.AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: rq.enqueueNamespace,
 			UpdateFunc: func(old, cur interface{}) {
@@ -128,13 +143,7 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 		rq.resyncPeriod(),
 	)
 
-	// Observe account quota changes
-	accountQuotaInformer, err := options.Manager.GetCache().GetInformer(&configv1alpha1.AccountQuota{})
-	if err != nil {
-		return nil, err
-	}
-
-	accountQuotaInformer.AddEventHandlerWithResyncPeriod(
+	quotaInf.AddEventHandlerWithResyncPeriod(
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: rq.addQuota,
 			UpdateFunc: func(old, cur interface{}) {
@@ -161,54 +170,36 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 		rq.resyncPeriod(),
 	)
 
-	qm := &QuotaMonitor{
-		manager:           options.Manager,
-		ignoredResources:  options.IgnoredResourcesFunc(),
-		resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
-		resyncPeriod:      options.ReplenishmentResyncPeriod,
-		replenishmentFunc: rq.replenishQuota,
-		registry:          rq.registry,
+	if options.DiscoveryFunc != nil {
+		qm := &QuotaMonitor{
+			informersStarted:  options.InformersStarted,
+			informerFactory:   options.InformerFactory,
+			ignoredResources:  options.IgnoredResourcesFunc(),
+			resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
+			resyncPeriod:      options.ReplenishmentResyncPeriod,
+			replenishmentFunc: rq.replenishQuota,
+			registry:          rq.registry,
+		}
+
+		rq.quotaMonitor = qm
+
+		// do initial quota monitor setup.  If we have a discovery failure here, it's ok. We'll discover more resources when a later sync happens.
+		resources, err := GetQuotableResourcesByFunc(options.DiscoveryFunc)
+		if discovery.IsGroupDiscoveryFailedError(err) {
+			utilruntime.HandleError(fmt.Errorf("initial discovery check failure, continuing and counting on future sync update: %v", err))
+		} else if err != nil {
+			return nil, err
+		}
+
+		if err = qm.SyncMonitors(resources); err != nil {
+			utilruntime.HandleError(fmt.Errorf("initial monitor sync has error: %v", err))
+		}
+
+		// only start quota once all informers synced
+		rq.informerSyncedFuncs = append(rq.informerSyncedFuncs, qm.IsSynced)
 	}
-
-	rq.quotaMonitor = qm
-
-	// do initial quota monitor setup.  If we have a discovery failure here, it's ok. We'll discover more resources when a later sync happens.
-	resources, err := GetQuotableResources()
-	if discovery.IsGroupDiscoveryFailedError(err) {
-		utilruntime.HandleError(fmt.Errorf("initial discovery check failure, continuing and counting on future sync update: %v", err))
-	} else if err != nil {
-		return nil, err
-	}
-
-	if err = qm.SyncMonitors(resources); err != nil {
-		utilruntime.HandleError(fmt.Errorf("initial monitor sync has error: %v", err))
-	}
-
-	// only start quota once all informers synced
-	// This shouldn't be necessary, since the informers should be synced directly when getting them
-	// rq.informerSyncedFuncs = append(rq.informerSyncedFuncs, qm.IsSynced)
 
 	return rq, nil
-}
-
-func (rq *AccountQuotaController) enqueueNamespace(obj interface{}) {
-	namespace := obj.(*v1.Namespace)
-	account := util.GetAccountFromNamespace(namespace)
-	if account == "" {
-		return
-	}
-
-	// List quotas by account
-	quotaList := &configv1alpha1.AccountQuotaList{}
-	err := rq.client.List(context.Background(), quotaList, client.MatchingField(constants.IndexByAccount, account))
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("unable to list account quotas: %v", err))
-		return
-	}
-
-	for _, quota := range quotaList.Items {
-		rq.queue.Add(quota.Name)
-	}
 }
 
 // enqueueAll is called at the fullResyncPeriod interval to force a full recalculation of quota usage statistics
@@ -230,7 +221,7 @@ func (rq *AccountQuotaController) enqueueAll() {
 	}
 }
 
-// obj could be an *configv1alpha1.AccountQuota, or a DeletionFinalStateUnknown marker item.
+// obj could be an *v1.AccountQuota, or a DeletionFinalStateUnknown marker item.
 func (rq *AccountQuotaController) enqueueAccountQuota(obj interface{}) {
 	key, err := controller.KeyFunc(obj)
 	if err != nil {
@@ -238,6 +229,26 @@ func (rq *AccountQuotaController) enqueueAccountQuota(obj interface{}) {
 		return
 	}
 	rq.queue.Add(key)
+}
+
+func (rq *AccountQuotaController) enqueueNamespace(obj interface{}) {
+	namespace := obj.(*v1.Namespace)
+	account := util.GetAccountFromNamespace(namespace)
+	if account == "" {
+		return
+	}
+
+	// List quotas by account
+	quotaList := &configv1alpha1.AccountQuotaList{}
+	err := rq.client.List(context.Background(), quotaList, client.MatchingField(constants.IndexByAccount, account))
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("unable to list account quotas: %v", err))
+		return
+	}
+
+	for _, quota := range quotaList.Items {
+		rq.queue.Add(quota.Name)
+	}
 }
 
 func (rq *AccountQuotaController) addQuota(obj interface{}) {
@@ -314,10 +325,9 @@ func (rq *AccountQuotaController) Run(workers int, stopCh <-chan struct{}) {
 		go rq.quotaMonitor.Run(stopCh)
 	}
 
-	// This is not necessary since the underlying cache will take care of this
-	// if !cache.WaitForNamedCacheSync("resource quota", stopCh, rq.informerSyncedFuncs...) {
-	// 	return
-	// }
+	if !cache.WaitForNamedCacheSync("resource quota", stopCh, rq.informerSyncedFuncs...) {
+		return
+	}
 
 	// the workers that chug through the quota calculation backlog
 	for i := 0; i < workers; i++ {
@@ -329,8 +339,8 @@ func (rq *AccountQuotaController) Run(workers int, stopCh <-chan struct{}) {
 	<-stopCh
 }
 
-// syncResourceQuotaFromKey syncs a quota key
-func (rq *AccountQuotaController) syncResourceQuotaFromKey(key string) (err error) {
+// syncAccountQuotaFromKey syncs a quota key
+func (rq *AccountQuotaController) syncAccountQuotaFromKey(key string) (err error) {
 	startTime := time.Now()
 	defer func() {
 		klog.V(4).Infof("Finished syncing resource quota %q (%v)", key, time.Since(startTime))
@@ -346,11 +356,11 @@ func (rq *AccountQuotaController) syncResourceQuotaFromKey(key string) (err erro
 		klog.Infof("Unable to retrieve resource quota %v from store: %v", key, err)
 		return err
 	}
-	return rq.syncResourceQuota(accountQuota)
+	return rq.syncAccountQuota(accountQuota)
 }
 
-// syncResourceQuota runs a complete sync of resource quota status across all known kinds
-func (rq *AccountQuotaController) syncResourceQuota(accountQuota *configv1alpha1.AccountQuota) (err error) {
+// syncAccountQuota runs a complete sync of resource quota status across all known kinds
+func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.AccountQuota) (err error) {
 	// quota is dirty if any part of spec hard limits differs from the status hard limits
 	statusLimitsDirty := !apiequality.Semantic.DeepEqual(accountQuota.Spec.Quota.Hard, accountQuota.Status.Total.Hard)
 
@@ -449,12 +459,8 @@ func (rq *AccountQuotaController) replenishQuota(groupResource schema.GroupResou
 	// check if this namespace even has a quota...
 	accountQuotaList := &configv1alpha1.AccountQuotaList{}
 	err = rq.client.List(context.Background(), accountQuotaList, client.MatchingField(constants.IndexByAccount, account))
-	if errors.IsNotFound(err) {
-		utilruntime.HandleError(fmt.Errorf("quota controller could not find ResourceQuota associated with namespace: %s, could take up to %v before a quota replenishes", namespace, rq.resyncPeriod()))
-		return
-	}
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("error checking to see if namespace %s has any ResourceQuota associated with it: %v", namespace, err))
+		utilruntime.HandleError(fmt.Errorf("error checking to see if namespace %s has any AccountQuota associated with it: %v", namespace, err))
 		return
 	}
 	if len(accountQuotaList.Items) == 0 {
@@ -478,7 +484,7 @@ func (rq *AccountQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, pe
 	oldResources := make(map[schema.GroupVersionResource]struct{})
 	wait.Until(func() {
 		// Get the current resource list from discovery.
-		newResources, err := GetQuotableResources()
+		newResources, err := GetQuotableResourcesByFunc(discoveryFunc)
 		if err != nil {
 			utilruntime.HandleError(err)
 
@@ -569,14 +575,15 @@ func (rq *AccountQuotaController) resyncMonitors(resources map[schema.GroupVersi
 	if err := rq.quotaMonitor.SyncMonitors(resources); err != nil {
 		return err
 	}
+	rq.quotaMonitor.StartMonitors()
 	return nil
 }
 
-// GetQuotableResources returns all resources that the quota system should recognize.
+// GetQuotableResourcesByFunc returns all resources that the quota system should recognize.
 // It requires a resource supports the following verbs: 'create','list','delete'
 // This function may return both results and an error.  If that happens, it means that the discovery calls were only
 // partially successful.  A decision about whether to proceed or not is left to the caller.
-func GetQuotableResources() (map[schema.GroupVersionResource]struct{}, error) {
+func GetQuotableResourcesByFunc(discoveryFunc NamespacedResourcesFunc) (map[schema.GroupVersionResource]struct{}, error) {
 	/*possibleResources, discoveryErr := discoveryFunc()
 	if discoveryErr != nil && len(possibleResources) == 0 {
 		return nil, fmt.Errorf("failed to discover resources: %v", discoveryErr)
@@ -589,7 +596,6 @@ func GetQuotableResources() (map[schema.GroupVersionResource]struct{}, error) {
 	// return the original discovery error (if any) in addition to the list
 	return quotableGroupVersionResources, discoveryErr*/
 
-	// We only do pods for now
 	return map[schema.GroupVersionResource]struct{}{
 		schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}: struct{}{},
 	}, nil
