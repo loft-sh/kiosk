@@ -112,7 +112,7 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 		return nil, err
 	}
 
-	// build the resource quota controller
+	// build the account quota controller
 	rq := &AccountQuotaController{
 		client:              options.Manager.GetClient(),
 		informerSyncedFuncs: []cache.InformerSynced{quotaInf.HasSynced, namespaceInf.HasSynced},
@@ -154,7 +154,7 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 				// us to enqueue all quota.Status updates, and since quota.Status updates involve additional queries
 				// that cannot be backed by a cache and result in a full query of a namespace's content, we do not
 				// want to pay the price on spurious status updates.  As a result, we have a separate routine that is
-				// responsible for enqueue of all resource quotas when doing a full resync (enqueueAll)
+				// responsible for enqueue of all account quotas when doing a full resync (enqueueAll)
 				oldAccountQuota := old.(*configv1alpha1.AccountQuota)
 				curAccountQuota := cur.(*configv1alpha1.AccountQuota)
 				if quota.Equals(oldAccountQuota.Spec.Quota.Hard, curAccountQuota.Spec.Quota.Hard) {
@@ -204,11 +204,11 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 
 // enqueueAll is called at the fullResyncPeriod interval to force a full recalculation of quota usage statistics
 func (rq *AccountQuotaController) enqueueAll() {
-	defer klog.V(4).Infof("Resource quota controller queued all resource quota for full calculation of usage")
+	defer klog.V(4).Infof("account quota controller queued all account quota for full calculation of usage")
 	accountQuotaList := &configv1alpha1.AccountQuotaList{}
 	err := rq.client.List(context.Background(), accountQuotaList)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("unable to enqueue all - error listing resource quotas: %v", err))
+		utilruntime.HandleError(fmt.Errorf("unable to enqueue all - error listing account quotas: %v", err))
 		return
 	}
 	for i := range accountQuotaList.Items {
@@ -306,7 +306,7 @@ func (rq *AccountQuotaController) worker(queue workqueue.RateLimitingInterface) 
 	return func() {
 		for {
 			if quit := workFunc(); quit {
-				klog.Infof("resource quota controller worker shutting down")
+				klog.Infof("account quota controller worker shutting down")
 				return
 			}
 		}
@@ -318,14 +318,14 @@ func (rq *AccountQuotaController) Run(workers int, stopCh <-chan struct{}) {
 	defer utilruntime.HandleCrash()
 	defer rq.queue.ShutDown()
 
-	klog.Infof("Starting resource quota controller")
-	defer klog.Infof("Shutting down resource quota controller")
+	klog.Infof("Starting account quota controller")
+	defer klog.Infof("Shutting down account quota controller")
 
 	if rq.quotaMonitor != nil {
 		go rq.quotaMonitor.Run(stopCh)
 	}
 
-	if !cache.WaitForNamedCacheSync("resource quota", stopCh, rq.informerSyncedFuncs...) {
+	if !cache.WaitForNamedCacheSync("account quota", stopCh, rq.informerSyncedFuncs...) {
 		return
 	}
 
@@ -343,23 +343,23 @@ func (rq *AccountQuotaController) Run(workers int, stopCh <-chan struct{}) {
 func (rq *AccountQuotaController) syncAccountQuotaFromKey(key string) (err error) {
 	startTime := time.Now()
 	defer func() {
-		klog.V(4).Infof("Finished syncing resource quota %q (%v)", key, time.Since(startTime))
+		klog.V(4).Infof("Finished syncing account quota %q (%v)", key, time.Since(startTime))
 	}()
 
 	accountQuota := &configv1alpha1.AccountQuota{}
 	err = rq.client.Get(context.Background(), types.NamespacedName{Name: key}, accountQuota)
 	if errors.IsNotFound(err) {
-		klog.Infof("Resource quota has been deleted %v", key)
+		klog.Infof("Account quota has been deleted %v", key)
 		return nil
 	}
 	if err != nil {
-		klog.Infof("Unable to retrieve resource quota %v from store: %v", key, err)
+		klog.Infof("Unable to retrieve account quota %v from store: %v", key, err)
 		return err
 	}
 	return rq.syncAccountQuota(accountQuota)
 }
 
-// syncAccountQuota runs a complete sync of resource quota status across all known kinds
+// syncAccountQuota runs a complete sync of account quota status across all known kinds
 func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.AccountQuota) (err error) {
 	// quota is dirty if any part of spec hard limits differs from the status hard limits
 	statusLimitsDirty := !apiequality.Semantic.DeepEqual(accountQuota.Spec.Quota.Hard, accountQuota.Status.Total.Hard)
@@ -501,7 +501,7 @@ func (rq *AccountQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, pe
 
 		// Decide whether discovery has reported a change.
 		if reflect.DeepEqual(oldResources, newResources) {
-			klog.V(4).Infof("no resource updates from discovery, skipping resource quota sync")
+			klog.V(4).Infof("no resource updates from discovery, skipping account quota sync")
 			return
 		}
 
@@ -512,7 +512,7 @@ func (rq *AccountQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, pe
 
 		// Something has changed, so track the new state and perform a sync.
 		if klog.V(2) {
-			klog.Infof("syncing resource quota controller with updated resources from discovery: %s", printDiff(oldResources, newResources))
+			klog.Infof("syncing account quota controller with updated resources from discovery: %s", printDiff(oldResources, newResources))
 		}
 
 		// Perform the monitor resync and wait for controllers to report cache sync.
@@ -524,7 +524,7 @@ func (rq *AccountQuotaController) Sync(discoveryFunc NamespacedResourcesFunc, pe
 		// this protects us from deadlocks where available resources changed and one of our informer caches will never fill.
 		// informers keep attempting to sync in the background, so retrying doesn't interrupt them.
 		// the call to resyncMonitors on the reattempt will no-op for resources that still exist.
-		if rq.quotaMonitor != nil && !cache.WaitForNamedCacheSync("resource quota", waitForStopOrTimeout(stopCh, period), rq.quotaMonitor.IsSynced) {
+		if rq.quotaMonitor != nil && !cache.WaitForNamedCacheSync("account quota", waitForStopOrTimeout(stopCh, period), rq.quotaMonitor.IsSynced) {
 			utilruntime.HandleError(fmt.Errorf("timed out waiting for quota monitor sync"))
 			return
 		}

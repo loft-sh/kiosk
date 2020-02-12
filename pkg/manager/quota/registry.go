@@ -17,7 +17,6 @@ limitations under the License.
 package quota
 
 import (
-	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/kubernetes/pkg/quota/v1"
 	"k8s.io/kubernetes/pkg/quota/v1/evaluator/core"
 	"k8s.io/kubernetes/pkg/quota/v1/generic"
@@ -26,11 +25,7 @@ import (
 
 // NewQuotaConfiguration creates a new quota configuration that can be used to create quota registry
 func NewQuotaConfiguration(f quota.ListerForResourceFunc) quota.Configuration {
-	// we only get the pod evaluator for now
-	// evaluators := core.NewEvaluators(f)
-	evaluators := []quota.Evaluator{core.NewPodEvaluator(f, clock.RealClock{})}
-
-	return generic.NewConfiguration(evaluators, install.DefaultIgnoredResources())
+	return generic.NewConfiguration(core.NewEvaluators(f), install.DefaultIgnoredResources())
 }
 
 // NewQuotaRegistry creates a new registry from the given quota config

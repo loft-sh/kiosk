@@ -65,13 +65,10 @@ const (
 // using the provided registry.  The registry must have the capability to handle group/kinds that
 // are persisted by the server this admission controller is intercepting
 func NewAccountResourceQuota(ctrlCtx *controllers.Context) admission.ValidationInterface {
-	listerFuncForResource := generic.ListerFuncForResourceFunc(ctrlCtx.SharedInformers.ForResource)
-	quotaConfiguration := NewQuotaConfiguration(listerFuncForResource)
-
 	return &accountQuotaAdmission{
 		Handler: admission.NewHandler(admission.Create, admission.Update),
 
-		config:      quotaConfiguration,
+		config:      NewQuotaConfiguration(generic.ListerFuncForResourceFunc(ctrlCtx.SharedInformers.ForResource)),
 		client:      ctrlCtx.Manager.GetClient(),
 		cache:       ctrlCtx.Manager.GetCache(),
 		lockFactory: util.NewDefaultLockFactory(),
