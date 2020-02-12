@@ -29,8 +29,8 @@ func Register(ctrlCtx *controllers.Context) error {
 
 	// Create the admission controller
 	admissionController := quota.NewAccountResourceQuota(ctrlCtx)
-	hookServer.Register("/validate-pod", &webhook.Admission{Handler: &PodValidator{
-		Log:                 ctrl.Log.WithName("webhooks").WithName("Pod"),
+	hookServer.Register("/validate-quota", &webhook.Admission{Handler: &QuotaValidator{
+		Log:                 ctrl.Log.WithName("webhooks").WithName("Quota"),
 		Scheme:              ctrlCtx.Manager.GetScheme(),
 		AdmissionController: admissionController,
 	}})

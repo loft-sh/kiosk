@@ -584,7 +584,7 @@ func (rq *AccountQuotaController) resyncMonitors(resources map[schema.GroupVersi
 // This function may return both results and an error.  If that happens, it means that the discovery calls were only
 // partially successful.  A decision about whether to proceed or not is left to the caller.
 func GetQuotableResourcesByFunc(discoveryFunc NamespacedResourcesFunc) (map[schema.GroupVersionResource]struct{}, error) {
-	/*possibleResources, discoveryErr := discoveryFunc()
+	possibleResources, discoveryErr := discoveryFunc()
 	if discoveryErr != nil && len(possibleResources) == 0 {
 		return nil, fmt.Errorf("failed to discover resources: %v", discoveryErr)
 	}
@@ -594,9 +594,5 @@ func GetQuotableResourcesByFunc(discoveryFunc NamespacedResourcesFunc) (map[sche
 		return nil, fmt.Errorf("Failed to parse resources: %v", err)
 	}
 	// return the original discovery error (if any) in addition to the list
-	return quotableGroupVersionResources, discoveryErr*/
-
-	return map[schema.GroupVersionResource]struct{}{
-		schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}: struct{}{},
-	}, nil
+	return quotableGroupVersionResources, discoveryErr
 }
