@@ -44,6 +44,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.SpaceList":                       schema_pkg_apis_tenancy_v1alpha1_SpaceList(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.SpaceSpec":                       schema_pkg_apis_tenancy_v1alpha1_SpaceSpec(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.SpaceStatus":                     schema_pkg_apis_tenancy_v1alpha1_SpaceStatus(ref),
+		"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.TemplateInstanceSpec":            schema_pkg_apis_tenancy_v1alpha1_TemplateInstanceSpec(ref),
 		"k8s.io/api/admissionregistration/v1.MutatingWebhook":                                 schema_k8sio_api_admissionregistration_v1_MutatingWebhook(ref),
 		"k8s.io/api/admissionregistration/v1.MutatingWebhookConfiguration":                    schema_k8sio_api_admissionregistration_v1_MutatingWebhookConfiguration(ref),
 		"k8s.io/api/admissionregistration/v1.MutatingWebhookConfigurationList":                schema_k8sio_api_admissionregistration_v1_MutatingWebhookConfigurationList(ref),
@@ -980,14 +981,14 @@ func schema_pkg_apis_tenancy_v1alpha1_AccountTemplateInstanceTemplate(ref common
 					"spec": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The spec of the template instance",
-							Ref:         ref("github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceSpec"),
+							Ref:         ref("github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.TemplateInstanceSpec"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1.TemplateInstanceSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1130,6 +1131,27 @@ func schema_pkg_apis_tenancy_v1alpha1_SpaceStatus(ref common.ReferenceCallback) 
 						},
 					},
 				},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_tenancy_v1alpha1_TemplateInstanceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "TemplateInstanceSpec holds the expected cluster status of the template instance",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"template": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The template to instantiate. This is an immutable field",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"template"},
 			},
 		},
 	}

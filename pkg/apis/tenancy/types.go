@@ -1,7 +1,6 @@
 package tenancy
 
 import (
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -76,7 +75,13 @@ type AccountTemplateInstanceTemplate struct {
 
 	// The spec of the template instance
 	// +optional
-	Spec configv1alpha1.TemplateInstanceSpec `json:"spec,omitempty"`
+	Spec TemplateInstanceSpec `json:"spec,omitempty"`
+}
+
+// TemplateInstanceSpec holds the expected cluster status of the template instance
+type TemplateInstanceSpec struct {
+	// The template to instantiate. This is an immutable field
+	Template string `json:"template"`
 }
 
 // AccountStatus describes the current status of the account is the cluster
