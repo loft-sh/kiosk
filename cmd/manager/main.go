@@ -83,27 +83,26 @@ func main() {
 	stopChan := ctrl.SetupSignalHandler()
 	ctrlCtx := controllers.NewControllerContext(mgr, stopChan)
 
-	// Add controllers to manager
+	// Register generic controllers
 	err = controllers.Register(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to register controller")
 		os.Exit(1)
 	}
 
-	// Create the admission controller
+	// Register quota controller
+	err = quota.Register(ctrlCtx)
+	if err != nil {
+		setupLog.Error(err, "unable to register quota controller")
+		os.Exit(1)
+	}
+
+	// Register webhooks
 	err = webhooks.Register(ctrlCtx)
 	if err != nil {
 		setupLog.Error(err, "unable to register webhooks")
 		os.Exit(1)
 	}
-
-	// Start quota controller
-	go func() {
-		err := quota.Register(ctrlCtx)
-		if err != nil {
-			setupLog.Error(err, "unable to register quota controller")
-		}
-	}()
 
 	// Start controller context
 	go ctrlCtx.Start()

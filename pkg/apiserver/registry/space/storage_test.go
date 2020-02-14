@@ -157,7 +157,16 @@ func TestCreateSpace(t *testing.T) {
 				Name: "test",
 			},
 			Spec: configv1alpha1.AccountSpec{
-				SpaceLimit: &spaceLimit,
+				Space: configv1alpha1.AccountSpace{
+					Limit: &spaceLimit,
+					SpaceTemplate: configv1alpha1.AccountSpaceTemplate{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"Test": "Test",
+							},
+						},
+					},
+				},
 			},
 		})
 	fakeAuthCache := fakeauth.NewFakeAuthCache()
@@ -179,7 +188,7 @@ func TestCreateSpace(t *testing.T) {
 	fakeAuthCache.UserAccounts["foo"] = []string{"test"}
 
 	// Create a space with account
-	_, err = spaceStorage.Create(userCtx, &tenancy.Space{
+	createdObj, err := spaceStorage.Create(userCtx, &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test3",
 		},
@@ -189,6 +198,14 @@ func TestCreateSpace(t *testing.T) {
 	}, fakeCreateValidation, &metav1.CreateOptions{})
 	if err != nil {
 		t.Fatalf("Expected no error but got %v", err)
+	}
+
+	createdSpace, ok := createdObj.(*tenancy.Space)
+	if !ok {
+		t.Fatalf("Expected space, but got: %#+v", createdObj)
+	}
+	if createdSpace.Annotations["Test"] != "Test" {
+		t.Fatalf("Annotations were not set correctly during space init")
 	}
 
 	// Create a space without account
