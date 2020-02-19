@@ -3,7 +3,8 @@ kind: Account
 metadata:
   name: johns-account-deletable-spaces
 spec:
-  spaceClusterRole: kiosk-space-admin
+  space: 
+    clusterRole: kiosk-space-admin
   subjects:
   - kind: User
     name: john

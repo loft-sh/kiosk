@@ -3,7 +3,8 @@ kind: Account
 metadata:
   name: johns-account
 spec:
-  spaceLimit: 2
+  space:
+    limit: 2
   subjects:
   - kind: User
     name: john
