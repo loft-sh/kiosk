@@ -18,6 +18,19 @@
 
 <br>
 
+## [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
+kiosk community calls are Zoom calls that are open for anyone to join. Feel free to invite colleagues or friends who may be interested. The goal of these calls is to:
+
+- Answer questions about kiosk and offer help for new users
+- Offer a channel for project feedback and learn about use cases for kiosk
+- Provide updates on new features and improvements
+- Discuss feature requests and the roadmap for kiosk
+
+☎️ [**Follow this link to join the call or to view/edit the agenda.**](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
+
+
+<br>
+
 ## Contents
 - [Why kiosk?](#why-kiosk)
 - [Architecture](#architecture)
@@ -1030,9 +1043,10 @@ The following questions are currently being discussed. Suggestions are highly ap
 
 ## Contributing
 There are many ways to get involved:
+- Join the next kiosk [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
 - Open an issue for questions, to report bugs or to suggest new features
 - Open a pull request to contribute improvements to the code base or documentation
-- Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) for an invite to the bi-weekly conference call, to be added to the Slack channel or to find out more about the project and how to get involved
+- Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) to find out more about the project and how to get involved
 
 For more detailed information, see our [Contributing Guide](CONTRIBUTING.md).
 
