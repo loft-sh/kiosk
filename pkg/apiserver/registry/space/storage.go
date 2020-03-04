@@ -243,17 +243,21 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 			}
 
 			// Check if account is at limit
-			if account.Spec.SpaceLimit != nil {
+			if account.Spec.Space.Limit != nil {
 				namespaceList := &corev1.NamespaceList{}
 				err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
 				if err != nil {
 					return nil, err
 				}
 
-				if len(namespaceList.Items) >= *account.Spec.SpaceLimit {
-					return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.SpaceLimit, account.Name))
+				if len(namespaceList.Items) >= *account.Spec.Space.Limit {
+					return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.Space.Limit, account.Name))
 				}
 			}
+
+			// Apply namespace annotations & labels
+			space.ObjectMeta.Labels = account.Spec.Space.SpaceTemplate.Labels
+			space.ObjectMeta.Annotations = account.Spec.Space.SpaceTemplate.Annotations
 
 			canCreate = true
 		}
@@ -301,17 +305,19 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Namespace, account *configv1alpha1.Account) error {
 	// Create template instances
 	templateInstances := []*configv1alpha1.TemplateInstance{}
-	for _, instSpec := range account.Spec.SpaceDefaultTemplates {
-		if instSpec.Template == "" {
+	for _, instSpec := range account.Spec.Space.TemplateInstances {
+		if instSpec.Spec.Template == "" {
 			continue
 		}
 
 		templateInstance := &configv1alpha1.TemplateInstance{
-			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: instSpec.Template + "-",
-				Namespace:    namespace.Name,
-			},
-			Spec: instSpec,
+			ObjectMeta: instSpec.ObjectMeta,
+			Spec:       instSpec.Spec,
+		}
+
+		templateInstance.Namespace = namespace.Name
+		if templateInstance.Name == "" && templateInstance.GenerateName == "" {
+			templateInstance.GenerateName = instSpec.Spec.Template + "-"
 		}
 
 		err := r.client.Create(ctx, templateInstance)

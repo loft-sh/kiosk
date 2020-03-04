@@ -30,8 +30,8 @@ import (
 // GetClusterRoleFor returns the cluster role for the given account if there is any
 func GetClusterRoleFor(account *configv1alpha1.Account) string {
 	clusterRole := "admin"
-	if account.Spec.SpaceClusterRole != nil {
-		clusterRole = *account.Spec.SpaceClusterRole
+	if account.Spec.Space.ClusterRole != nil {
+		clusterRole = *account.Spec.Space.ClusterRole
 	}
 
 	return clusterRole

@@ -37,29 +37,53 @@ spec:
         spec:
           description: AccountSpec defines a single account configuration
           properties:
-            spaceClusterRole:
-              description: This defines the cluster role that will be used for the
-                rolebinding when creating a new space for the selected subjects
-              type: string
-            spaceDefaultTemplates:
-              description: SpaceDefaultTemplates are templates that should be initialized
-                during space creation.
-              items:
-                description: TemplateInstanceSpec holds the expected cluster status
-                  of the template instance
-                properties:
-                  template:
-                    description: The template to instantiate. This is an immutable
-                      field
-                    type: string
-                required:
-                - template
-                type: object
-              type: array
-            spaceLimit:
-              description: SpaceLimit is the amount of spaces an account is allowed
-                to create in the given cluster
-              type: integer
+            space:
+              description: Space defines default options for created spaces by the
+                account
+              properties:
+                clusterRole:
+                  description: This defines the cluster role that will be used for
+                    the rolebinding when creating a new space for the selected subjects
+                  type: string
+                limit:
+                  description: Limit defines how many spaces are allowed to be owned
+                    by this account. If no value is specified, unlimited spaces can
+                    be created by the account (if the users have the rights to create
+                    spaces)
+                  type: integer
+                spaceTemplate:
+                  description: SpaceTemplate defines a space template with default
+                    annotations and labels the space should have after creation
+                  properties:
+                    metadata:
+                      description: The default metadata of the space to create
+                      type: object
+                  type: object
+                templateInstances:
+                  description: TemplateInstances are templates that should be created
+                    by default in a newly created space by this account. Kiosk makes
+                    sure that these templates are deployed successfully, before the
+                    users of this account will get access to the space
+                  items:
+                    description: AccountTemplateInstanceTemplate defines a template
+                      instance template
+                    properties:
+                      metadata:
+                        description: The metadata of the template instace to create
+                        type: object
+                      spec:
+                        description: The spec of the template instance
+                        properties:
+                          template:
+                            description: The template to instantiate. This is an immutable
+                              field
+                            type: string
+                        required:
+                        - template
+                        type: object
+                    type: object
+                  type: array
+              type: object
             subjects:
               description: Subjects are the account users
               items:
