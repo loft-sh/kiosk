@@ -271,7 +271,7 @@ kiosk needs cert-manager. You can install it into your cluster using helm v3:
 ```bash
 # Install cert-manager with helm v3
 kubectl create namespace cert-manager
-helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.12.0 --namespace cert-manager
+helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.13.1 --namespace cert-manager
 ```
 
 <br>
