@@ -37,6 +37,9 @@ func ConvertSpace(space *tenancy.Space) *corev1.Namespace {
 	if namespace.Labels == nil {
 		namespace.Labels = map[string]string{}
 	}
+	if namespace.Annotations == nil {
+		namespace.Annotations = map[string]string{}
+	}
 
 	namespace.Labels[tenancy.SpaceLabelAccount] = space.Spec.Account
 	return namespace

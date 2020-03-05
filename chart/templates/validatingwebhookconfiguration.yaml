@@ -33,7 +33,7 @@ webhooks:
       name: {{ template "kiosk.fullname" . }}
       namespace: {{ .Release.Namespace }}
       path: /validate-quota
-  failurePolicy: Ignore
+  failurePolicy: Fail
   namespaceSelector:
     matchExpressions:
     - key: kiosk.sh/account
