@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"testing"
+
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
@@ -13,7 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	"testing"
 )
 
 type indexTest struct {
@@ -69,8 +70,8 @@ func TestIndices(t *testing.T) {
 			field: constants.IndexByAccount,
 			in: &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						tenancy.SpaceAnnotationAccount: "foo",
+					Labels: map[string]string{
+						tenancy.SpaceLabelAccount: "foo",
 					},
 				},
 			},

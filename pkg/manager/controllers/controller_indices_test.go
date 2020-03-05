@@ -58,8 +58,8 @@ func TestAddManagerIndices(t *testing.T) {
 			key:  constants.IndexByAccount,
 			in: &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{
-						tenancy.SpaceAnnotationAccount: "myAccount2",
+					Labels: map[string]string{
+						tenancy.SpaceLabelAccount: "myAccount2",
 					},
 				},
 			},

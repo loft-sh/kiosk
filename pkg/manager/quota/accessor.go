@@ -158,12 +158,12 @@ func (e *accountQuotaAccessor) waitForReadyAccountQuotaNames(namespaceName strin
 		}
 
 		// Check if namespace belongs to an account
-		if namespace.Annotations == nil || namespace.Annotations[tenancy.SpaceAnnotationAccount] == "" {
+		if namespace.Labels == nil || namespace.Labels[tenancy.SpaceLabelAccount] == "" {
 			return true, nil
 		}
 
 		// Now list the account quotas for the namespace
-		accountName := namespace.Annotations[tenancy.SpaceAnnotationAccount]
+		accountName := namespace.Labels[tenancy.SpaceLabelAccount]
 		accountQuotaList := &configv1alpha1.AccountQuotaList{}
 		err = e.client.List(context.Background(), accountQuotaList, client.MatchingFields{constants.IndexByAccount: accountName})
 		if err != nil {

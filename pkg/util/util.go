@@ -46,12 +46,12 @@ func Output(command string, args ...string) (string, error) {
 
 // GetAccountFromNamespace retrieves the account from a namespace meta
 func GetAccountFromNamespace(namespace metav1.Object) string {
-	annotations := namespace.GetAnnotations()
-	if annotations == nil {
+	labels := namespace.GetLabels()
+	if labels == nil {
 		return ""
 	}
 
-	return annotations[tenancy.SpaceAnnotationAccount]
+	return labels[tenancy.SpaceLabelAccount]
 }
 
 // IsNamespaceInitializing checks if the given namespace is initializing

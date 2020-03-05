@@ -64,12 +64,12 @@ func (e *NamespaceEventHandler) handleEvent(meta metav1.Object, q workqueue.Rate
 		return
 	}
 
-	annotations := meta.GetAnnotations()
-	if annotations == nil {
+	labels := meta.GetLabels()
+	if labels == nil {
 		return
 	}
 
-	if owner, ok := annotations[tenancy.SpaceAnnotationAccount]; ok && owner != "" {
+	if owner, ok := labels[tenancy.SpaceLabelAccount]; ok && owner != "" {
 		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 			Name: owner,
 		}})
