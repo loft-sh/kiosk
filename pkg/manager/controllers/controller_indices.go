@@ -49,8 +49,8 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	if err := indexer.IndexField(&corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
 		// grab the namespace object, extract the owner...
 		namespace := rawObj.(*corev1.Namespace)
-		if namespace.Annotations != nil && namespace.Annotations[tenancy.SpaceAnnotationAccount] != "" {
-			return []string{namespace.Annotations[tenancy.SpaceAnnotationAccount]}
+		if namespace.Labels != nil && namespace.Labels[tenancy.SpaceLabelAccount] != "" {
+			return []string{namespace.Labels[tenancy.SpaceLabelAccount]}
 		}
 
 		return nil

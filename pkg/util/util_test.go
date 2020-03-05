@@ -83,7 +83,7 @@ func TestOutput(t *testing.T) {
 type getAccountFromNamespaceTestCase struct {
 	name string
 
-	annotations map[string]string
+	labels map[string]string
 
 	expectedAccount string
 }
@@ -95,8 +95,8 @@ func TestGetAccountFromNamespace(t *testing.T) {
 		},
 		{
 			name: "Get account",
-			annotations: map[string]string{
-				tenancy.SpaceAnnotationAccount: "myAccount",
+			labels: map[string]string{
+				tenancy.SpaceLabelAccount: "myAccount",
 			},
 			expectedAccount: "myAccount",
 		},
@@ -105,7 +105,7 @@ func TestGetAccountFromNamespace(t *testing.T) {
 	for _, testCase := range testCases {
 		account := GetAccountFromNamespace(&corev1.Namespace{
 			ObjectMeta: v1.ObjectMeta{
-				Annotations: testCase.annotations,
+				Labels: testCase.labels,
 			},
 		})
 		assert.Equal(t, account, testCase.expectedAccount, "Unexpected account in testCase %s", testCase.name)

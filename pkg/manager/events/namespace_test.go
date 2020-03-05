@@ -34,16 +34,16 @@ func TestEventHandler(t *testing.T) {
 				MetaOld: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
-						Annotations: map[string]string{
-							tenancy.SpaceAnnotationAccount: "someOwner",
+						Labels: map[string]string{
+							tenancy.SpaceLabelAccount: "someOwner",
 						},
 					},
 				},
 				MetaNew: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
-						Annotations: map[string]string{
-							tenancy.SpaceAnnotationAccount: "someOwner",
+						Labels: map[string]string{
+							tenancy.SpaceLabelAccount: "someOwner",
 						},
 					},
 				},
@@ -55,16 +55,16 @@ func TestEventHandler(t *testing.T) {
 				MetaOld: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
-						Annotations: map[string]string{
-							tenancy.SpaceAnnotationAccount: "someOwnerOld",
+						Labels: map[string]string{
+							tenancy.SpaceLabelAccount: "someOwnerOld",
 						},
 					},
 				},
 				MetaNew: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
-						Annotations: map[string]string{
-							tenancy.SpaceAnnotationAccount: "someOwnerNew",
+						Labels: map[string]string{
+							tenancy.SpaceLabelAccount: "someOwnerNew",
 						},
 					},
 				},
@@ -93,8 +93,8 @@ func TestEventHandler(t *testing.T) {
 			event: event.GenericEvent{
 				Meta: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
-						Annotations: map[string]string{
-							tenancy.SpaceAnnotationAccount: "someOwner",
+						Labels: map[string]string{
+							tenancy.SpaceLabelAccount: "someOwner",
 						},
 					},
 				},

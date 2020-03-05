@@ -21,6 +21,7 @@ import (
 
 	"github.com/kiosk-sh/kiosk/pkg/util/convert"
 	"k8s.io/api/admission/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apiadmission "k8s.io/apiserver/pkg/admission"
@@ -43,16 +44,17 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 	)
 
 	if req.Operation == v1beta1.Create {
-		obj, err = scheme.New(kind)
+		obj, err = newRuntimeObject(kind, scheme)
 		if err != nil {
 			return nil, err
 		}
+
 		err = d.DecodeRaw(req.Object, obj)
 		if err != nil {
 			return nil, err
 		}
 	} else if req.Operation == v1beta1.Update {
-		obj, err = scheme.New(kind)
+		obj, err = newRuntimeObject(kind, scheme)
 		if err != nil {
 			return nil, err
 		}
@@ -60,7 +62,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 		if err != nil {
 			return nil, err
 		}
-		oldObj, err = scheme.New(kind)
+		oldObj, err = newRuntimeObject(kind, scheme)
 		if err != nil {
 			return nil, err
 		}
@@ -70,7 +72,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 		}
 	} else if req.Operation == v1beta1.Delete {
 		if len(req.OldObject.Raw) > 0 {
-			oldObj, err = scheme.New(kind)
+			oldObj, err = newRuntimeObject(kind, scheme)
 			if err != nil {
 				return nil, err
 			}
@@ -110,4 +112,19 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 	}
 
 	return apiadmission.NewAttributesRecord(obj, oldObj, kind, req.Namespace, req.Name, resource, req.SubResource, apiadmission.Operation(req.Operation), options, dryRun, userInfo), nil
+}
+
+func newRuntimeObject(kind schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
+	obj, err := scheme.New(kind)
+	if err != nil {
+		if runtime.IsNotRegisteredError(err) {
+			obj = &unstructured.Unstructured{}
+			obj.(*unstructured.Unstructured).SetGroupVersionKind(kind)
+			return obj, nil
+		}
+
+		return nil, err
+	}
+
+	return obj, nil
 }
