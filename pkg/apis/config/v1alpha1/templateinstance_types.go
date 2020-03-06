@@ -17,7 +17,6 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 // TemplateInstanceNoOwnerAnnotation if this annotation is set on a template instance,
@@ -28,6 +27,9 @@ const TemplateInstanceNoOwnerAnnotation = "templateinstance.config.kiosk.sh/no-o
 type TemplateInstanceSpec struct {
 	// The template to instantiate. This is an immutable field
 	Template string `json:"template"`
+	// If true the template instance will keep the deployed resources in sync with the template.
+	// +optional
+	Sync bool `json:"sync,omitempty"`
 }
 
 // TemplateInstanceStatus describes the current status of the template instance in the cluster
@@ -41,34 +43,16 @@ type TemplateInstanceStatus struct {
 	// +optional
 	Reason string `json:"reason,omitempty"`
 
-	// Resources holds the status of the deployed resources
-	// +optional
-	Resources []ResourceStatus `json:"resources,omitempty"`
-
 	// TemplateResourceVersion is the resource version of the template that was applied
 	// +optional
 	TemplateResourceVersion string `json:"templateResourceVersion,omitempty"`
+	// TemplateManifests are the manifests that were rendered before
+	// +optional
+	TemplateManifests string `json:"templateManifests,omitempty"`
+
 	// LastAppliedAt indicates when the template was last applied
 	// +optional
 	LastAppliedAt *metav1.Time `json:"observedAt,omitempty"`
-}
-
-// ResourceStatus holds the current status of a resource
-type ResourceStatus struct {
-	// +optional
-	Group string `json:"group,omitempty"`
-	// +optional
-	Version string `json:"version,omitempty"`
-	// +optional
-	Kind string `json:"kind,omitempty"`
-	// +optional
-	ResourceVersion string `json:"resourceVersion,omitempty"`
-	// +optional
-	Name string `json:"name,omitempty"`
-	// +optional
-	UID types.UID `json:"uid,omitempty"`
-	// +optional
-	Namespace string `json:"namespace,omitempty"`
 }
 
 // TemplateInstanceDeploymentStatus describes the status of template instance deployment

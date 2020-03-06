@@ -19,8 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"github.com/kiosk-sh/kiosk/pkg/manager/helm"
+	"github.com/kiosk-sh/kiosk/pkg/manager/merge"
+	"github.com/kiosk-sh/kiosk/pkg/util"
 	"github.com/kiosk-sh/kiosk/pkg/util/convert"
 
 	"github.com/go-logr/logr"
@@ -28,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,7 +47,8 @@ import (
 // TemplateInstanceReconciler reconciles a template instance object
 type TemplateInstanceReconciler struct {
 	client.Client
-	helm helm.Helm
+	helm           helm.Helm
+	newMergeClient newMergeClient
 
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -66,8 +71,8 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 		return ctrl.Result{}, err
 	}
 
-	// If not pending then stop
-	if templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusPending {
+	// If not pending and syncing then stop
+	if templateInstance.Spec.Sync == false && templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusPending {
 		return ctrl.Result{}, nil
 	}
 
@@ -76,21 +81,22 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	err := r.Get(ctx, types.NamespacedName{Name: templateInstance.Spec.Template}, template)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return ctrl.Result{}, r.setFailed(ctx, templateInstance, "TemplateNotFound", fmt.Sprintf("The specified template '%s' couldn't be found.", templateInstance.Spec.Template))
+			return r.setFailed(ctx, templateInstance, "TemplateNotFound", fmt.Sprintf("The specified template '%s' couldn't be found.", templateInstance.Spec.Template))
 		}
+
 		return ctrl.Result{}, err
+	}
+
+	// Check if template instance has changed to last deployment
+	if templateInstance.Status.TemplateResourceVersion == template.ResourceVersion {
+		return ctrl.Result{}, nil
 	}
 
 	// Try to deploy the template
-	err = r.deploy(ctx, template, templateInstance, log)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+	return r.deploy(ctx, template, templateInstance, log)
 }
 
-func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, log logr.Logger) error {
+func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, log logr.Logger) (ctrl.Result, error) {
 	objects := []*unstructured.Unstructured{}
 
 	// Gather objects from manifest
@@ -118,88 +124,125 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 	return r.deployObjects(ctx, template, templateInstance, objects, log)
 }
 
-func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured, log logr.Logger) error {
+func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured, log logr.Logger) (ctrl.Result, error) {
+	var err error
 	now := metav1.Now()
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
 		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusDeployed,
-		Resources:               []configv1alpha1.ResourceStatus{},
 		TemplateResourceVersion: template.ResourceVersion,
+		TemplateManifests:       templateInstance.Status.TemplateManifests,
 		LastAppliedAt:           &now,
 	}
 
-	// Deploy all objects
+	// Create manifest string
+	manifestsArray := []string{}
 	for _, object := range objects {
 		object.SetNamespace(templateInstance.Namespace)
 
 		// Set owner controller
 		if shouldSetOwner(templateInstance) {
-			err := ctrl.SetControllerReference(templateInstance, object, r.Scheme)
-			if err != nil {
-				return err
-			}
+			_ = ctrl.SetControllerReference(templateInstance, object, r.Scheme)
 		}
 
-		// Get group version
-		gv, err := schema.ParseGroupVersion(object.GetAPIVersion())
+		yaml, err := convert.ObjectToYaml(object)
 		if err != nil {
-			return r.setFailed(ctx, templateInstance, "ErrorParsingGroupVersion", fmt.Sprintf("Error parsing apiVersion of %s: %v", object.GetName(), err))
+			return r.setFailed(ctx, templateInstance, "ObjectToYamlError", err.Error())
 		}
 
-		// Create the object
-		err = r.Create(ctx, object)
-		if err != nil {
-			return r.setFailed(ctx, templateInstance, "ErrorCreatingObject", fmt.Sprintf("Error creating object %s: %v", object.GetName(), err))
-		}
-
-		templateInstance.Status.Resources = append(templateInstance.Status.Resources, configv1alpha1.ResourceStatus{
-			Group:           gv.Group,
-			Version:         gv.Version,
-			Kind:            object.GetKind(),
-			ResourceVersion: object.GetResourceVersion(),
-			Name:            object.GetName(),
-			Namespace:       object.GetNamespace(),
-			UID:             object.GetUID(),
-		})
+		manifestsArray = append(manifestsArray, string(yaml))
 	}
 
-	err := r.Status().Update(ctx, templateInstance)
+	manifests := strings.Join(manifestsArray, "\n---\n")
+
+	// Retrieve old manifests
+	oldManifests := ""
+	if templateInstance.Status.TemplateManifests != "" {
+		oldManifests, err = util.Uncompress(templateInstance.Status.TemplateManifests)
+		if err != nil {
+			return r.setFailed(ctx, templateInstance, "DecompressOldManifests", err.Error())
+		}
+	}
+
+	// Apply the manifests
+	if oldManifests != manifests {
+		err = r.newMergeClient().Merge(oldManifests, manifests)
+		if err != nil {
+			return r.setFailed(ctx, templateInstance, "ApplyManifests", err.Error())
+		}
+	}
+
+	compressed, err := util.Compress(manifests)
+	if err != nil {
+		return r.setFailed(ctx, templateInstance, "CompressManifests", err.Error())
+	}
+
+	templateInstance.Status.TemplateManifests = compressed
+	err = r.Status().Update(ctx, templateInstance)
 	if err != nil {
 		return r.setFailed(ctx, templateInstance, "ErrorUpdatingStatus", fmt.Sprintf("Couldn't update template instance status: %v", err))
 	}
 
-	return nil
+	return ctrl.Result{}, nil
 }
 
 func shouldSetOwner(templateInstance *configv1alpha1.TemplateInstance) bool {
 	return templateInstance.Annotations == nil || templateInstance.Annotations[configv1alpha1.TemplateInstanceNoOwnerAnnotation] != "true"
 }
 
-func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) error {
+func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) (ctrl.Result, error) {
 	r.Log.Info("Template instance failed: " + message)
 
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
-		Status:  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
-		Reason:  reason,
-		Message: message,
+		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
+		Reason:                  reason,
+		Message:                 message,
+		TemplateManifests:       templateInstance.Status.TemplateManifests,
+		TemplateResourceVersion: templateInstance.Status.TemplateResourceVersion,
 	}
 
-	return r.Status().Update(ctx, templateInstance)
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, r.Status().Update(ctx, templateInstance)
 }
 
 type templateMapper struct {
 	client client.Client
+
+	Log logr.Logger
 }
 
 func (t *templateMapper) Map(obj handler.MapObject) []reconcile.Request {
-	// TODO: Sync
-	return []reconcile.Request{}
+	templateInstanceList := &configv1alpha1.TemplateInstanceList{}
+	err := t.client.List(context.TODO(), templateInstanceList, client.MatchingFields{constants.IndexByTemplate: obj.Meta.GetName()})
+	if err != nil {
+		t.Log.Info("Template instance list failed: " + err.Error())
+	}
+
+	requests := []reconcile.Request{}
+	for _, i := range templateInstanceList.Items {
+		// Don't reconcile instances that don't sync
+		if !i.Spec.Sync {
+			continue
+		}
+
+		requests = append(requests, reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      i.Name,
+				Namespace: i.Namespace,
+			},
+		})
+	}
+
+	return requests
 }
+
+type newMergeClient func() merge.Interface
 
 // SetupWithManager adds the controller to the manager
 func (r *TemplateInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.helm = helm.NewHelmRunner()
+	r.newMergeClient = func() merge.Interface { return merge.New(nil) }
+
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: &templateMapper{client: r}}).
+		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: &templateMapper{client: r, Log: r.Log}}).
 		For(&configv1alpha1.TemplateInstance{}).
 		Complete(r)
 }

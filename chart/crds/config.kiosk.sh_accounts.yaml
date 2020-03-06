@@ -74,6 +74,10 @@ spec:
                       spec:
                         description: The spec of the template instance
                         properties:
+                          sync:
+                            description: If true the template instance will keep the
+                              deployed resources in sync with the template.
+                            type: boolean
                           template:
                             description: The template to instantiate. This is an immutable
                               field

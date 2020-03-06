@@ -464,6 +464,7 @@ func Convert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus(in *tenancy.SpaceStatus
 
 func autoConvert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(in *TemplateInstanceSpec, out *tenancy.TemplateInstanceSpec, s conversion.Scope) error {
 	out.Template = in.Template
+	out.Sync = in.Sync
 	return nil
 }
 
@@ -474,6 +475,7 @@ func Convert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(in *T
 
 func autoConvert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(in *tenancy.TemplateInstanceSpec, out *TemplateInstanceSpec, s conversion.Scope) error {
 	out.Template = in.Template
+	out.Sync = in.Sync
 	return nil
 }
 
