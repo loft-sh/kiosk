@@ -72,5 +72,14 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 		return err
 	}
 
+	// Index templateinstance by template
+	if err := indexer.IndexField(&configv1alpha1.TemplateInstance{}, constants.IndexByTemplate, func(rawObj runtime.Object) []string {
+		// grab the rolebinding object, extract the owner...
+		cr := rawObj.(*configv1alpha1.TemplateInstance)
+		return []string{cr.Spec.Template}
+	}); err != nil {
+		return err
+	}
+
 	return nil
 }

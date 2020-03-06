@@ -25,4 +25,6 @@ const (
 	IndexByClusterRole = "byclusterrole"
 	// IndexByAccount indexes objects by their referenced account
 	IndexByAccount = "byaccount"
+	// IndexByTemplates indexes objects by their referenced template
+	IndexByTemplate = "bytemplate"
 )

@@ -60,6 +60,11 @@ func StringToUnstructuredArray(out string) ([]*unstructured.Unstructured, error)
 	return objs, firstErr
 }
 
+// ObjectToYaml returns the yaml of a runtime object
+func ObjectToYaml(obj runtime.Object) ([]byte, error) {
+	return yaml.Marshal(obj)
+}
+
 // RuntimeObjectToBytes converts a runtime object into a byte array
 func RuntimeObjectToBytes(obj runtime.Object) ([]byte, error) {
 	bytes, err := json.Marshal(obj)

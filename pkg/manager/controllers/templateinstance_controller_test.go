@@ -1,5 +1,6 @@
 package controllers
 
+/*
 import (
 	"context"
 	"encoding/json"
@@ -214,4 +215,4 @@ func (f *fakeHelmRunner) Template(client client.Client, name, namespace string, 
 	}
 
 	return result, nil
-}
+}*/

@@ -92,6 +92,9 @@ type AccountTemplateInstanceTemplate struct {
 type TemplateInstanceSpec struct {
 	// The template to instantiate. This is an immutable field
 	Template string `json:"template"`
+	// If true the template instance will keep the deployed resources in sync with the template.
+	// +optional
+	Sync bool `json:"sync,omitempty"`
 }
 
 // AccountStatus describes the current status of the account is the cluster

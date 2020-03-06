@@ -1150,6 +1150,13 @@ func schema_pkg_apis_tenancy_v1alpha1_TemplateInstanceSpec(ref common.ReferenceC
 							Format:      "",
 						},
 					},
+					"sync": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If true the template instance will keep the deployed resources in sync with the template.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"template"},
 			},

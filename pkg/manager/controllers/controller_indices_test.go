@@ -93,6 +93,17 @@ func TestAddManagerIndices(t *testing.T) {
 			},
 			expected: []string{"myAccount3"},
 		},
+		addManagerIndicesTestCase{
+			name: "Template instace",
+			key:  constants.IndexByAccount,
+			in: &configv1alpha1.TemplateInstance{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec: configv1alpha1.TemplateInstanceSpec{
+					Template: "test",
+				},
+			},
+			expected: []string{"test"},
+		},
 	}
 
 	fakeIndexer := &fakeIndexer{

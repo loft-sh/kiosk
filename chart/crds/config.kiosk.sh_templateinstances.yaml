@@ -38,6 +38,10 @@ spec:
           description: TemplateInstanceSpec holds the expected cluster status of the
             template instance
           properties:
+            sync:
+              description: If true the template instance will keep the deployed resources
+                in sync with the template.
+              type: boolean
             template:
               description: The template to instantiate. This is an immutable field
               type: string
@@ -60,33 +64,12 @@ spec:
               description: A brief CamelCase message indicating details about why
                 the namespace is in this state.
               type: string
-            resources:
-              description: Resources holds the status of the deployed resources
-              items:
-                description: ResourceStatus holds the current status of a resource
-                properties:
-                  group:
-                    type: string
-                  kind:
-                    type: string
-                  name:
-                    type: string
-                  namespace:
-                    type: string
-                  resourceVersion:
-                    type: string
-                  uid:
-                    description: UID is a type that holds unique ID values, including
-                      UUIDs.  Because we don't ONLY use UUIDs, this is an alias to
-                      string.  Being a type captures intent and helps make sure that
-                      UIDs and names do not get conflated.
-                    type: string
-                  version:
-                    type: string
-                type: object
-              type: array
             status:
               description: Status holds the template instances status
+              type: string
+            templateManifests:
+              description: TemplateManifests are the manifests that were rendered
+                before
               type: string
             templateResourceVersion:
               description: TemplateResourceVersion is the resource version of the
