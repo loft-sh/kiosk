@@ -25,11 +25,18 @@ import (
 type TemplateResources struct {
 	// manifest represents kubernetes resources that will be deployed into the target namespace
 	// +optional
-	Manifests []runtime.RawExtension `json:"manifests,omitempty"`
+	Manifests []EmbeddedResource `json:"manifests,omitempty"`
 
 	// helm defines the configuration for a helm deployment
 	// +optional
 	Helm *HelmConfiguration `json:"helm,omitempty"`
+}
+
+// EmbeddedResource holds a kubernetes resource
+// +kubebuilder:validation:XPreserveUnknownFields
+// +kubebuilder:validation:XEmbeddedResource
+type EmbeddedResource struct {
+	runtime.RawExtension `json:",inline"`
 }
 
 // HelmConfiguration holds the helm configuration

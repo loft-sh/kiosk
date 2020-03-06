@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"github.com/kiosk-sh/kiosk/pkg/manager/helm"
@@ -80,8 +81,9 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	err := r.Get(ctx, types.NamespacedName{Name: templateInstance.Spec.Template}, template)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
-			return ctrl.Result{}, r.setFailed(ctx, templateInstance, "TemplateNotFound", fmt.Sprintf("The specified template '%s' couldn't be found.", templateInstance.Spec.Template))
+			return r.setFailed(ctx, templateInstance, "TemplateNotFound", fmt.Sprintf("The specified template '%s' couldn't be found.", templateInstance.Spec.Template))
 		}
+
 		return ctrl.Result{}, err
 	}
 
@@ -91,15 +93,10 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	}
 
 	// Try to deploy the template
-	err = r.deploy(ctx, template, templateInstance, log)
-	if err != nil {
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+	return r.deploy(ctx, template, templateInstance, log)
 }
 
-func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, log logr.Logger) error {
+func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, log logr.Logger) (ctrl.Result, error) {
 	objects := []*unstructured.Unstructured{}
 
 	// Gather objects from manifest
@@ -127,12 +124,13 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 	return r.deployObjects(ctx, template, templateInstance, objects, log)
 }
 
-func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured, log logr.Logger) error {
+func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured, log logr.Logger) (ctrl.Result, error) {
 	var err error
 	now := metav1.Now()
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
 		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusDeployed,
 		TemplateResourceVersion: template.ResourceVersion,
+		TemplateManifests:       templateInstance.Status.TemplateManifests,
 		LastAppliedAt:           &now,
 	}
 
@@ -143,10 +141,7 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 
 		// Set owner controller
 		if shouldSetOwner(templateInstance) {
-			err := ctrl.SetControllerReference(templateInstance, object, r.Scheme)
-			if err != nil {
-				return err
-			}
+			_ = ctrl.SetControllerReference(templateInstance, object, r.Scheme)
 		}
 
 		yaml, err := convert.ObjectToYaml(object)
@@ -187,23 +182,25 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 		return r.setFailed(ctx, templateInstance, "ErrorUpdatingStatus", fmt.Sprintf("Couldn't update template instance status: %v", err))
 	}
 
-	return nil
+	return ctrl.Result{}, nil
 }
 
 func shouldSetOwner(templateInstance *configv1alpha1.TemplateInstance) bool {
 	return templateInstance.Annotations == nil || templateInstance.Annotations[configv1alpha1.TemplateInstanceNoOwnerAnnotation] != "true"
 }
 
-func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) error {
+func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) (ctrl.Result, error) {
 	r.Log.Info("Template instance failed: " + message)
 
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
-		Status:  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
-		Reason:  reason,
-		Message: message,
+		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
+		Reason:                  reason,
+		Message:                 message,
+		TemplateManifests:       templateInstance.Status.TemplateManifests,
+		TemplateResourceVersion: templateInstance.Status.TemplateResourceVersion,
 	}
 
-	return r.Status().Update(ctx, templateInstance)
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, r.Status().Update(ctx, templateInstance)
 }
 
 type templateMapper struct {

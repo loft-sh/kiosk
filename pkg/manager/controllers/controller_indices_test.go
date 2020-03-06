@@ -95,7 +95,7 @@ func TestAddManagerIndices(t *testing.T) {
 		},
 		addManagerIndicesTestCase{
 			name: "Template instace",
-			key:  constants.IndexByAccount,
+			key:  constants.IndexByTemplate,
 			in: &configv1alpha1.TemplateInstance{
 				ObjectMeta: metav1.ObjectMeta{},
 				Spec: configv1alpha1.TemplateInstanceSpec{

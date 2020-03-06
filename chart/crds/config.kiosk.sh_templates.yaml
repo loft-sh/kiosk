@@ -113,10 +113,11 @@ spec:
                   type: string
               type: object
             manifests:
-              description: manifest represents kubernetes resources that will be deployed
-                into the target namespace
               items:
+                description: EmbeddedResource holds a kubernetes resource
                 type: object
+                x-kubernetes-embedded-resource: true
+                x-kubernetes-preserve-unknown-fields: true
               type: array
           type: object
       type: object
