@@ -43,6 +43,7 @@ kiosk community calls are Zoom calls that are open for anyone to join. Feel free
   - [3. Working with Spaces](#3-working-with-spaces)
   - [4. Setting Account limits](#4-setting-account-limits)
   - [5. Working with Templates](#5-working-with-templates)
+- [Upgrade kiosk](#upgrade-kiosk)
 - [Uninstall kiosk](#uninstall-kiosk)
 - [Extra: User Management & Authentication](#extra-user-management--authentication)
 - [Roadmap](#roadmap)
@@ -503,7 +504,7 @@ That's great, right? A user that did not have any access to the Kubernetes clust
 ---
 
 #### 3.5. Create Deletable Spaces
-To allow Account Users to delete all Spaces/Namespace that they create, you need to set the `spec.spaceClusterRole` field in the Account to `kiosk-space-admin`. 
+To allow Account Users to delete all Spaces/Namespace that they create, you need to set the `spec.space.clusterRole` field in the Account to `kiosk-space-admin`. 
 
 > When creating a Space, kiosk creates the according Namespace for the Space and then creates a RoleBinding within this Namespace which binds the standard Kubernetes ClusterRole `admin` to every Account User (i.e. all `subjects` listed in the Account). While this ClusterRole allows full access to this Namespace, it does **not** allow to delete the Space/Namespace. (The verb `delete` is missing in the default admin clusterrole)
 
@@ -523,7 +524,8 @@ kind: Account
 metadata:
   name: johns-account-deletable-spaces
 spec:
-  spaceClusterRole: kiosk-space-admin
+  space: 
+    clusterRole: kiosk-space-admin
   subjects:
   - kind: User
     name: john
@@ -582,9 +584,9 @@ With kiosk, you have two options to limit Accounts:
 ---
 
 #### 4.1. Limit Number of Spaces
-By setting the `spec.spaceLimit` in an Account, Cluster Admins can limit the number of Spaces that Account Users can create for a certain Account.
+By setting the `spec.space.limit` in an Account, Cluster Admins can limit the number of Spaces that Account Users can create for a certain Account.
 
-Let's run the following command to update the existing Account `johns-account` and apply a `spaceLimit: 2`:
+Let's run the following command to update the existing Account `johns-account` and specify `spec.space.limit: 2`:
 ```bash
 # Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/account-space-limit.yaml
@@ -600,7 +602,8 @@ kind: Account
 metadata:
   name: johns-account
 spec:
-  spaceLimit: 2
+  space:
+    limit: 2
   subjects:
   - kind: User
     name: john
@@ -860,9 +863,9 @@ spec:
 ---
 
 #### 5.4. Mandatory vs. Optional Templates
-Templates can either be mandatory or optional. By default, all Templates are optional. Cluster Admins can make Templates mandatory by adding them to the `spec.spaceDefaultTemplates` array within the Account configuration. All Templates listed in `spec.spaceDefaultTemplates` will always be instantiated within every Space/Namespace that is created for the respective Account.
+Templates can either be mandatory or optional. By default, all Templates are optional. Cluster Admins can make Templates mandatory by adding them to the `spec.space.templateInstances` array within the Account configuration. All Templates listed in `spec.space.templateInstances` will always be instantiated within every Space/Namespace that is created for the respective Account.
 
-Let's see this in action by updating the Account `johns-account` and adding our `space-restrictions` Template from 5.1. to `spec.spaceDefaultTemplates`:
+Let's see this in action by updating the Account `johns-account` and referencing our `space-restrictions` Template from 5.1. in `spec.space.templateInstances`:
 ```bash
 # Run this as cluster admin:
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/account-default-template.yaml
@@ -878,9 +881,11 @@ kind: Account
 metadata:
   name: johns-account-deletable-spaces
 spec:
-  spaceClusterRole: kiosk-space-admin
-  spaceDefaultTemplates:
-  - template: space-restrictions
+  space:
+    clusterRole: kiosk-space-admin
+    templateInstances:
+    - spec:
+        template: space-restrictions
   subjects:
   - kind: User
     name: john
@@ -942,6 +947,8 @@ TemplateInstances allow admins and user to see which Templates are being used wi
 ```bash
 helm upgrade kiosk -n kiosk
 ```
+Check the [release notes](https://github.com/kiosk-sh/kiosk/releases) for details on how to upgrade to a specific release.  
+**Do not skip releases with release notes containing upgrade instructions!**
 
 <br>
 

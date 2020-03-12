@@ -3,9 +3,11 @@ kind: Account
 metadata:
   name: johns-account-deletable-spaces
 spec:
-  spaceClusterRole: kiosk-space-admin
-  spaceDefaultTemplates:
-  - template: space-restrictions
+  space:
+    clusterRole: kiosk-space-admin
+    templateInstances:
+    - spec:
+        template: space-restrictions
   subjects:
   - kind: User
     name: john
