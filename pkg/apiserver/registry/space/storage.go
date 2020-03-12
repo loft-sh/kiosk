@@ -208,7 +208,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 	// Check if user can access account and create space
 	var account *configv1alpha1.Account
-	if canCreate == false {
+	if canCreate == false || space.Spec.Account != "" {
 		accounts, err := r.authCache.GetAccountsForUser(user, "get")
 		if err != nil {
 			return nil, err
@@ -256,8 +256,12 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 			}
 
 			// Apply namespace annotations & labels
-			space.ObjectMeta.Labels = account.Spec.Space.SpaceTemplate.Labels
-			space.ObjectMeta.Annotations = account.Spec.Space.SpaceTemplate.Annotations
+			if account.Spec.Space.SpaceTemplate.Labels != nil {
+				space.ObjectMeta.Labels = account.Spec.Space.SpaceTemplate.Labels
+			}
+			if account.Spec.Space.SpaceTemplate.Annotations != nil {
+				space.ObjectMeta.Annotations = account.Spec.Space.SpaceTemplate.Annotations
+			}
 
 			canCreate = true
 		}

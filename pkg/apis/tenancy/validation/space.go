@@ -28,13 +28,6 @@ func ValidateName(name string, prefix bool) []string {
 // ValidateSpace tests required fields for a Space.
 func ValidateSpace(space *tenancy.Space) field.ErrorList {
 	allErrs := validation.ValidateObjectMeta(&space.ObjectMeta, false, ValidateName, field.NewPath("metadata"))
-	if len(space.Annotations) > 0 {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "annotations"), space.Annotations, "field is immutable, try updating the namespace"))
-	}
-	if len(space.Labels) > 0 {
-		allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "labels"), space.Labels, "field is immutable, try updating the namespace"))
-	}
-
 	return allErrs
 }
 
