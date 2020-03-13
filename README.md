@@ -272,7 +272,7 @@ kiosk needs cert-manager. You can install it into your cluster using helm v3:
 ```bash
 # Install cert-manager with helm v3
 kubectl create namespace cert-manager
-helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.13.1 --namespace cert-manager
+helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.13.1 --namespace cert-manager --atomic
 ```
 
 <br>
@@ -281,7 +281,7 @@ helm install cert-manager --repo https://charts.jetstack.io cert-manager --versi
 ```bash
 # Install kiosk with helm v3
 kubectl create namespace kiosk
-helm install kiosk --repo https://charts.devspace.sh/ kiosk --namespace kiosk
+helm install kiosk --repo https://charts.devspace.sh/ kiosk --namespace kiosk --atomic
 ```
 To verify the installation make sure the kiosk pod is running:
 ```bash
@@ -574,6 +574,42 @@ kubectl get spaces --as=john
 
 **Deleting a Space also deletes the underlying Namespace.**
 
+#### 3.7. Defaults for Spaces
+kiosk provides the `spec.space.spaceTemplate` option for Accounts which lets admins define defaults for new Spaces of an Account. The following example creates the Account `account-default-space-metadata` which defines default labels and annotations for all Spaces created with this Account:
+```bash
+# Run this as cluster admin:
+# Create Account johns-account-default-space-metadata
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/account-default-space-metadata.yaml
+```
+<details>
+<summary><b>View: account-default-space-metadata.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: Account
+metadata:
+  name: johns-account-default-space-metadata
+spec:
+  space: 
+    clusterRole: kiosk-space-admin
+    spaceTemplate:
+      metadata:
+        labels:
+          some-label: "label-value"
+          some--other-label: "other-label-value"
+        annotations:
+          "space-annotation-1": "annotation-value-1"
+          "space-annotation-2": "annotation-value-2"
+  subjects:
+  - kind: User
+    name: john
+    apiGroup: rbac.authorization.k8s.io
+```
+
+<br>
+</details>
+
 <br>
 
 ### 4. Setting Account Limits
@@ -810,6 +846,8 @@ To instantiate a Template, users need to have permission to create [TemplateInst
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-instance-admin.yaml
 ```
 
+**Note:** Creating a TemplateInstance in a Space is only possible if a RoleBinding exists that binds the Role `kiosk-template-admin` to the user. Because `kiosk-template-admin` has the label `rbac.kiosk.sh/aggregate-to-space-admin: "true"` (see `rbac-instance-admin.yaml` below), it is also possible to create a RoleBinding for the Role `kiosk-space-admin` (which automatically includes `kiosk-template-admin`).
+
 <details>
 <summary><b>View: rbac-instance-admin.yaml</b></summary>
 <br>
@@ -841,8 +879,10 @@ rules:
 
 After creating the ClusterRole `kiosk-template-admin` as shown above, users can instantiate templates inside their Namespaces by creating so-called [TemplateInstances](#55-templateinstances). The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates):
 ```bash
-kubectl apply --as=john -n johns-space -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
+kubectl apply --as=john -n space-2 -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
 ```
+
+**Note:** In the above example, we are using `space-2` which belongs to Account `johns-account-deletable-spaces`. This Account defines `space.clusterRole: kiosk-space-admin` which automatically creates a RoleBinding for the Role `kiosk-space-admin` when creating a new Space for this Account.
 
 <details>
 <summary><b>View: template-instance.yaml</b></summary>
@@ -941,11 +981,36 @@ kubectl get templateinstances -n johns-space-template-mandatory
 
 TemplateInstances allow admins and user to see which Templates are being used within a Space/Namespace and they make it possible to upgrade the resources created by a Template if there is a newer version of the Template ([coming soon](#roadmap)).
 
+---
+
+#### 5.6. Template Sync
+Generally, a TemplateInstance is created from a Template and then, the TemplateInstances will **not** be updated when the Template changes later on. To change this behavior, it is possible to set `spec.sync: true` in a TemplateInstance. Setting this option, tells kiosk to keep this TemplateInstance in sync with the underlying template using a 3-way merge (similar to `helm upgrade`).
+
+The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates) and defines that this TemplateInstance should be kept in sync with the underlying Template:
+```bash
+kubectl apply --as=john -n space-2 -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance-sync.yaml
+```
+<details>
+<summary><b>View: template-instance-sync.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: config.kiosk.sh/v1alpha1
+kind: TemplateInstance
+metadata:
+  name: redis-instance-sync
+spec:
+  template: redis
+  sync: true
+```
+<br>
+</details>
+
 <br>
 
 ## Upgrade kiosk
 ```bash
-helm upgrade kiosk -n kiosk
+helm upgrade kiosk --repo https://charts.devspace.sh/ kiosk -n kiosk --atomic
 ```
 Check the [release notes](https://github.com/kiosk-sh/kiosk/releases) for details on how to upgrade to a specific release.  
 **Do not skip releases with release notes containing upgrade instructions!**
@@ -1028,16 +1093,12 @@ kubectl ...
 
 | YYYY-MM-DD       | Work Item                                                                            |
 |------------|--------------------------------------------------------------------------------------|
-| TBD        | Project: inaugural Zoom call with all initial design partners & future contributors* |
 | TBD        | Project: set up docs page with docusaurus                    |
 | TBD        | Project: create landing page                    |
-| 2020-03-02 | TemplateInstance: implement logic to keep TemplateInstances in sync                  |
-| 2020-03-16 | Project: add project to CNCF landscape                                               |
-| 2020-03-25 | AccountQuota: implement all ResourceQuota hard limits                                |
-| TBD        | Multi-Cluster: proposal for config resources and general workflow                    |
+| TBD        | Project: add project to CNCF landscape                                               |
+| 2020-04-20 | Multi-Cluster: finalize [proposal for config resources and general workflow](https://docs.google.com/presentation/d/1ubDA2D-5EtvubiM_iPF581XJaFZeueQ5GhIbvOHo098/edit?usp=sharing)                    |
 | TBD        | Project: suggest kiosk as CNCF sandbox project                                       |
 
-\* Send an email to [Lukas](mailto:lukas@devspace.sh) if you would like an invite to the call.
 
 ### Open Questions
 The following questions are currently being discussed. Suggestions are highly appreciated.
@@ -1053,7 +1114,7 @@ There are many ways to get involved:
 - Join the next kiosk [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
 - Open an issue for questions, to report bugs or to suggest new features
 - Open a pull request to contribute improvements to the code base or documentation
-- Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) to find out more about the project and how to get involved
+- Email one of the maintainers ([Fabian](mailto:fk@devspace.cloud), [Lukas](mailto:lukas@devspace.sh)) to find out more about the project and how to get involved
 
 For more detailed information, see our [Contributing Guide](CONTRIBUTING.md).
 

@@ -1,0 +1,19 @@
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: Account
+metadata:
+  name: johns-account-default-space-metadata
+spec:
+  space: 
+    clusterRole: kiosk-space-admin
+    spaceTemplate:
+      metadata:
+        labels:
+          some-label: "label-value"
+          some--other-label: "other-label-value"
+        annotations:
+          "space-annotation-1": "annotation-value-1"
+          "space-annotation-2": "annotation-value-2"
+  subjects:
+  - kind: User
+    name: john
+    apiGroup: rbac.authorization.k8s.io
