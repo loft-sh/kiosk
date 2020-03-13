@@ -272,7 +272,7 @@ kiosk needs cert-manager. You can install it into your cluster using helm v3:
 ```bash
 # Install cert-manager with helm v3
 kubectl create namespace cert-manager
-helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.13.1 --namespace cert-manager
+helm install cert-manager --repo https://charts.jetstack.io cert-manager --version v0.13.1 --namespace cert-manager --atomic
 ```
 
 <br>
@@ -281,7 +281,7 @@ helm install cert-manager --repo https://charts.jetstack.io cert-manager --versi
 ```bash
 # Install kiosk with helm v3
 kubectl create namespace kiosk
-helm install kiosk --repo https://charts.devspace.sh/ kiosk --namespace kiosk
+helm install kiosk --repo https://charts.devspace.sh/ kiosk --namespace kiosk --atomic
 ```
 To verify the installation make sure the kiosk pod is running:
 ```bash
@@ -1010,7 +1010,7 @@ spec:
 
 ## Upgrade kiosk
 ```bash
-helm upgrade kiosk -n kiosk
+helm upgrade kiosk --repo https://charts.devspace.sh/ kiosk -n kiosk --atomic
 ```
 Check the [release notes](https://github.com/kiosk-sh/kiosk/releases) for details on how to upgrade to a specific release.  
 **Do not skip releases with release notes containing upgrade instructions!**
