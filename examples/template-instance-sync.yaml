@@ -1,0 +1,7 @@
+apiVersion: config.kiosk.sh/v1alpha1
+kind: TemplateInstance
+metadata:
+  name: redis-instance-sync
+spec:
+  template: redis
+  sync: true

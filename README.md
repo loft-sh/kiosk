@@ -574,6 +574,42 @@ kubectl get spaces --as=john
 
 **Deleting a Space also deletes the underlying Namespace.**
 
+#### 3.7. Defaults for Spaces
+kiosk provides the `spec.space.spaceTemplate` option for Accounts which lets admins define defaults for new Spaces of an Account. The following example creates the Account `account-default-space-metadata` which defines default labels and annotations for all Spaces created with this Account:
+```bash
+# Run this as cluster admin:
+# Create Account johns-account-default-space-metadata
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/account-default-space-metadata.yaml
+```
+<details>
+<summary><b>View: account-default-space-metadata.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: tenancy.kiosk.sh/v1alpha1
+kind: Account
+metadata:
+  name: johns-account-default-space-metadata
+spec:
+  space: 
+    clusterRole: kiosk-space-admin
+    spaceTemplate:
+      metadata:
+        labels:
+          some-label: "label-value"
+          some--other-label: "other-label-value"
+        annotations:
+          "space-annotation-1": "annotation-value-1"
+          "space-annotation-2": "annotation-value-2"
+  subjects:
+  - kind: User
+    name: john
+    apiGroup: rbac.authorization.k8s.io
+```
+
+<br>
+</details>
+
 <br>
 
 ### 4. Setting Account Limits
@@ -810,6 +846,8 @@ To instantiate a Template, users need to have permission to create [TemplateInst
 kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-template-instance-admin.yaml
 ```
 
+**Note:** Creating a TemplateInstance in a Space is only possible if a RoleBinding exists that binds the Role `kiosk-template-admin` to the user. Because `kiosk-template-admin` has the label `rbac.kiosk.sh/aggregate-to-space-admin: "true"` (see `rbac-instance-admin.yaml` below), it is also possible to create a RoleBinding for the Role `kiosk-space-admin` (which automatically includes `kiosk-template-admin`).
+
 <details>
 <summary><b>View: rbac-instance-admin.yaml</b></summary>
 <br>
@@ -841,8 +879,10 @@ rules:
 
 After creating the ClusterRole `kiosk-template-admin` as shown above, users can instantiate templates inside their Namespaces by creating so-called [TemplateInstances](#55-templateinstances). The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates):
 ```bash
-kubectl apply --as=john -n johns-space -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
+kubectl apply --as=john -n space-2 -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance.yaml
 ```
+
+**Note:** In the above example, we are using `space-2` which belongs to Account `johns-account-deletable-spaces`. This Account defines `space.clusterRole: kiosk-space-admin` which automatically creates a RoleBinding for the Role `kiosk-space-admin` when creating a new Space for this Account.
 
 <details>
 <summary><b>View: template-instance.yaml</b></summary>
@@ -940,6 +980,31 @@ kubectl get templateinstances -n johns-space-template-mandatory
 ```
 
 TemplateInstances allow admins and user to see which Templates are being used within a Space/Namespace and they make it possible to upgrade the resources created by a Template if there is a newer version of the Template ([coming soon](#roadmap)).
+
+---
+
+#### 5.6. Template Sync
+Generally, a TemplateInstance is created from a Template and then, the TemplateInstances will **not** be updated when the Template changes later on. To change this behavior, it is possible to set `spec.sync: true` in a TemplateInstance. Setting this option, tells kiosk to keep this TemplateInstance in sync with the underlying template using a 3-way merge (similar to `helm upgrade`).
+
+The following example creates an instance of the Helm Chart [Template `redis` which has been created above](#52-helm-chart-templates) and defines that this TemplateInstance should be kept in sync with the underlying Template:
+```bash
+kubectl apply --as=john -n space-2 -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/template-instance-sync.yaml
+```
+<details>
+<summary><b>View: template-instance-sync.yaml</b></summary>
+<br>
+
+```yaml
+apiVersion: config.kiosk.sh/v1alpha1
+kind: TemplateInstance
+metadata:
+  name: redis-instance-sync
+spec:
+  template: redis
+  sync: true
+```
+<br>
+</details>
 
 <br>
 
