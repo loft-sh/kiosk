@@ -1093,16 +1093,12 @@ kubectl ...
 
 | YYYY-MM-DD       | Work Item                                                                            |
 |------------|--------------------------------------------------------------------------------------|
-| TBD        | Project: inaugural Zoom call with all initial design partners & future contributors* |
 | TBD        | Project: set up docs page with docusaurus                    |
 | TBD        | Project: create landing page                    |
-| 2020-03-02 | TemplateInstance: implement logic to keep TemplateInstances in sync                  |
-| 2020-03-16 | Project: add project to CNCF landscape                                               |
-| 2020-03-25 | AccountQuota: implement all ResourceQuota hard limits                                |
-| TBD        | Multi-Cluster: proposal for config resources and general workflow                    |
+| TBD        | Project: add project to CNCF landscape                                               |
+| 2020-04-20 | Multi-Cluster: finalize [proposal for config resources and general workflow](https://docs.google.com/presentation/d/1ubDA2D-5EtvubiM_iPF581XJaFZeueQ5GhIbvOHo098/edit?usp=sharing)                    |
 | TBD        | Project: suggest kiosk as CNCF sandbox project                                       |
 
-\* Send an email to [Lukas](mailto:lukas@devspace.sh) if you would like an invite to the call.
 
 ### Open Questions
 The following questions are currently being discussed. Suggestions are highly appreciated.
@@ -1118,7 +1114,7 @@ There are many ways to get involved:
 - Join the next kiosk [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
 - Open an issue for questions, to report bugs or to suggest new features
 - Open a pull request to contribute improvements to the code base or documentation
-- Email one of the maintainers ([Lukas](mailto:lukas@devspace.sh), [Fabian](mailto:fk@devspace.cloud)) to find out more about the project and how to get involved
+- Email one of the maintainers ([Fabian](mailto:fk@devspace.cloud), [Lukas](mailto:lukas@devspace.sh)) to find out more about the project and how to get involved
 
 For more detailed information, see our [Contributing Guide](CONTRIBUTING.md).
 
