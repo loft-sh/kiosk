@@ -5,10 +5,9 @@ import (
 
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/util/convert"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
-	rbac "k8s.io/kubernetes/pkg/apis/rbac"
-	rbacvalidation "k8s.io/kubernetes/pkg/apis/rbac/validation"
 )
 
 func verifySubjects(account *tenancy.Account) field.ErrorList {
@@ -26,7 +25,7 @@ func validateSubjects(subjects []rbac.Subject) field.ErrorList {
 
 	subjectsPath := field.NewPath("spec.subjects")
 	for i, subject := range subjects {
-		allErrs = append(allErrs, rbacvalidation.ValidateRoleBindingSubject(subject, false, subjectsPath.Index(i))...)
+		allErrs = append(allErrs, ValidateRoleBindingSubject(subject, false, subjectsPath.Index(i))...)
 	}
 
 	return allErrs
@@ -55,3 +54,45 @@ func ValidateAccountUpdate(newAccount *tenancy.Account, oldAccount *tenancy.Acco
 	allErrs = append(allErrs, verifySubjects(newAccount)...)
 	return allErrs
 }
+
+// ValidateRoleBindingSubject is exported to allow types outside of the RBAC API group to embed a rbac.Subject and reuse this validation logic
+func ValidateRoleBindingSubject(subject rbac.Subject, isNamespaced bool, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if len(subject.Name) == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("name"), ""))
+	}
+
+	switch subject.Kind {
+	case rbac.ServiceAccountKind:
+		if len(subject.Name) > 0 {
+			for _, msg := range validation.ValidateServiceAccountName(subject.Name, false) {
+				allErrs = append(allErrs, field.Invalid(fldPath.Child("name"), subject.Name, msg))
+			}
+		}
+		if len(subject.APIGroup) > 0 {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("apiGroup"), subject.APIGroup, []string{""}))
+		}
+		if !isNamespaced && len(subject.Namespace) == 0 {
+			allErrs = append(allErrs, field.Required(fldPath.Child("namespace"), ""))
+		}
+
+	case rbac.UserKind:
+		// TODO(ericchiang): What other restrictions on user name are there?
+		if subject.APIGroup != rbac.GroupName {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("apiGroup"), subject.APIGroup, []string{rbac.GroupName}))
+		}
+
+	case rbac.GroupKind:
+		// TODO(ericchiang): What other restrictions on group name are there?
+		if subject.APIGroup != rbac.GroupName {
+			allErrs = append(allErrs, field.NotSupported(fldPath.Child("apiGroup"), subject.APIGroup, []string{rbac.GroupName}))
+		}
+
+	default:
+		allErrs = append(allErrs, field.NotSupported(fldPath.Child("kind"), subject.Kind, []string{rbac.ServiceAccountKind, rbac.UserKind, rbac.GroupKind}))
+	}
+
+	return allErrs
+}
+

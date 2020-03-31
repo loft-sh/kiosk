@@ -19,6 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
+	v12 "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
 	"reflect"
 	"sync"
 	"time"
@@ -38,8 +40,6 @@ import (
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/kubernetes/pkg/controller"
-	quota "k8s.io/kubernetes/pkg/quota/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -48,6 +48,15 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"github.com/kiosk-sh/kiosk/pkg/util"
 )
+
+// StaticResyncPeriodFunc returns the resync period specified
+func StaticResyncPeriodFunc(resyncPeriod time.Duration) ResyncPeriodFunc {
+	return func() time.Duration {
+		return resyncPeriod
+	}
+}
+
+type ResyncPeriodFunc func() time.Duration
 
 // NamespacedResourcesFunc knows how to discover namespaced resources.
 type NamespacedResourcesFunc func() ([]*metav1.APIResourceList, error)
@@ -61,9 +70,9 @@ type AccountQuotaControllerOptions struct {
 	// Manager is needed for kubernetes access and cache
 	Manager manager.Manager
 	// Controls full recalculation of quota usage
-	ResyncPeriod controller.ResyncPeriodFunc
+	ResyncPeriod ResyncPeriodFunc
 	// Maintains evaluators that know how to calculate usage for group resource
-	Registry quota.Registry
+	Registry v12.Registry
 	// Discover list of supported resources on the server.
 	DiscoveryFunc NamespacedResourcesFunc
 	// A function that returns the list of resources to ignore
@@ -73,7 +82,7 @@ type AccountQuotaControllerOptions struct {
 	// InformerFactory interfaces with informers.
 	InformerFactory controller.InformerFactory
 	// Controls full resync of objects monitored for replenishment.
-	ReplenishmentResyncPeriod controller.ResyncPeriodFunc
+	ReplenishmentResyncPeriod ResyncPeriodFunc
 }
 
 // AccountQuotaController is responsible for tracking quota usage status in the system
@@ -88,10 +97,10 @@ type AccountQuotaController struct {
 	missingUsageQueue workqueue.RateLimitingInterface
 	// To allow injection of syncUsage for testing.
 	syncHandler func(key string) error
-	// function that controls full recalculation of quota usage
-	resyncPeriod controller.ResyncPeriodFunc
+	// function that controls full recalculxation of quota usage
+	resyncPeriod ResyncPeriodFunc
 	// knows how to calculate usage
-	registry quota.Registry
+	registry v12.Registry
 	// knows how to monitor all the resources tracked by quota and trigger replenishment
 	quotaMonitor *QuotaMonitor
 	// controls the workers that process quotas
@@ -157,7 +166,7 @@ func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*Account
 				// responsible for enqueue of all account quotas when doing a full resync (enqueueAll)
 				oldAccountQuota := old.(*configv1alpha1.AccountQuota)
 				curAccountQuota := cur.(*configv1alpha1.AccountQuota)
-				if quota.Equals(oldAccountQuota.Spec.Quota.Hard, curAccountQuota.Spec.Quota.Hard) {
+				if v12.Equals(oldAccountQuota.Spec.Quota.Hard, curAccountQuota.Spec.Quota.Hard) {
 					return
 				}
 				rq.addQuota(curAccountQuota)
@@ -368,7 +377,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 	// if so, we send a new usage with latest status
 	// if this is our first sync, it will be dirty by default, since we need track usage
 	dirty := statusLimitsDirty || accountQuota.Status.Total.Hard == nil || accountQuota.Status.Total.Used == nil
-	hardLimits := quota.Add(v1.ResourceList{}, accountQuota.Spec.Quota.Hard)
+	hardLimits := v12.Add(v1.ResourceList{}, accountQuota.Spec.Quota.Hard)
 
 	// iterate over all quota namespaces and calculate usages
 	namespaceList := &v1.NamespaceList{}
@@ -378,12 +387,12 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 	}
 
 	// ensure set of used values match those that have hard constraints
-	hardResources := quota.ResourceNames(hardLimits)
+	hardResources := v12.ResourceNames(hardLimits)
 	used := configv1alpha1.AccountQuotasStatusByNamespace{}
 	totalUsed := v1.ResourceList{}
 	errors := []error{}
 	for _, n := range namespaceList.Items {
-		newUsage, err := quota.CalculateUsage(n.Name, accountQuota.Spec.Quota.Scopes, hardLimits, rq.registry, accountQuota.Spec.Quota.ScopeSelector)
+		newUsage, err := v12.CalculateUsage(n.Name, accountQuota.Spec.Quota.Scopes, hardLimits, rq.registry, accountQuota.Spec.Quota.ScopeSelector)
 		if err != nil {
 			// if err is non-nil, remember it to return, but continue updating status with any resources in newUsage
 			errors = append(errors, err)
@@ -392,7 +401,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 		usedList := v1.ResourceList{}
 		for _, nsStatus := range accountQuota.Status.Namespaces {
 			if nsStatus.Namespace == n.Name && nsStatus.Status.Used != nil {
-				usedList = quota.Add(v1.ResourceList{}, nsStatus.Status.Used)
+				usedList = v12.Add(v1.ResourceList{}, nsStatus.Status.Used)
 			}
 		}
 
@@ -400,7 +409,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 			usedList[key] = value
 		}
 
-		usedList = quota.Mask(usedList, hardResources)
+		usedList = v12.Mask(usedList, hardResources)
 		used = append(used, configv1alpha1.AccountQuotaStatusByNamespace{
 			Namespace: n.Name,
 			Status: v1.ResourceQuotaStatus{
@@ -408,7 +417,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 			},
 		})
 
-		totalUsed = quota.Add(totalUsed, usedList)
+		totalUsed = v12.Add(totalUsed, usedList)
 	}
 
 	// Create a usage object that is based on the quota resource version that will handle updates
@@ -422,7 +431,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 		Namespaces: used,
 	}
 
-	dirty = dirty || !quota.Equals(usage.Status.Total.Used, accountQuota.Status.Total.Used)
+	dirty = dirty || !v12.Equals(usage.Status.Total.Used, accountQuota.Status.Total.Used)
 
 	// there was a change observed by this controller that requires we update quota
 	if dirty {
@@ -470,7 +479,7 @@ func (rq *AccountQuotaController) replenishQuota(groupResource schema.GroupResou
 	// only queue those quotas that are tracking a resource associated with this kind.
 	for i := range accountQuotaList.Items {
 		accountQuota := &accountQuotaList.Items[i]
-		accountQuotaResources := quota.ResourceNames(accountQuota.Status.Total.Hard)
+		accountQuotaResources := v12.ResourceNames(accountQuota.Status.Total.Hard)
 		if intersection := evaluator.MatchingResources(accountQuotaResources); len(intersection) > 0 {
 			// TODO: make this support targeted replenishment to a specific kind, right now it does a full recalc on that quota.
 			rq.enqueueAccountQuota(accountQuota)

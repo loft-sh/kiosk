@@ -22,6 +22,7 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 
+	utilquota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
@@ -31,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilwait "k8s.io/apimachinery/pkg/util/wait"
 	etcd "k8s.io/apiserver/pkg/storage/etcd3"
-	utilquota "k8s.io/kubernetes/pkg/quota/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

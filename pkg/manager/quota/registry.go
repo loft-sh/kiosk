@@ -17,18 +17,13 @@ limitations under the License.
 package quota
 
 import (
-	"k8s.io/kubernetes/pkg/quota/v1"
-	"k8s.io/kubernetes/pkg/quota/v1/evaluator/core"
-	"k8s.io/kubernetes/pkg/quota/v1/generic"
-	"k8s.io/kubernetes/pkg/quota/v1/install"
+	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/install"
 )
 
 // NewQuotaConfiguration creates a new quota configuration that can be used to create quota registry
 func NewQuotaConfiguration(f quota.ListerForResourceFunc) quota.Configuration {
 	return generic.NewConfiguration(core.NewEvaluators(f), install.DefaultIgnoredResources())
-}
-
-// NewQuotaRegistry creates a new registry from the given quota config
-func NewQuotaRegistry(config quota.Configuration) quota.Registry {
-	return generic.NewRegistry(config.Evaluators())
 }

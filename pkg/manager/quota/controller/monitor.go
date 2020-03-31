@@ -18,6 +18,10 @@ package controller
 
 import (
 	"fmt"
+	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
+	v12 "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
 	"sync"
 	"time"
 
@@ -32,10 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/kubernetes/pkg/controller"
-	quota "k8s.io/kubernetes/pkg/quota/v1"
-	"k8s.io/kubernetes/pkg/quota/v1/evaluator/core"
-	"k8s.io/kubernetes/pkg/quota/v1/generic"
 )
 
 type eventType int
@@ -92,16 +92,16 @@ type QuotaMonitor struct {
 	ignoredResources map[schema.GroupResource]struct{}
 
 	// The period that should be used to re-sync the monitored resource
-	resyncPeriod controller.ResyncPeriodFunc
+	resyncPeriod ResyncPeriodFunc
 
 	// callback to alert that a change may require quota recalculation
 	replenishmentFunc ReplenishmentFunc
 
 	// maintains list of evaluators
-	registry quota.Registry
+	registry v12.Registry
 }
 
-func NewQuotaMonitor(informersStarted <-chan struct{}, informerFactory controller.InformerFactory, ignoredResources map[schema.GroupResource]struct{}, resyncPeriod controller.ResyncPeriodFunc, replenishmentFunc ReplenishmentFunc, registry quota.Registry) *QuotaMonitor {
+func NewQuotaMonitor(informersStarted <-chan struct{}, informerFactory controller.InformerFactory, ignoredResources map[schema.GroupResource]struct{}, resyncPeriod ResyncPeriodFunc, replenishmentFunc ReplenishmentFunc, registry v12.Registry) *QuotaMonitor {
 	return &QuotaMonitor{
 		informersStarted:  informersStarted,
 		informerFactory:   informerFactory,
