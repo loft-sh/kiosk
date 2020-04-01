@@ -1,10 +1,11 @@
 package space
 
 import (
+	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
 
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	fakeauth "github.com/kiosk-sh/kiosk/pkg/apiserver/auth/testing"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -20,6 +21,47 @@ import (
 
 	"context"
 )
+
+var clusterAdminBinding = &rbacv1.ClusterRoleBinding{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:            "test",
+		UID:             "123",
+		ResourceVersion: "1",
+	},
+	Subjects: []rbacv1.Subject{
+		{
+			Kind:     "User",
+			Name:     "foo",
+			APIGroup: rbacv1.GroupName,
+		},
+	},
+	RoleRef: rbacv1.RoleRef{
+		Name:     "test",
+		Kind:     "ClusterRole",
+		APIGroup: rbacv1.GroupName,
+	},
+}
+
+func clientWithDefaultRoles(scheme *runtime.Scheme, objs ...runtime.Object) *testingutil.FakeIndexClient {
+	objs = append(objs, &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "test",
+			UID:             "123",
+			ResourceVersion: "1",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:           []string{"*"},
+				APIGroups:       []string{"*"},
+				Resources:       []string{"*"},
+				NonResourceURLs: []string{"*"},
+			},
+		},
+		AggregationRule: nil,
+	})
+
+	return testingutil.NewFakeClient(scheme, objs...)
+}
 
 func TestBasic(t *testing.T) {
 	spaceStorage := &spaceStorage{}
@@ -37,27 +79,26 @@ func TestBasic(t *testing.T) {
 
 func TestGetSpace(t *testing.T) {
 	scheme := testingutil.NewScheme()
-	fakeClient := testingutil.NewFakeClient(scheme, &corev1.Namespace{
+	fakeClient := clientWithDefaultRoles(scheme, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
 		},
 	})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceStorage(fakeClient, fakeAuthCache, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
 
 	// We are not allowed to retrieve it so this should return a not found
-	_, err := spaceStorage.Get(userCtx, "test", &metav1.GetOptions{})
+	_, err := spaceStorage.Get(withRequestInfo(userCtx, "get", "test"), "test", &metav1.GetOptions{})
 	if err == nil || kerrors.IsNotFound(err) == false {
 		t.Fatalf("Expected not found error, got %v", err)
 	}
 
-	// Change the auth cache that allows us to retrieve the account
-	fakeAuthCache.UserNamespaces["foo"] = []string{"test"}
+	// make user cluster admin
+	fakeClient.Create(context.TODO(), clusterAdminBinding)
 
 	// We are not allowed to retrieve it so this should return a not found
-	test, err := spaceStorage.Get(userCtx, "test", &metav1.GetOptions{})
+	test, err := spaceStorage.Get(withRequestInfo(userCtx, "get", "test"), "test", &metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,10 +133,9 @@ func TestListSpaces(t *testing.T) {
 				},
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
-	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceStorage(fakeClient, fakeAuthCache, scheme).(*spaceStorage)
+	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
+	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
 
 	// Get empty list
 	obj, err := spaceStorage.List(userCtx, &metainternalversion.ListOptions{})
@@ -109,8 +149,25 @@ func TestListSpaces(t *testing.T) {
 		t.Fatalf("Expected empty space list, got %d items", len(spaceList.Items))
 	}
 
-	// Allow user to see 2 namespaces
-	fakeAuthCache.UserNamespaces["foo"] = []string{"test", "test2"}
+	// create role for 2 spaces
+	fakeClient.Create(context.TODO(), &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "test",
+			UID:             "123",
+			ResourceVersion: "1",
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:           []string{"*"},
+				APIGroups:       []string{"*"},
+				Resources:       []string{"*"},
+				ResourceNames:   []string{"test", "test2"},
+				NonResourceURLs: []string{"*"},
+			},
+		},
+		AggregationRule: nil,
+	})
+	fakeClient.Create(context.TODO(), clusterAdminBinding)
 
 	obj, err = spaceStorage.List(userCtx, &metainternalversion.ListOptions{})
 	if err != nil {
@@ -143,7 +200,7 @@ func TestListSpaces(t *testing.T) {
 func TestCreateSpace(t *testing.T) {
 	spaceLimit := 2
 	scheme := testingutil.NewScheme()
-	fakeClient := testingutil.NewFakeClient(scheme,
+	fakeClient := clientWithDefaultRoles(scheme,
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
@@ -169,10 +226,9 @@ func TestCreateSpace(t *testing.T) {
 				},
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
-	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceStorage(fakeClient, fakeAuthCache, scheme).(*spaceStorage)
+	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "create", "")
+	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
 
 	// Try to create if we are not allowed to
 	_, err := spaceStorage.Create(userCtx, &tenancy.Space{
@@ -184,8 +240,35 @@ func TestCreateSpace(t *testing.T) {
 		t.Fatal("Expected error but got nil")
 	}
 
-	// Allow us to create the space
-	fakeAuthCache.UserAccounts["foo"] = []string{"test"}
+	// Set index value
+	newAccount := &configv1alpha1.Account{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test",
+		},
+		Spec: configv1alpha1.AccountSpec{
+			Subjects: []rbacv1.Subject{
+				{
+					Kind:     "User",
+					APIGroup: rbacv1.GroupName,
+					Name:     "foo",
+				},
+			},
+			Space: configv1alpha1.AccountSpace{
+				Limit: &spaceLimit,
+				SpaceTemplate: configv1alpha1.AccountSpaceTemplate{
+					ObjectMeta: metav1.ObjectMeta{
+						Annotations: map[string]string{
+							"Test": "Test",
+						},
+					},
+				},
+			},
+		},
+	}
+	fakeClient.SetIndexValue(configv1alpha1.SchemeGroupVersion.WithKind("Account"), constants.IndexBySubjects, "user:foo", []runtime.Object{
+		newAccount,
+	})
+	fakeClient.Update(context.TODO(), newAccount)
 
 	// Create a space with account
 	createdObj, err := spaceStorage.Create(userCtx, &tenancy.Space{
@@ -240,38 +323,11 @@ func TestCreateSpace(t *testing.T) {
 	if err == nil || kerrors.IsForbidden(err) == false {
 		t.Fatalf("Expected forbidden but got %v", err)
 	}
-
-	fakeAuthCache.UserAccounts["foo"] = []string{}
-	fakeAuthCache.UserNamespaces["foo"] = []string{"test6"}
-
-	// Create a space without account again
-	_, err = spaceStorage.Create(userCtx, &tenancy.Space{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test6",
-		},
-	}, fakeCreateValidation, &metav1.CreateOptions{})
-	if err != nil {
-		t.Fatalf("Expected no error but got %v", err)
-	}
-
-	fakeAuthCache.UserNamespaces["foo"] = []string{"*"}
-
-	// Try to create an space that already exists
-	_, err = spaceStorage.Create(userCtx, &tenancy.Space{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test3",
-		},
-	}, fakeCreateValidation, &metav1.CreateOptions{})
-	if err != nil {
-		if kerrors.IsAlreadyExists(err) == false {
-			t.Fatalf("Expected already exists but got %v", err)
-		}
-	}
 }
 
 func TestSpaceUpdate(t *testing.T) {
 	scheme := testingutil.NewScheme()
-	fakeClient := testingutil.NewFakeClient(scheme,
+	fakeClient := clientWithDefaultRoles(scheme,
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
@@ -281,10 +337,9 @@ func TestSpaceUpdate(t *testing.T) {
 				Name: "test2",
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
-	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceStorage(fakeClient, fakeAuthCache, scheme).(*spaceStorage)
+	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "update", "test")
+	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
 
 	_, updated, err := spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -299,7 +354,7 @@ func TestSpaceUpdate(t *testing.T) {
 	}
 
 	// Allow namespace update
-	fakeAuthCache.UserNamespaces["foo"] = []string{"*"}
+	fakeClient.Create(context.TODO(), clusterAdminBinding)
 
 	_, updated, err = spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -310,14 +365,14 @@ func TestSpaceUpdate(t *testing.T) {
 			},
 		},
 	}}, fakeCreateValidation, fakeUpdateValidation, false, &metav1.UpdateOptions{})
-	if err == nil || kerrors.IsInvalid(err) == false {
-		t.Fatalf("Expected invalid error, got %v", err)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
 	}
 }
 
 func TestSpaceDelete(t *testing.T) {
 	scheme := testingutil.NewScheme()
-	fakeClient := testingutil.NewFakeClient(scheme,
+	fakeClient := clientWithDefaultRoles(scheme,
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "test",
@@ -327,10 +382,9 @@ func TestSpaceDelete(t *testing.T) {
 				Name: "test2",
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
-	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceStorage(fakeClient, fakeAuthCache, scheme).(*spaceStorage)
+	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "delete", "test")
+	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
 
 	_, deleted, err := spaceStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err == nil || kerrors.IsForbidden(err) == false || deleted == true {
@@ -338,7 +392,7 @@ func TestSpaceDelete(t *testing.T) {
 	}
 
 	// Allow account delete
-	fakeAuthCache.UserNamespaces["foo"] = []string{"test"}
+	fakeClient.Create(context.TODO(), clusterAdminBinding)
 
 	_, deleted, err = spaceStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err != nil || deleted == false {
@@ -365,4 +419,19 @@ func (f *fakeUpdater) Preconditions() *metav1.Preconditions {
 }
 func (f *fakeUpdater) UpdatedObject(ctx context.Context, oldObj runtime.Object) (newObj runtime.Object, err error) {
 	return f.out, nil
+}
+
+func withRequestInfo(ctx context.Context, verb string, name string) context.Context {
+	return request.WithRequestInfo(ctx, &request.RequestInfo{
+		IsResourceRequest: true,
+		Path:              "/apis/" + tenancy.SchemeGroupVersion.Group + "/" + tenancyv1alpha1.SchemeGroupVersion.Version,
+		Verb:              verb,
+		APIPrefix:         "",
+		APIGroup:          tenancyv1alpha1.SchemeGroupVersion.Group,
+		APIVersion:        tenancy.SchemeGroupVersion.Version,
+		Namespace:         "",
+		Resource:          "spaces",
+		Subresource:       "",
+		Name:              name,
+	})
 }

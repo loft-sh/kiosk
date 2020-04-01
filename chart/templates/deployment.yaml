@@ -33,11 +33,11 @@ spec:
           secretName: {{ .Values.certSecret }}-apiservice
       containers:
       - command:
-        {{- range $f := .Values.apiserver.command }}
+        {{- range $f := .Values.kiosk.command }}
         - {{ $f | quote }}
         {{- end }}
         args:
-        {{- range $f := .Values.apiserver.args }}
+        {{- range $f := .Values.kiosk.args }}
         - {{ $f | quote }}
         {{- end }}
         {{- if .Values.image }}
@@ -45,7 +45,7 @@ spec:
         {{- else }}
         image: "kiosksh/kiosk:{{ .Chart.Version }}"
         {{- end }}
-        name: apiserver
+        name: kiosk
         volumeMounts:
         - mountPath: /tmp/k8s-apiserver/serving-certs
           name: cert-apiservice
@@ -54,4 +54,4 @@ spec:
           name: cert
           readOnly: true
         resources:
-{{ toYaml .Values.manager.resources | indent 10 }}
+{{ toYaml .Values.kiosk.resources | indent 10 }}

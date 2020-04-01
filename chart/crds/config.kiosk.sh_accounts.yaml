@@ -5,18 +5,18 @@ metadata:
 spec:
   conversion:
     strategy: None
-    group: config.kiosk.sh
-    names:
-      kind: Account
-      listKind: AccountList
-      plural: accounts
-      singular: account
-    preserveUnknownFields: true
-    scope: Cluster
-    subresources:
-      status: {}
-    version: v1alpha1
-    versions:
-      - name: v1alpha1
-        served: true
-        storage: true
+  group: config.kiosk.sh
+  names:
+    kind: Account
+    listKind: AccountList
+    plural: accounts
+    singular: account
+  preserveUnknownFields: true
+  scope: Cluster
+  subresources:
+    status: {}
+  version: v1alpha1
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true

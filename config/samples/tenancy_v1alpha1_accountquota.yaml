@@ -1,7 +1,0 @@
-apiVersion: tenancy.kiosk.sh/v1alpha1
-kind: AccountQuota
-metadata:
-  name: accountquota-sample
-spec:
-  # Add fields here
-  foo: bar

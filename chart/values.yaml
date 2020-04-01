@@ -4,7 +4,7 @@
 
 replicaCount: 1
 
-manager:
+kiosk:
   command: 
   - /kiosk
   args: []

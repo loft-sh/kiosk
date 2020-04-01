@@ -2,8 +2,9 @@ package account
 
 import (
 	"context"
+	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	rbacv1 "k8s.io/api/rbac/v1"
 
-	fakeauth "github.com/kiosk-sh/kiosk/pkg/apiserver/auth/testing"
 	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
 
 	"testing"
@@ -19,8 +20,28 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/request"
 )
 
+var clusterBinding = &rbacv1.ClusterRoleBinding{
+	ObjectMeta: metav1.ObjectMeta{
+		Name:            "test",
+		UID:             "123",
+		ResourceVersion: "1",
+	},
+	Subjects: []rbacv1.Subject{
+		{
+			Kind:     "User",
+			Name:     "foo",
+			APIGroup: rbacv1.GroupName,
+		},
+	},
+	RoleRef: rbacv1.RoleRef{
+		Name:     "test",
+		Kind:     "ClusterRole",
+		APIGroup: rbacv1.GroupName,
+	},
+}
+
 func TestBasic(t *testing.T) {
-	accountStorage := &accountStorage{}
+	accountStorage := &accountREST{}
 
 	if accountStorage.NamespaceScoped() == true {
 		t.Fatal("Expected cluster scope")
@@ -40,21 +61,9 @@ func TestGetAccount(t *testing.T) {
 			Name: "test",
 		},
 	})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountStorage(fakeClient, fakeAuthCache).(*accountStorage)
-
-	// We are not allowed to retrieve it so this should return a not found
-	_, err := accountStorage.Get(userCtx, "test", &metav1.GetOptions{})
-	if err == nil || kerrors.IsNotFound(err) == false {
-		t.Fatalf("Expected not found error, got %v", err)
-	}
-
-	// Change the auth cache that allows us to retrieve the account
-	fakeAuthCache.UserAccounts["foo"] = []string{"test"}
-
-	// We are not allowed to retrieve it so this should return a not found
+	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
 	test, err := accountStorage.Get(userCtx, "test", &metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -89,11 +98,26 @@ func TestListAccount(t *testing.T) {
 					"testlabel": "test",
 				},
 			},
+		}, &rbacv1.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            "test",
+				UID:             "123",
+				ResourceVersion: "1",
+			},
+			Rules: []rbacv1.PolicyRule{
+				{
+					Verbs:           []string{"*"},
+					APIGroups:       []string{tenancy.SchemeGroupVersion.Group},
+					Resources:       []string{"*"},
+					ResourceNames:   []string{"test", "test2"},
+					NonResourceURLs: []string{"*"},
+				},
+			},
+			AggregationRule: nil,
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
-	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountStorage(fakeClient, fakeAuthCache).(*accountStorage)
+	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
+	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
 
 	// Get empty list
 	obj, err := accountStorage.List(userCtx, &metainternalversion.ListOptions{})
@@ -108,7 +132,7 @@ func TestListAccount(t *testing.T) {
 	}
 
 	// Allow user to see 2 accounts
-	fakeAuthCache.UserAccounts["foo"] = []string{"test", "test2"}
+	fakeClient.Create(context.TODO(), clusterBinding)
 
 	obj, err = accountStorage.List(userCtx, &metainternalversion.ListOptions{})
 	if err != nil {
@@ -150,24 +174,13 @@ func TestCreateAccount(t *testing.T) {
 				Name: "test2",
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountStorage(fakeClient, fakeAuthCache).(*accountStorage)
-
-	// Try to create if we are not allowed to
-	_, err := accountStorage.Create(userCtx, &tenancy.Account{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test3",
-		},
-	}, fakeCreateValidation, &metav1.CreateOptions{})
-	if err == nil {
-		t.Fatal("Expected error but got nil")
-	}
+	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
 
 	// Allow us to create the account
-	fakeAuthCache.UserAccounts["foo"] = []string{"*"}
-	_, err = accountStorage.Create(userCtx, &tenancy.Account{
+	// fakeAuthCache.UserAccounts["foo"] = []string{"*"}
+	_, err := accountStorage.Create(userCtx, &tenancy.Account{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test3",
 		},
@@ -201,25 +214,9 @@ func TestAccountUpdate(t *testing.T) {
 				Name: "test2",
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountStorage(fakeClient, fakeAuthCache).(*accountStorage)
-
-	_, updated, err := accountStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Account{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-			Labels: map[string]string{
-				"Updated": "true",
-			},
-		},
-	}}, fakeCreateValidation, fakeUpdateValidation, false, &metav1.UpdateOptions{})
-	if err == nil || kerrors.IsForbidden(err) == false || updated == true {
-		t.Fatalf("Expected forbidden error, got %v", err)
-	}
-
-	// Allow account update
-	fakeAuthCache.UserAccounts["foo"] = []string{"*"}
+	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
 
 	newObj, updated, err := accountStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Account{
 		ObjectMeta: metav1.ObjectMeta{
@@ -250,20 +247,11 @@ func TestAccountDelete(t *testing.T) {
 				Name: "test2",
 			},
 		})
-	fakeAuthCache := fakeauth.NewFakeAuthCache()
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountStorage(fakeClient, fakeAuthCache).(*accountStorage)
+	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
 
 	_, deleted, err := accountStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
-	if err == nil || kerrors.IsForbidden(err) == false || deleted == true {
-		t.Fatalf("Expected forbidden error, got %v", err)
-	}
-
-	// Allow account delete
-	fakeAuthCache.UserAccounts["foo"] = []string{"test"}
-
-	_, deleted, err = accountStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err != nil || deleted == false {
 		t.Fatalf("Expected no error, got %v", err)
 	}
@@ -288,4 +276,19 @@ func (f *fakeUpdater) Preconditions() *metav1.Preconditions {
 }
 func (f *fakeUpdater) UpdatedObject(ctx context.Context, oldObj runtime.Object) (newObj runtime.Object, err error) {
 	return f.out, nil
+}
+
+func withRequestInfo(ctx context.Context, verb string, name string) context.Context {
+	return request.WithRequestInfo(ctx, &request.RequestInfo{
+		IsResourceRequest: true,
+		Path:              "/apis/" + tenancy.SchemeGroupVersion.Group + "/" + tenancyv1alpha1.SchemeGroupVersion.Version,
+		Verb:              verb,
+		APIPrefix:         "",
+		APIGroup:          tenancyv1alpha1.SchemeGroupVersion.Group,
+		APIVersion:        tenancy.SchemeGroupVersion.Version,
+		Namespace:         "",
+		Resource:          "accounts",
+		Subresource:       "",
+		Name:              name,
+	})
 }

@@ -17,14 +17,12 @@ limitations under the License.
 package convert
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 
 	"github.com/ghodss/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var diffSeparator = regexp.MustCompile(`\n---`)
@@ -65,16 +63,6 @@ func ObjectToYaml(obj runtime.Object) ([]byte, error) {
 	return yaml.Marshal(obj)
 }
 
-// RuntimeObjectToBytes converts a runtime object into a byte array
-func RuntimeObjectToBytes(obj runtime.Object) ([]byte, error) {
-	bytes, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
-}
-
 // StringToUnstructured expects a single object via string and parses it into an unstructured object
 func StringToUnstructured(out string) (*unstructured.Unstructured, error) {
 	var obj unstructured.Unstructured
@@ -98,39 +86,4 @@ func ObjectToObject(from interface{}, to interface{}) error {
 	}
 
 	return nil
-}
-
-// BytesToObject converts a given byte array into the object
-func BytesToObject(from []byte, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
-	new, err := scheme.New(to)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(from, new)
-	if err != nil {
-		return nil, err
-	}
-
-	return new, nil
-}
-
-// UnstructuredToObject converts a given unstructured object into a runtime object
-func UnstructuredToObject(from *unstructured.Unstructured, to schema.GroupVersionKind, scheme *runtime.Scheme) (runtime.Object, error) {
-	fromBytes, err := yaml.Marshal(from)
-	if err != nil {
-		return nil, err
-	}
-
-	new, err := scheme.New(to)
-	if err != nil {
-		return nil, err
-	}
-
-	err = yaml.Unmarshal(fromBytes, new)
-	if err != nil {
-		return nil, err
-	}
-
-	return new, nil
 }

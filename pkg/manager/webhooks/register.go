@@ -19,6 +19,7 @@ package webhooks
 import (
 	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
 	"github.com/kiosk-sh/kiosk/pkg/manager/quota"
+	"github.com/kiosk-sh/kiosk/pkg/util/encoding"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
@@ -29,20 +30,16 @@ func Register(ctrlCtx *controllers.Context) error {
 
 	// Create the admission controller
 	admissionController := quota.NewAccountResourceQuota(ctrlCtx)
-	hookServer.Register("/validate-quota", &webhook.Admission{Handler: &QuotaValidator{
+	hookServer.Register("/quota", &webhook.Admission{Handler: &QuotaValidator{
 		Log:                 ctrl.Log.WithName("webhooks").WithName("Quota"),
 		Scheme:              ctrlCtx.Manager.GetScheme(),
 		AdmissionController: admissionController,
 	}})
 
-	hookServer.Register("/validate-accountquota", &webhook.Admission{Handler: &AccountQuotaValidator{
-		Log:    ctrl.Log.WithName("webhooks").WithName("AccountQuota"),
-		Scheme: ctrlCtx.Manager.GetScheme(),
-	}})
-
-	hookServer.Register("/validate-templateinstance", &webhook.Admission{Handler: &TemplateInstanceValidator{
-		Log:    ctrl.Log.WithName("webhooks").WithName("TemplateInstance"),
-		Scheme: ctrlCtx.Manager.GetScheme(),
+	hookServer.Register("/validate", &webhook.Admission{Handler: &Validator{
+		Log:           ctrl.Log.WithName("webhooks").WithName("Validator"),
+		StrictDecoder: encoding.NewDecoder(ctrlCtx.Manager.GetScheme(), true),
+		NormalDecoder: encoding.NewDecoder(ctrlCtx.Manager.GetScheme(), false),
 	}})
 
 	return nil

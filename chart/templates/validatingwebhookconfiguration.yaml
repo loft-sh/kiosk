@@ -15,24 +15,7 @@ webhooks:
     service:
       name: {{ template "kiosk.fullname" . }}
       namespace: {{ .Release.Namespace }}
-      path: /validate-accountquota
-  failurePolicy: Fail
-  name: vaccountquota.kb.io
-  rules:
-  - apiGroups:
-    - config.kiosk.sh
-    apiVersions:
-    - v1alpha1
-    operations:
-    - UPDATE
-    resources:
-    - accountquotas
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: {{ template "kiosk.fullname" . }}
-      namespace: {{ .Release.Namespace }}
-      path: /validate-quota
+      path: /quota
   failurePolicy: Fail
   namespaceSelector:
     matchExpressions:
@@ -55,15 +38,16 @@ webhooks:
     service:
       name: {{ template "kiosk.fullname" . }}
       namespace: {{ .Release.Namespace }}
-      path: /validate-templateinstance
+      path: /validate
   failurePolicy: Fail
-  name: vtemplateinstance.kb.io
+  name: config.kiosk.sh
   rules:
   - apiGroups:
     - config.kiosk.sh
     apiVersions:
     - v1alpha1
     operations:
+    - CREATE
     - UPDATE
     resources:
-    - templateinstances
+      - '*'

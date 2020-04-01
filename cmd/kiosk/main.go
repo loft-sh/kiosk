@@ -21,6 +21,7 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apiserver"
+	_ "github.com/kiosk-sh/kiosk/pkg/apiserver/registry"
 	"github.com/kiosk-sh/kiosk/pkg/openapi"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"

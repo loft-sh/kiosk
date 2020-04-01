@@ -12,8 +12,8 @@ COPY go.sum go.sum
 COPY vendor/ vendor/
 
 # Copy the go source
-COPY cmd/kiosk cmd/manager/main.go
-COPY cmd/apiserver/main.go cmd/apiserver/main.go
+COPY cmd/ cmd/
+COPY kube/ kube/
 COPY pkg/ pkg/
 
 ENV GO111MODULE on

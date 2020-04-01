@@ -2,13 +2,14 @@ package authorization
 
 import (
 	"context"
-	"github.com/kiosk-sh/kiosk/vendor/k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sort"
 )
 
 type FilteredLister interface {
@@ -35,10 +36,10 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion sch
 
 	err = f.client.List(ctx, list, &client.ListOptions{
 		LabelSelector: options.LabelSelector,
-		FieldSelector: options.FieldSelector,
-		Namespace:     a.GetNamespace(),
-		Limit:         options.Limit,
-		Continue:      options.Continue,
+		// FieldSelector: options.FieldSelector,
+		Namespace: a.GetNamespace(),
+		Limit:     options.Limit,
+		Continue:  options.Continue,
 	})
 	if err != nil {
 		return nil, err
@@ -80,6 +81,12 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion sch
 				newObjs = append(newObjs, obj)
 			}
 		}
+
+		sort.Slice(newObjs, func(i int, j int) bool {
+			ni, _ := meta.Accessor(newObjs[i])
+			nj, _ := meta.Accessor(newObjs[j])
+			return ni.GetName() < nj.GetName()
+		})
 
 		err = meta.SetList(list, newObjs)
 		if err != nil {

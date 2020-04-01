@@ -252,6 +252,18 @@ golang.org/x/text/unicode/norm
 golang.org/x/text/width
 # golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 golang.org/x/time/rate
+# golang.org/x/tools v0.0.0-20190920225731-5eefd052ad72
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/go/packages
+golang.org/x/tools/imports
+golang.org/x/tools/internal/fastwalk
+golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/imports
+golang.org/x/tools/internal/module
+golang.org/x/tools/internal/semver
 # gomodules.xyz/jsonpatch/v2 v2.0.1
 gomodules.xyz/jsonpatch/v2
 # google.golang.org/appengine v1.5.0
@@ -745,6 +757,12 @@ k8s.io/component-base/logs
 k8s.io/component-base/metrics
 k8s.io/component-base/metrics/legacyregistry
 k8s.io/component-base/version
+# k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e
+k8s.io/gengo/args
+k8s.io/gengo/generator
+k8s.io/gengo/namer
+k8s.io/gengo/parser
+k8s.io/gengo/types
 # k8s.io/klog v1.0.0
 k8s.io/klog
 # k8s.io/kube-controller-manager v0.17.3

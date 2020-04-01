@@ -169,7 +169,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 		// check if user is part of account
 		if util.IsUserPartOfAccount(userInfo, account) == false {
-			return nil, fmt.Errorf("user " + userInfo.GetName() + " is not part of the account")
+			return nil, fmt.Errorf("user " + userInfo.GetName() + " is not part of the account " + account.Name)
 		}
 	}
 

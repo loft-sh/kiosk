@@ -11,7 +11,6 @@ require (
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/go-openapi/loads v0.19.4
 	github.com/go-openapi/spec v0.19.3
-	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190723091251-e0797f438f94 // indirect
