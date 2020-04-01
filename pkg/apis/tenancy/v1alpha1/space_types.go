@@ -26,7 +26,7 @@ import (
 
 // Space
 // +k8s:openapi-gen=true
-// +resource:path=spaces
+// +resource:path=spaces,rest=SpaceREST
 type Space struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

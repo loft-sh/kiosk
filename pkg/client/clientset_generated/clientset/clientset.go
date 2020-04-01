@@ -19,6 +19,7 @@ limitations under the License.
 package clientset
 
 import (
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1"
 	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -27,6 +28,7 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
+	ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface
 	TenancyV1alpha1() tenancyv1alpha1.TenancyV1alpha1Interface
 }
 
@@ -34,7 +36,13 @@ type Interface interface {
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
+	configV1alpha1  *configv1alpha1.ConfigV1alpha1Client
 	tenancyV1alpha1 *tenancyv1alpha1.TenancyV1alpha1Client
+}
+
+// ConfigV1alpha1 retrieves the ConfigV1alpha1Client
+func (c *Clientset) ConfigV1alpha1() configv1alpha1.ConfigV1alpha1Interface {
+	return c.configV1alpha1
 }
 
 // TenancyV1alpha1 retrieves the TenancyV1alpha1Client
@@ -58,6 +66,10 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
+	cs.configV1alpha1, err = configv1alpha1.NewForConfig(&configShallowCopy)
+	if err != nil {
+		return nil, err
+	}
 	cs.tenancyV1alpha1, err = tenancyv1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
@@ -74,6 +86,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
+	cs.configV1alpha1 = configv1alpha1.NewForConfigOrDie(c)
 	cs.tenancyV1alpha1 = tenancyv1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
@@ -83,6 +96,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
+	cs.configV1alpha1 = configv1alpha1.New(c)
 	cs.tenancyV1alpha1 = tenancyv1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)

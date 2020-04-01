@@ -17,12 +17,15 @@ limitations under the License.
 package constants
 
 const (
+	// UserPrefix is used to prefix users for the index
+	UserPrefix = "user:"
+	// GroupPrefix is used to prefix groups for the index
+	GroupPrefix = "group:"
+)
+
+const (
 	// IndexBySubjects indexes rolebindings / clusterrolebindings by their subjects
 	IndexBySubjects = "bysubjects"
-	// IndexByRole indexes rolebindings by their role
-	IndexByRole = "byrole"
-	// IndexByClusterRole indexes rolebindings / clusterrolebindings by their cluster role
-	IndexByClusterRole = "byclusterrole"
 	// IndexByAccount indexes objects by their referenced account
 	IndexByAccount = "byaccount"
 	// IndexByTemplates indexes objects by their referenced template

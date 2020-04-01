@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	rbacv1 "k8s.io/api/rbac/v1"
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,7 +26,7 @@ import (
 
 // Account
 // +k8s:openapi-gen=true
-// +resource:path=accounts,strategy=AccountStrategy
+// +resource:path=accounts,rest=AccountREST
 type Account struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -35,76 +35,12 @@ type Account struct {
 	Status AccountStatus `json:"status,omitempty"`
 }
 
-// AccountSpec defines a single account configuration
+// AccountSpec defines the desired state of Space
 type AccountSpec struct {
-	// Space defines default options for created spaces by the account
-	// +optional
-	Space AccountSpace `json:"space,omitempty"`
-
-	// Subjects are the account users
-	// +optional
-	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
+	configv1alpha1.AccountSpec `json:",inline"`
 }
 
-// AccountSpace defines properties how many spaces can be owned by the account and how they should be created
-type AccountSpace struct {
-	// This defines the cluster role that will be used for the rolebinding when
-	// creating a new space for the selected subjects
-	// +optional
-	ClusterRole *string `json:"clusterRole,omitempty"`
-
-	// Limit defines how many spaces are allowed to be owned by this account. If no value is specified,
-	// unlimited spaces can be created by the account (if the users have the rights to create spaces)
-	// +optional
-	Limit *int `json:"limit,omitempty"`
-
-	// TemplateInstances are templates that should be created by default in a newly created space by
-	// this account. Kiosk makes sure that these templates are deployed successfully, before the users of
-	// this account will get access to the space
-	// +optional
-	TemplateInstances []AccountTemplateInstanceTemplate `json:"templateInstances,omitempty"`
-
-	// SpaceTemplate defines a space template with default annotations and labels the space should have after
-	// creation
-	// +optional
-	SpaceTemplate AccountSpaceTemplate `json:"spaceTemplate,omitempty"`
-}
-
-// AccountSpaceTemplate defines a space template
-type AccountSpaceTemplate struct {
-	// The default metadata of the space to create
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-}
-
-// AccountTemplateInstanceTemplate defines a template instance template
-type AccountTemplateInstanceTemplate struct {
-	// The metadata of the template instace to create
-	// +optional
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// The spec of the template instance
-	// +optional
-	Spec TemplateInstanceSpec `json:"spec,omitempty"`
-}
-
-// TemplateInstanceSpec holds the expected cluster status of the template instance
-type TemplateInstanceSpec struct {
-	// The template to instantiate. This is an immutable field
-	Template string `json:"template"`
-	// If true the template instance will keep the deployed resources in sync with the template.
-	// +optional
-	Sync bool `json:"sync,omitempty"`
-}
-
-// AccountStatus describes the current status of the account is the cluster
+// AccountStatus defines the observed state of Space
 type AccountStatus struct {
-	// +optional
-	Namespaces []AccountNamespaceStatus `json:"namespaces,omitempty"`
-}
-
-// AccountNamespaceStatus is the status for the account access objects that belong to the account
-type AccountNamespaceStatus struct {
-	// +optional
-	Name string `json:"name,omitempty"`
+	configv1alpha1.AccountStatus `json:",inline"`
 }
