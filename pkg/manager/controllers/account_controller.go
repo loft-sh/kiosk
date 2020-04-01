@@ -19,14 +19,18 @@ package controllers
 import (
 	"context"
 	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/kiosk-sh/kiosk/pkg/util"
 	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
 	"github.com/kiosk-sh/kiosk/pkg/util/clusterrole"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/workqueue"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
-	"github.com/kiosk-sh/kiosk/pkg/manager/events"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -181,10 +185,58 @@ func (r *AccountReconciler) getClusterRoleRules(account *configv1alpha1.Account)
 	return rules
 }
 
+
+// NamespaceEventHandler handles events
+type NamespaceEventHandler struct {
+	Log logr.Logger
+}
+
+// Create implements EventHandler
+func (e *NamespaceEventHandler) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
+	e.handleEvent(evt.Meta, q)
+}
+
+// Update implements EventHandler
+func (e *NamespaceEventHandler) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
+	if util.GetAccountFromNamespace(evt.MetaOld) == util.GetAccountFromNamespace(evt.MetaNew) {
+		return
+	}
+
+	e.handleEvent(evt.MetaOld, q)
+	e.handleEvent(evt.MetaNew, q)
+}
+
+// Delete implements EventHandler
+func (e *NamespaceEventHandler) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
+	e.handleEvent(evt.Meta, q)
+}
+
+// Generic implements EventHandler
+func (e *NamespaceEventHandler) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
+	e.handleEvent(evt.Meta, q)
+}
+
+func (e *NamespaceEventHandler) handleEvent(meta metav1.Object, q workqueue.RateLimitingInterface) {
+	if meta == nil {
+		return
+	}
+
+	labels := meta.GetLabels()
+	if labels == nil {
+		return
+	}
+
+	if owner, ok := labels[constants.SpaceLabelAccount]; ok && owner != "" {
+		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
+			Name: owner,
+		}})
+	}
+}
+
 // SetupWithManager adds the controller to the manager
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Kind{Type: &corev1.Namespace{}}, &events.NamespaceEventHandler{}).
+		Watches(&source.Kind{Type: &corev1.Namespace{}}, &NamespaceEventHandler{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.ClusterRole{}).
 		For(&configv1alpha1.Account{}).

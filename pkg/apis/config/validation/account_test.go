@@ -1,9 +1,8 @@
 package validation
 
 import (
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"testing"
-
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,8 +10,8 @@ import (
 )
 
 type testAccountValidation struct {
-	in    *tenancy.Account
-	inOld *tenancy.Account
+	in    *configv1alpha1.Account
+	inOld *configv1alpha1.Account
 
 	valid bool
 }
@@ -21,11 +20,11 @@ func TestAccountValidation(t *testing.T) {
 	tests := map[string]*testAccountValidation{
 		"Invalid account": &testAccountValidation{
 			valid: false,
-			in: &tenancy.Account{
+			in: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind: "ServiceAccount",
@@ -37,11 +36,11 @@ func TestAccountValidation(t *testing.T) {
 		},
 		"Valid account": &testAccountValidation{
 			valid: true,
-			in: &tenancy.Account{
+			in: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind:      "ServiceAccount",
@@ -54,12 +53,12 @@ func TestAccountValidation(t *testing.T) {
 		},
 		"Invalid update": &testAccountValidation{
 			valid: false,
-			inOld: &tenancy.Account{
+			inOld: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "test",
 					ResourceVersion: "12345",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind:      "ServiceAccount",
@@ -68,20 +67,20 @@ func TestAccountValidation(t *testing.T) {
 						},
 					},
 				},
-				Status: tenancy.AccountStatus{
-					Namespaces: []tenancy.AccountNamespaceStatus{
-						tenancy.AccountNamespaceStatus{
+				Status: configv1alpha1.AccountStatus{
+					Namespaces: []configv1alpha1.AccountNamespaceStatus{
+						configv1alpha1.AccountNamespaceStatus{
 							Name: "test",
 						},
 					},
 				},
 			},
-			in: &tenancy.Account{
+			in: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "test",
 					ResourceVersion: "12345",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind:      "ServiceAccount",
@@ -94,12 +93,12 @@ func TestAccountValidation(t *testing.T) {
 		},
 		"Valid update": &testAccountValidation{
 			valid: true,
-			inOld: &tenancy.Account{
+			inOld: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "test",
 					ResourceVersion: "12345",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind:      "ServiceAccount",
@@ -109,12 +108,12 @@ func TestAccountValidation(t *testing.T) {
 					},
 				},
 			},
-			in: &tenancy.Account{
+			in: &configv1alpha1.Account{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:            "test",
 					ResourceVersion: "12345",
 				},
-				Spec: tenancy.AccountSpec{
+				Spec: configv1alpha1.AccountSpec{
 					Subjects: []rbacv1.Subject{
 						rbacv1.Subject{
 							Kind:      "ServiceAccount",

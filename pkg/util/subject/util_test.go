@@ -1,6 +1,7 @@
 package subject
 
 import (
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -22,7 +23,7 @@ func TestConvertSubject(t *testing.T) {
 				Kind:     "User",
 				Name:     "foo",
 			},
-			expected: UserPrefix + "foo",
+			expected: constants.UserPrefix + "foo",
 		},
 		"Group": &convertSubjectTest{
 			namespace: "test",
@@ -31,7 +32,7 @@ func TestConvertSubject(t *testing.T) {
 				Kind:     "Group",
 				Name:     "foo",
 			},
-			expected: GroupPrefix + "foo",
+			expected: constants.GroupPrefix + "foo",
 		},
 		"SeriveAccount no namespace": &convertSubjectTest{
 			namespace: "test",
@@ -40,7 +41,7 @@ func TestConvertSubject(t *testing.T) {
 				Kind:     "ServiceAccount",
 				Name:     "foo",
 			},
-			expected: UserPrefix + "system:serviceaccount:test:foo",
+			expected: constants.UserPrefix + "system:serviceaccount:test:foo",
 		},
 		"SeriveAccount with namespace": &convertSubjectTest{
 			namespace: "test",
@@ -50,7 +51,7 @@ func TestConvertSubject(t *testing.T) {
 				Name:      "foo",
 				Namespace: "loo",
 			},
-			expected: UserPrefix + "system:serviceaccount:loo:foo",
+			expected: constants.UserPrefix + "system:serviceaccount:loo:foo",
 		},
 	}
 
