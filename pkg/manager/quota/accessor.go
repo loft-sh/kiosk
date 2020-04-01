@@ -24,7 +24,6 @@ import (
 
 	utilquota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 
 	corev1 "k8s.io/api/core/v1"
@@ -158,12 +157,12 @@ func (e *accountQuotaAccessor) waitForReadyAccountQuotaNames(namespaceName strin
 		}
 
 		// Check if namespace belongs to an account
-		if namespace.Labels == nil || namespace.Labels[tenancy.SpaceLabelAccount] == "" {
+		if namespace.Labels == nil || namespace.Labels[constants.SpaceLabelAccount] == "" {
 			return true, nil
 		}
 
 		// Now list the account quotas for the namespace
-		accountName := namespace.Labels[tenancy.SpaceLabelAccount]
+		accountName := namespace.Labels[constants.SpaceLabelAccount]
 		accountQuotaList := &configv1alpha1.AccountQuotaList{}
 		err = e.client.List(context.Background(), accountQuotaList, client.MatchingFields{constants.IndexByAccount: accountName})
 		if err != nil {

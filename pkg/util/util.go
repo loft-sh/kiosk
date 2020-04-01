@@ -18,9 +18,9 @@ package util
 
 import (
 	"fmt"
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"os/exec"
 
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,7 +51,7 @@ func GetAccountFromNamespace(namespace metav1.Object) string {
 		return ""
 	}
 
-	return labels[tenancy.SpaceLabelAccount]
+	return labels[constants.SpaceLabelAccount]
 }
 
 // IsNamespaceInitializing checks if the given namespace is initializing
@@ -61,7 +61,7 @@ func IsNamespaceInitializing(namespace metav1.Object) bool {
 		return false
 	}
 
-	return annotations[tenancy.SpaceAnnotationInitializing] == "true"
+	return annotations[constants.SpaceAnnotationInitializing] == "true"
 }
 
 // StringsEqual checks if two string arrays are equal

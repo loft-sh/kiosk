@@ -50,23 +50,6 @@ spec:
         - mountPath: /tmp/k8s-apiserver/serving-certs
           name: cert-apiservice
           readOnly: true
-        resources:
-{{ toYaml .Values.apiserver.resources | indent 10 }}
-      - command:
-        {{- range $f := .Values.manager.command }}
-        - {{ $f | quote }}
-        {{- end }}
-        args:
-        {{- range $f := .Values.manager.args }}
-        - {{ $f | quote }}
-        {{- end }}
-        {{- if .Values.image }}
-        image: "{{ .Values.image }}"
-        {{- else }}
-        image: "kiosksh/kiosk:{{ .Chart.Version }}"
-        {{- end }}
-        name: manager
-        volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true

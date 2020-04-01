@@ -11,6 +11,7 @@ require (
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/go-openapi/loads v0.19.4
 	github.com/go-openapi/spec v0.19.3
+	github.com/gogo/protobuf v1.2.2-0.20190723190241-65acae22fc9d
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190723091251-e0797f438f94 // indirect
@@ -34,6 +35,7 @@ require (
 	k8s.io/cli-runtime v0.17.3
 	k8s.io/client-go v0.17.3
 	k8s.io/component-base v0.17.3
+	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e
 	k8s.io/klog v1.0.0
 	k8s.io/kube-controller-manager v0.17.3
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a

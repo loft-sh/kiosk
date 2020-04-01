@@ -18,44 +18,46 @@ package space
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sort"
-
+	"github.com/kiosk-sh/kiosk/kube/plugin/pkg/auth/authorizer/rbac"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/validation"
-	"github.com/kiosk-sh/kiosk/pkg/apiserver/auth"
 	"github.com/kiosk-sh/kiosk/pkg/apiserver/registry/util"
+	"github.com/kiosk-sh/kiosk/pkg/authorization"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
-
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/apimachinery/pkg/util/wait"
+	authorizer "k8s.io/apiserver/pkg/authorization/authorizer"
+	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/util/retry"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type spaceStorage struct {
-	scheme    *runtime.Scheme
-	authCache auth.Cache
-	client    client.Client
+	authorizer authorizer.Authorizer
+	scheme     *runtime.Scheme
+	filter     authorization.FilteredLister
+	client     client.Client
 }
 
-// NewSpaceStorage creates a new space storage that implements the rest interface
-func NewSpaceStorage(client client.Client, authCache auth.Cache, scheme *runtime.Scheme) rest.Storage {
+// NewSpaceREST creates a new space storage that implements the rest interface
+func NewSpaceREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
+	ruleClient := authorization.NewRuleClient(client)
+	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
 	return &spaceStorage{
-		scheme:    scheme,
-		authCache: authCache,
-		client:    client,
+		client:     client,
+		authorizer: authorizer,
+		scheme:     scheme,
+		filter:     authorization.NewFilteredLister(client, authorizer),
 	}
 }
 
@@ -78,38 +80,17 @@ func (r *spaceStorage) NewList() runtime.Object {
 }
 
 func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
-	user, ok := request.UserFrom(ctx)
-	if !ok {
-		return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), "", fmt.Errorf("unable to list spaces without a user on the context"))
-	}
-
-	namespaces, err := r.authCache.GetNamespacesForUser(user, "get")
+	namespaces := &corev1.NamespaceList{}
+	_, err := r.filter.List(ctx, namespaces, corev1.SchemeGroupVersion, options)
 	if err != nil {
 		return nil, err
 	}
-
-	namespaceObjects, err := auth.GetNamespaces(ctx, r.client, namespaces)
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Slice(namespaceObjects, func(i int, j int) bool {
-		return namespaceObjects[i].Name < namespaceObjects[j].Name
-	})
 
 	spaceList := &tenancy.SpaceList{
 		Items: []tenancy.Space{},
 	}
-
-	m := util.MatchNamespace(util.ListOptionsToSelectors(options))
-	for _, n := range namespaceObjects {
-		match, err := m.Matches(n)
-		if err != nil {
-			return nil, err
-		}
-		if match {
-			spaceList.Items = append(spaceList.Items, *ConvertNamespace(n))
-		}
+	for _, n := range namespaces.Items {
+		spaceList.Items = append(spaceList.Items, *ConvertNamespace(&n))
 	}
 
 	return spaceList, nil
@@ -118,33 +99,17 @@ func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.Li
 var _ = rest.Getter(&spaceStorage{})
 
 func (r *spaceStorage) Get(ctx context.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
-	user, ok := request.UserFrom(ctx)
-	if !ok {
-		return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("unable to get space without a user on the context"))
-	}
-
-	namespaces, err := r.authCache.GetNamespacesForUser(user, "get")
+	a, err := filters.GetAuthorizerAttributes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	allowed := false
-	if len(namespaces) > 0 {
-		if namespaces[0] == "*" {
-			allowed = true
-		} else {
-			for _, n := range namespaces {
-				if n == name {
-					allowed = true
-					break
-				}
-			}
-		}
-	}
-
-	if allowed == false {
-		return nil, kerrors.NewNotFound(tenancy.Resource("spaces"), name)
-		// return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("cannot get space because user is not allowed to"))
+	decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	if err != nil {
+		return nil, err
+	} else if decision != authorizer.DecisionAllow {
+		return nil, kerrors.NewNotFound(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name)
+		// return nil, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(reason))
 	}
 
 	namespaceObj := &corev1.Namespace{}
@@ -163,9 +128,9 @@ func (r *spaceStorage) Get(ctx context.Context, name string, options *metav1.Get
 var _ = rest.Creater(&spaceStorage{})
 
 func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createValidation rest.ValidateObjectFunc, options *metav1.CreateOptions) (runtime.Object, error) {
-	user, ok := request.UserFrom(ctx)
+	userInfo, ok := request.UserFrom(ctx)
 	if !ok {
-		return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), "", fmt.Errorf("unable to create space without a user on the context"))
+		return nil, fmt.Errorf("couldn't find user in request")
 	}
 
 	space, ok := obj.(*tenancy.Space)
@@ -183,99 +148,67 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		return nil, err
 	}
 
-	// A user can create a space if:
-	// 1. He is part of the requesting account and below the space limit
-	// 2. He can create namespaces and account field is empty
-	namespaces, err := r.authCache.GetNamespacesForUser(user, "create")
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if user could create namespace
-	canCreate := false
-	if len(namespaces) > 0 && space.Spec.Account == "" {
-		if namespaces[0] == rbacv1.ResourceAll {
-			canCreate = true
-		} else {
-			for _, n := range namespaces {
-				if n == space.Name {
-					canCreate = true
-					break
-				}
-			}
-		}
-	}
-
 	// Check if user can access account and create space
 	var account *configv1alpha1.Account
-	if canCreate == false || space.Spec.Account != "" {
-		accounts, err := r.authCache.GetAccountsForUser(user, "get")
+	if space.Spec.Account == "" {
+		accounts, err := util.GetAccountsByUserInfo(ctx, r.client, userInfo)
+		if err != nil {
+			return nil, err
+		} else if len(accounts) != 1 {
+			return nil, kerrors.NewBadRequest("spec.account is required")
+		}
+
+		space.Spec.Account = accounts[0].Name
+		account = accounts[0]
+	} else {
+		account = &configv1alpha1.Account{}
+		err := r.client.Get(ctx, types.NamespacedName{Name: space.Spec.Account}, account)
 		if err != nil {
 			return nil, err
 		}
 
-		if len(accounts) > 0 {
-			if space.Spec.Account == "" {
-				if accounts[0] == rbacv1.ResourceAll || len(accounts) > 1 {
-					return nil, kerrors.NewInvalid(tenancy.Kind("Space"), space.Name, field.ErrorList{field.Invalid(field.NewPath("spec").Key("account"), "", "account must be specified")})
-				}
-
-				space.Spec.Account = accounts[0]
-			}
-
-			// Find account
-			account = &configv1alpha1.Account{}
-			err := r.client.Get(ctx, types.NamespacedName{Name: space.Spec.Account}, account)
-			if err != nil {
-				return nil, kerrors.NewInvalid(tenancy.Kind("Space"), space.Name, field.ErrorList{field.Invalid(field.NewPath("spec").Key("account"), space.Spec.Account, "account does not exist")})
-			}
-
-			// Check if user can access account
-			canAccessAccount := false
-			for _, a := range accounts {
-				if a == rbacv1.ResourceAll || a == space.Spec.Account {
-					canAccessAccount = true
-					break
-				}
-			}
-			if canAccessAccount == false {
-				return nil, kerrors.NewInvalid(tenancy.Kind("Space"), space.Name, field.ErrorList{field.Invalid(field.NewPath("spec").Key("account"), space.Spec.Account, "user cannot access account")})
-			}
-
-			// Check if account is at limit
-			if account.Spec.Space.Limit != nil {
-				namespaceList := &corev1.NamespaceList{}
-				err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
-				if err != nil {
-					return nil, err
-				}
-
-				if len(namespaceList.Items) >= *account.Spec.Space.Limit {
-					return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.Space.Limit, account.Name))
-				}
-			}
-
-			// Apply namespace annotations & labels
-			if account.Spec.Space.SpaceTemplate.Labels != nil {
-				space.ObjectMeta.Labels = account.Spec.Space.SpaceTemplate.Labels
-			}
-			if account.Spec.Space.SpaceTemplate.Annotations != nil {
-				space.ObjectMeta.Annotations = account.Spec.Space.SpaceTemplate.Annotations
-			}
-
-			canCreate = true
+		// check if user is part of account
+		if util.IsUserPartOfAccount(userInfo, account) == false {
+			return nil, fmt.Errorf("user " + userInfo.GetName() + " is not part of the account")
 		}
 	}
 
-	if canCreate == false {
-		return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("user is not allowed to create space"))
+	// Check if account is at limit
+	if account.Spec.Space.Limit != nil {
+		namespaceList := &corev1.NamespaceList{}
+		err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
+		if err != nil {
+			return nil, err
+		}
+
+		if len(namespaceList.Items) >= *account.Spec.Space.Limit {
+			return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.Space.Limit, account.Name))
+		}
+	}
+
+	// Apply namespace annotations & labels
+	if account.Spec.Space.SpaceTemplate.Labels != nil {
+		if space.ObjectMeta.Labels == nil {
+			space.ObjectMeta.Labels = map[string]string{}
+		}
+		for k, v := range account.Spec.Space.SpaceTemplate.Labels {
+			space.ObjectMeta.Labels[k] = v
+		}
+	}
+	if account.Spec.Space.SpaceTemplate.Annotations != nil {
+		if space.ObjectMeta.Annotations == nil {
+			space.ObjectMeta.Annotations = map[string]string{}
+		}
+		for k, v := range account.Spec.Space.SpaceTemplate.Annotations {
+			space.ObjectMeta.Annotations[k] = v
+		}
 	}
 
 	// Create the target namespace
 	namespace := ConvertSpace(space)
 	if len(options.DryRun) == 0 && account != nil {
-		namespace.Annotations[tenancy.SpaceAnnotationInitializing] = "true"
-		err = r.client.Create(ctx, namespace, &client.CreateOptions{
+		namespace.Annotations[constants.SpaceAnnotationInitializing] = "true"
+		err := r.client.Create(ctx, namespace, &client.CreateOptions{
 			Raw: options,
 		})
 		if err != nil {
@@ -289,7 +222,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 			return nil, err
 		}
 	} else {
-		err = r.client.Create(ctx, namespace, &client.CreateOptions{
+		err := r.client.Create(ctx, namespace, &client.CreateOptions{
 			Raw: options,
 		})
 		if err != nil {
@@ -298,7 +231,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 	}
 
 	// Wait till we have the namespace in the cache
-	err = r.waitForAccess(ctx, namespace.Name)
+	err := r.waitForAccess(ctx, namespace.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +309,7 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	}
 
 	// Update namespace intialization
-	delete(namespace.Annotations, tenancy.SpaceAnnotationInitializing)
+	delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
 	err = r.client.Update(ctx, namespace)
 	if err != nil {
 		return err
@@ -385,7 +318,7 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	return nil
 }
 
-// waitForAccess blocks until the apiserver says the user has access to the namespace
+// waitForAccess blocks until the namespace is created and in our cache
 func (r *spaceStorage) waitForAccess(ctx context.Context, namespace string) error {
 	backoff := retry.DefaultBackoff
 	backoff.Steps = 6 // this effectively waits for 6-ish seconds
@@ -409,38 +342,21 @@ var _ = rest.Updater(&spaceStorage{})
 var _ = rest.CreaterUpdater(&spaceStorage{})
 
 func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.UpdatedObjectInfo, createValidation rest.ValidateObjectFunc, updateValidation rest.ValidateObjectUpdateFunc, forceAllowCreate bool, options *metav1.UpdateOptions) (runtime.Object, bool, error) {
-	user, ok := request.UserFrom(ctx)
-	if !ok {
-		return nil, false, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("unable to create space without a user on the context"))
-	}
-
-	namespaces, err := r.authCache.GetNamespacesForUser(user, "update")
+	a, err := filters.GetAuthorizerAttributes(ctx)
 	if err != nil {
 		return nil, false, err
 	}
 
-	allowed := false
-	if len(namespaces) > 0 {
-		for _, n := range namespaces {
-			if n == rbacv1.ResourceAll || n == name {
-				allowed = true
-				break
-			}
-		}
-	}
-
-	if allowed == false {
-		return nil, false, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("user is not allowed to update space"))
+	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	if err != nil {
+		return nil, false, err
+	} else if decision != authorizer.DecisionAllow {
+		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(reason))
 	}
 
 	oldObj, err := r.Get(ctx, name, nil)
 	if err != nil {
 		return nil, false, err
-	}
-
-	oldSpace, ok := oldObj.(*tenancy.Space)
-	if !ok {
-		return nil, false, fmt.Errorf("Old object is not a space")
 	}
 
 	newObj, err := objInfo.UpdatedObject(ctx, oldObj)
@@ -453,17 +369,10 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, fmt.Errorf("New object is not a space")
 	}
 
-	errs := validation.ValidateSpaceUpdate(newSpace, oldSpace)
-	if len(errs) > 0 {
-		return nil, false, kerrors.NewInvalid(tenancy.Kind("Space"), newSpace.Name, errs)
-	}
-	err = updateValidation(ctx, newObj, oldObj)
-	if err != nil {
-		return nil, false, err
-	}
-
 	namespace := ConvertSpace(newSpace)
-	err = r.client.Update(ctx, namespace)
+	err = r.client.Update(ctx, namespace, &client.UpdateOptions{
+		Raw: options,
+	})
 	if err != nil {
 		return nil, false, err
 	}
@@ -474,28 +383,16 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 var _ = rest.GracefulDeleter(&spaceStorage{})
 
 func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation rest.ValidateObjectFunc, options *metav1.DeleteOptions) (runtime.Object, bool, error) {
-	user, ok := request.UserFrom(ctx)
-	if !ok {
-		return nil, false, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("unable to create space without a user on the context"))
-	}
-
-	namespaces, err := r.authCache.GetNamespacesForUser(user, "delete")
+	a, err := filters.GetAuthorizerAttributes(ctx)
 	if err != nil {
 		return nil, false, err
 	}
 
-	allowed := false
-	if len(namespaces) > 0 {
-		for _, n := range namespaces {
-			if n == rbacv1.ResourceAll || n == name {
-				allowed = true
-				break
-			}
-		}
-	}
-
-	if allowed == false {
-		return nil, false, kerrors.NewForbidden(tenancy.Resource("spaces"), name, fmt.Errorf("user is not allowed to delete space"))
+	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	if err != nil {
+		return nil, false, err
+	} else if decision != authorizer.DecisionAllow {
+		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(reason))
 	}
 
 	namespace := &corev1.Namespace{}

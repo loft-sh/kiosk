@@ -18,8 +18,8 @@ package events
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/util"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -69,7 +69,7 @@ func (e *NamespaceEventHandler) handleEvent(meta metav1.Object, q workqueue.Rate
 		return
 	}
 
-	if owner, ok := labels[tenancy.SpaceLabelAccount]; ok && owner != "" {
+	if owner, ok := labels[constants.SpaceLabelAccount]; ok && owner != "" {
 		q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
 			Name: owner,
 		}})

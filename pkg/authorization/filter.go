@@ -2,6 +2,7 @@ package authorization
 
 import (
 	"context"
+	"github.com/kiosk-sh/kiosk/vendor/k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -11,7 +12,7 @@ import (
 )
 
 type FilteredLister interface {
-	List(ctx context.Context, list runtime.Object, options *metainternalversion.ListOptions) (runtime.Object, error)
+	List(ctx context.Context, list runtime.Object, groupVersion schema.GroupVersion, options *metainternalversion.ListOptions) (runtime.Object, error)
 }
 
 func NewFilteredLister(client client.Client, authorizer authorizer.Authorizer) FilteredLister {
@@ -26,7 +27,7 @@ type filter struct {
 	authorizer authorizer.Authorizer
 }
 
-func (f *filter) List(ctx context.Context, list runtime.Object, options *metainternalversion.ListOptions) (runtime.Object, error) {
+func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion schema.GroupVersion, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	a, err := filters.GetAuthorizerAttributes(ctx)
 	if err != nil {
 		return nil, err
@@ -53,8 +54,8 @@ func (f *filter) List(ctx context.Context, list runtime.Object, options *metaint
 			User:            a.GetUser(),
 			Verb:            "get",
 			Namespace:       a.GetNamespace(),
-			APIGroup:        a.GetAPIGroup(),
-			APIVersion:      a.GetAPIVersion(),
+			APIGroup:        groupVersion.Group,
+			APIVersion:      groupVersion.Version,
 			Resource:        a.GetResource(),
 			Subresource:     a.GetSubresource(),
 			ResourceRequest: a.IsResourceRequest(),
@@ -69,6 +70,7 @@ func (f *filter) List(ctx context.Context, list runtime.Object, options *metaint
 			}
 
 			attributes.Name = m.GetName()
+			// TODO: change because group version is different?
 			attributes.Path = a.GetPath() + "/" + m.GetName()
 
 			d, _, err := f.authorizer.Authorize(ctx, attributes)

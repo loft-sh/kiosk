@@ -14,33 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package auth
+package subject
 
 import (
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 )
 
-var (
-
-	// UserPrefix is used to prefix users for the index
-	UserPrefix = "user:"
-	// GroupPrefix is used to prefix groups for the index
-	GroupPrefix = "group:"
-)
-
 // ConvertSubject converts the given subject into an unqiue id string
 func ConvertSubject(namespace string, subject *rbacv1.Subject) string {
-	// if subject.APIGroup != rbacv1.GroupName {
-	//	return ""
-	// }
-
 	switch subject.Kind {
 	case rbacv1.UserKind:
-		return UserPrefix + subject.Name
+		return constants.UserPrefix + subject.Name
 
 	case rbacv1.GroupKind:
-		return GroupPrefix + subject.Name
+		return constants.GroupPrefix + subject.Name
 
 	case rbacv1.ServiceAccountKind:
 		saNamespace := namespace
@@ -51,7 +40,7 @@ func ConvertSubject(namespace string, subject *rbacv1.Subject) string {
 			return ""
 		}
 
-		return UserPrefix + serviceaccount.MakeUsername(saNamespace, subject.Name)
+		return constants.UserPrefix + serviceaccount.MakeUsername(saNamespace, subject.Name)
 	default:
 	}
 

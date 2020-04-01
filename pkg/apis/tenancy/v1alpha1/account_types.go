@@ -26,7 +26,7 @@ import (
 
 // Account
 // +k8s:openapi-gen=true
-// +resource:path=accounts,strategy=AccountStrategy
+// +resource:path=accounts,rest=AccountREST
 type Account struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

@@ -6,16 +6,7 @@ replicaCount: 1
 
 manager:
   command: 
-  - /manager
-  args: []
-  resources:
-    requests:
-      memory: 128Mi
-      cpu: 50m
-
-apiserver:
-  command:
-  - /apiserver
+  - /kiosk
   args: []
   resources:
     requests:
