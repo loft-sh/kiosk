@@ -26,6 +26,7 @@ import (
 )
 
 type templateInstanceContollerTest struct {
+	name             string
 	template         *configv1alpha1.Template
 	templateInstance *configv1alpha1.TemplateInstance
 	helmOutput       []runtime.Object
@@ -81,8 +82,9 @@ func TestTemplateInstanceController(t *testing.T) {
 	}
 
 	scheme := testingutil.NewScheme()
-	tests := map[string]*templateInstanceContollerTest{
-		"Simple pod": &templateInstanceContollerTest{
+	tests := []*templateInstanceContollerTest{
+		&templateInstanceContollerTest{
+			name:             "Simple pod",
 			templateInstance: testTemplateInstance.DeepCopy(),
 			template: &configv1alpha1.Template{
 				ObjectMeta: metav1.ObjectMeta{
@@ -112,7 +114,8 @@ func TestTemplateInstanceController(t *testing.T) {
 				},
 			},
 		},
-		"Simple helm": &templateInstanceContollerTest{
+		&templateInstanceContollerTest{
+			name:             "Simple helm",
 			templateInstance: testTemplateInstance.DeepCopy(),
 			template: &configv1alpha1.Template{
 				ObjectMeta: metav1.ObjectMeta{
@@ -141,7 +144,8 @@ func TestTemplateInstanceController(t *testing.T) {
 				},
 			},
 		},
-		"Failed": &templateInstanceContollerTest{
+		&templateInstanceContollerTest{
+			name:             "Failed",
 			isFailed:         true,
 			templateInstance: testTemplateInstance.DeepCopy(),
 			template: &configv1alpha1.Template{
@@ -157,8 +161,8 @@ func TestTemplateInstanceController(t *testing.T) {
 		},
 	}
 
-	for testName, test := range tests {
-		fakeClient := testingutil.NewFakeClient(scheme, test.template, test.templateInstance)
+	for _, test := range tests {
+		fakeClient := testingutil.NewFakeClient(scheme, test.template.DeepCopy(), test.templateInstance.DeepCopy())
 		fakeHelmRunner := &fakeHelmRunner{
 			out: test.helmOutput,
 			err: test.helmError,
@@ -178,15 +182,15 @@ func TestTemplateInstanceController(t *testing.T) {
 		}
 
 		// Check if the status is equal
-		err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: test.templateInstance.Name}, test.templateInstance)
+		err := fakeClient.Get(context.TODO(), types.NamespacedName{Name: test.templateInstance.Name, Namespace: test.templateInstance.Namespace}, test.templateInstance)
 		if err != nil {
-			t.Fatal(err)
+			t.Fatalf("Test %s: %v", test.name, err)
 		}
 		if test.isFailed == false && test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusDeployed {
-			t.Fatalf("Test %s: unexpected template instance status: %s", testName, test.templateInstance.Status.Status)
+			t.Fatalf("Test %s: unexpected template instance status: %s", test.name, test.templateInstance.Status.Status)
 		}
 		if test.isFailed == true && test.templateInstance.Status.Status != configv1alpha1.TemplateInstanceDeploymentStatusFailed {
-			t.Fatalf("Test %s: expected failed status, but got status %s and error %v", testName, test.templateInstance.Status.Status, reconcileError)
+			t.Fatalf("Test %s: expected failed status, but got status %s and error %v", test.name, test.templateInstance.Status.Status, reconcileError)
 		}
 
 		// Check if the runtime objects exist
@@ -198,7 +202,7 @@ func TestTemplateInstanceController(t *testing.T) {
 
 			err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, o)
 			if err != nil {
-				t.Fatalf("Test %s: expected no error retrieving %s/%s, but got %v", testName, obj.Namespace, obj.Name, err)
+				t.Fatalf("Test %s: expected no error retrieving %s/%s, but got %v", test.name, obj.Namespace, obj.Name, err)
 			}
 		}
 	}
@@ -210,7 +214,6 @@ type fakeMerger struct {
 
 func (f *fakeMerger) Merge(oldManifests, newManifests string) error {
 	fmt.Println(newManifests)
-
 	unstructured, err := convert.StringToUnstructuredArray(newManifests)
 	if err != nil {
 		return err

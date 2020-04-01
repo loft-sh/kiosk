@@ -36,6 +36,7 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion sch
 
 	err = f.client.List(ctx, list, &client.ListOptions{
 		LabelSelector: options.LabelSelector,
+		// TODO: support this, since it is currently not supported by the underlying cache implementation
 		// FieldSelector: options.FieldSelector,
 		Namespace: a.GetNamespace(),
 		Limit:     options.Limit,

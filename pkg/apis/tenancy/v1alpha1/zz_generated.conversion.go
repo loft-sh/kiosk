@@ -24,8 +24,7 @@ import (
 	unsafe "unsafe"
 
 	tenancy "github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -57,36 +56,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*AccountNamespaceStatus)(nil), (*tenancy.AccountNamespaceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_AccountNamespaceStatus_To_tenancy_AccountNamespaceStatus(a.(*AccountNamespaceStatus), b.(*tenancy.AccountNamespaceStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*tenancy.AccountNamespaceStatus)(nil), (*AccountNamespaceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_tenancy_AccountNamespaceStatus_To_v1alpha1_AccountNamespaceStatus(a.(*tenancy.AccountNamespaceStatus), b.(*AccountNamespaceStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*AccountSpace)(nil), (*tenancy.AccountSpace)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_AccountSpace_To_tenancy_AccountSpace(a.(*AccountSpace), b.(*tenancy.AccountSpace), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*tenancy.AccountSpace)(nil), (*AccountSpace)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_tenancy_AccountSpace_To_v1alpha1_AccountSpace(a.(*tenancy.AccountSpace), b.(*AccountSpace), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*AccountSpaceTemplate)(nil), (*tenancy.AccountSpaceTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate(a.(*AccountSpaceTemplate), b.(*tenancy.AccountSpaceTemplate), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*tenancy.AccountSpaceTemplate)(nil), (*AccountSpaceTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate(a.(*tenancy.AccountSpaceTemplate), b.(*AccountSpaceTemplate), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*AccountSpec)(nil), (*tenancy.AccountSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_AccountSpec_To_tenancy_AccountSpec(a.(*AccountSpec), b.(*tenancy.AccountSpec), scope)
 	}); err != nil {
@@ -104,16 +73,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*tenancy.AccountStatus)(nil), (*AccountStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_tenancy_AccountStatus_To_v1alpha1_AccountStatus(a.(*tenancy.AccountStatus), b.(*AccountStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*AccountTemplateInstanceTemplate)(nil), (*tenancy.AccountTemplateInstanceTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_AccountTemplateInstanceTemplate_To_tenancy_AccountTemplateInstanceTemplate(a.(*AccountTemplateInstanceTemplate), b.(*tenancy.AccountTemplateInstanceTemplate), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*tenancy.AccountTemplateInstanceTemplate)(nil), (*AccountTemplateInstanceTemplate)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_tenancy_AccountTemplateInstanceTemplate_To_v1alpha1_AccountTemplateInstanceTemplate(a.(*tenancy.AccountTemplateInstanceTemplate), b.(*AccountTemplateInstanceTemplate), scope)
 	}); err != nil {
 		return err
 	}
@@ -154,16 +113,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*tenancy.SpaceStatus)(nil), (*SpaceStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus(a.(*tenancy.SpaceStatus), b.(*SpaceStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*TemplateInstanceSpec)(nil), (*tenancy.TemplateInstanceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(a.(*TemplateInstanceSpec), b.(*tenancy.TemplateInstanceSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*tenancy.TemplateInstanceSpec)(nil), (*TemplateInstanceSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(a.(*tenancy.TemplateInstanceSpec), b.(*TemplateInstanceSpec), scope)
 	}); err != nil {
 		return err
 	}
@@ -224,81 +173,8 @@ func Convert_tenancy_AccountList_To_v1alpha1_AccountList(in *tenancy.AccountList
 	return autoConvert_tenancy_AccountList_To_v1alpha1_AccountList(in, out, s)
 }
 
-func autoConvert_v1alpha1_AccountNamespaceStatus_To_tenancy_AccountNamespaceStatus(in *AccountNamespaceStatus, out *tenancy.AccountNamespaceStatus, s conversion.Scope) error {
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_v1alpha1_AccountNamespaceStatus_To_tenancy_AccountNamespaceStatus is an autogenerated conversion function.
-func Convert_v1alpha1_AccountNamespaceStatus_To_tenancy_AccountNamespaceStatus(in *AccountNamespaceStatus, out *tenancy.AccountNamespaceStatus, s conversion.Scope) error {
-	return autoConvert_v1alpha1_AccountNamespaceStatus_To_tenancy_AccountNamespaceStatus(in, out, s)
-}
-
-func autoConvert_tenancy_AccountNamespaceStatus_To_v1alpha1_AccountNamespaceStatus(in *tenancy.AccountNamespaceStatus, out *AccountNamespaceStatus, s conversion.Scope) error {
-	out.Name = in.Name
-	return nil
-}
-
-// Convert_tenancy_AccountNamespaceStatus_To_v1alpha1_AccountNamespaceStatus is an autogenerated conversion function.
-func Convert_tenancy_AccountNamespaceStatus_To_v1alpha1_AccountNamespaceStatus(in *tenancy.AccountNamespaceStatus, out *AccountNamespaceStatus, s conversion.Scope) error {
-	return autoConvert_tenancy_AccountNamespaceStatus_To_v1alpha1_AccountNamespaceStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_AccountSpace_To_tenancy_AccountSpace(in *AccountSpace, out *tenancy.AccountSpace, s conversion.Scope) error {
-	out.ClusterRole = (*string)(unsafe.Pointer(in.ClusterRole))
-	out.Limit = (*int)(unsafe.Pointer(in.Limit))
-	out.TemplateInstances = *(*[]tenancy.AccountTemplateInstanceTemplate)(unsafe.Pointer(&in.TemplateInstances))
-	if err := Convert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate(&in.SpaceTemplate, &out.SpaceTemplate, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_AccountSpace_To_tenancy_AccountSpace is an autogenerated conversion function.
-func Convert_v1alpha1_AccountSpace_To_tenancy_AccountSpace(in *AccountSpace, out *tenancy.AccountSpace, s conversion.Scope) error {
-	return autoConvert_v1alpha1_AccountSpace_To_tenancy_AccountSpace(in, out, s)
-}
-
-func autoConvert_tenancy_AccountSpace_To_v1alpha1_AccountSpace(in *tenancy.AccountSpace, out *AccountSpace, s conversion.Scope) error {
-	out.ClusterRole = (*string)(unsafe.Pointer(in.ClusterRole))
-	out.Limit = (*int)(unsafe.Pointer(in.Limit))
-	out.TemplateInstances = *(*[]AccountTemplateInstanceTemplate)(unsafe.Pointer(&in.TemplateInstances))
-	if err := Convert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate(&in.SpaceTemplate, &out.SpaceTemplate, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_tenancy_AccountSpace_To_v1alpha1_AccountSpace is an autogenerated conversion function.
-func Convert_tenancy_AccountSpace_To_v1alpha1_AccountSpace(in *tenancy.AccountSpace, out *AccountSpace, s conversion.Scope) error {
-	return autoConvert_tenancy_AccountSpace_To_v1alpha1_AccountSpace(in, out, s)
-}
-
-func autoConvert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate(in *AccountSpaceTemplate, out *tenancy.AccountSpaceTemplate, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	return nil
-}
-
-// Convert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate is an autogenerated conversion function.
-func Convert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate(in *AccountSpaceTemplate, out *tenancy.AccountSpaceTemplate, s conversion.Scope) error {
-	return autoConvert_v1alpha1_AccountSpaceTemplate_To_tenancy_AccountSpaceTemplate(in, out, s)
-}
-
-func autoConvert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate(in *tenancy.AccountSpaceTemplate, out *AccountSpaceTemplate, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	return nil
-}
-
-// Convert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate is an autogenerated conversion function.
-func Convert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate(in *tenancy.AccountSpaceTemplate, out *AccountSpaceTemplate, s conversion.Scope) error {
-	return autoConvert_tenancy_AccountSpaceTemplate_To_v1alpha1_AccountSpaceTemplate(in, out, s)
-}
-
 func autoConvert_v1alpha1_AccountSpec_To_tenancy_AccountSpec(in *AccountSpec, out *tenancy.AccountSpec, s conversion.Scope) error {
-	if err := Convert_v1alpha1_AccountSpace_To_tenancy_AccountSpace(&in.Space, &out.Space, s); err != nil {
-		return err
-	}
-	out.Subjects = *(*[]v1.Subject)(unsafe.Pointer(&in.Subjects))
+	out.AccountSpec = in.AccountSpec
 	return nil
 }
 
@@ -308,10 +184,7 @@ func Convert_v1alpha1_AccountSpec_To_tenancy_AccountSpec(in *AccountSpec, out *t
 }
 
 func autoConvert_tenancy_AccountSpec_To_v1alpha1_AccountSpec(in *tenancy.AccountSpec, out *AccountSpec, s conversion.Scope) error {
-	if err := Convert_tenancy_AccountSpace_To_v1alpha1_AccountSpace(&in.Space, &out.Space, s); err != nil {
-		return err
-	}
-	out.Subjects = *(*[]v1.Subject)(unsafe.Pointer(&in.Subjects))
+	out.AccountSpec = in.AccountSpec
 	return nil
 }
 
@@ -321,7 +194,7 @@ func Convert_tenancy_AccountSpec_To_v1alpha1_AccountSpec(in *tenancy.AccountSpec
 }
 
 func autoConvert_v1alpha1_AccountStatus_To_tenancy_AccountStatus(in *AccountStatus, out *tenancy.AccountStatus, s conversion.Scope) error {
-	out.Namespaces = *(*[]tenancy.AccountNamespaceStatus)(unsafe.Pointer(&in.Namespaces))
+	out.AccountStatus = in.AccountStatus
 	return nil
 }
 
@@ -331,39 +204,13 @@ func Convert_v1alpha1_AccountStatus_To_tenancy_AccountStatus(in *AccountStatus, 
 }
 
 func autoConvert_tenancy_AccountStatus_To_v1alpha1_AccountStatus(in *tenancy.AccountStatus, out *AccountStatus, s conversion.Scope) error {
-	out.Namespaces = *(*[]AccountNamespaceStatus)(unsafe.Pointer(&in.Namespaces))
+	out.AccountStatus = in.AccountStatus
 	return nil
 }
 
 // Convert_tenancy_AccountStatus_To_v1alpha1_AccountStatus is an autogenerated conversion function.
 func Convert_tenancy_AccountStatus_To_v1alpha1_AccountStatus(in *tenancy.AccountStatus, out *AccountStatus, s conversion.Scope) error {
 	return autoConvert_tenancy_AccountStatus_To_v1alpha1_AccountStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_AccountTemplateInstanceTemplate_To_tenancy_AccountTemplateInstanceTemplate(in *AccountTemplateInstanceTemplate, out *tenancy.AccountTemplateInstanceTemplate, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_v1alpha1_AccountTemplateInstanceTemplate_To_tenancy_AccountTemplateInstanceTemplate is an autogenerated conversion function.
-func Convert_v1alpha1_AccountTemplateInstanceTemplate_To_tenancy_AccountTemplateInstanceTemplate(in *AccountTemplateInstanceTemplate, out *tenancy.AccountTemplateInstanceTemplate, s conversion.Scope) error {
-	return autoConvert_v1alpha1_AccountTemplateInstanceTemplate_To_tenancy_AccountTemplateInstanceTemplate(in, out, s)
-}
-
-func autoConvert_tenancy_AccountTemplateInstanceTemplate_To_v1alpha1_AccountTemplateInstanceTemplate(in *tenancy.AccountTemplateInstanceTemplate, out *AccountTemplateInstanceTemplate, s conversion.Scope) error {
-	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-// Convert_tenancy_AccountTemplateInstanceTemplate_To_v1alpha1_AccountTemplateInstanceTemplate is an autogenerated conversion function.
-func Convert_tenancy_AccountTemplateInstanceTemplate_To_v1alpha1_AccountTemplateInstanceTemplate(in *tenancy.AccountTemplateInstanceTemplate, out *AccountTemplateInstanceTemplate, s conversion.Scope) error {
-	return autoConvert_tenancy_AccountTemplateInstanceTemplate_To_v1alpha1_AccountTemplateInstanceTemplate(in, out, s)
 }
 
 func autoConvert_v1alpha1_Space_To_tenancy_Space(in *Space, out *tenancy.Space, s conversion.Scope) error {
@@ -422,7 +269,7 @@ func Convert_tenancy_SpaceList_To_v1alpha1_SpaceList(in *tenancy.SpaceList, out 
 
 func autoConvert_v1alpha1_SpaceSpec_To_tenancy_SpaceSpec(in *SpaceSpec, out *tenancy.SpaceSpec, s conversion.Scope) error {
 	out.Account = in.Account
-	out.Finalizers = *(*[]corev1.FinalizerName)(unsafe.Pointer(&in.Finalizers))
+	out.Finalizers = *(*[]v1.FinalizerName)(unsafe.Pointer(&in.Finalizers))
 	return nil
 }
 
@@ -433,7 +280,7 @@ func Convert_v1alpha1_SpaceSpec_To_tenancy_SpaceSpec(in *SpaceSpec, out *tenancy
 
 func autoConvert_tenancy_SpaceSpec_To_v1alpha1_SpaceSpec(in *tenancy.SpaceSpec, out *SpaceSpec, s conversion.Scope) error {
 	out.Account = in.Account
-	out.Finalizers = *(*[]corev1.FinalizerName)(unsafe.Pointer(&in.Finalizers))
+	out.Finalizers = *(*[]v1.FinalizerName)(unsafe.Pointer(&in.Finalizers))
 	return nil
 }
 
@@ -443,7 +290,7 @@ func Convert_tenancy_SpaceSpec_To_v1alpha1_SpaceSpec(in *tenancy.SpaceSpec, out 
 }
 
 func autoConvert_v1alpha1_SpaceStatus_To_tenancy_SpaceStatus(in *SpaceStatus, out *tenancy.SpaceStatus, s conversion.Scope) error {
-	out.Phase = corev1.NamespacePhase(in.Phase)
+	out.Phase = v1.NamespacePhase(in.Phase)
 	return nil
 }
 
@@ -453,33 +300,11 @@ func Convert_v1alpha1_SpaceStatus_To_tenancy_SpaceStatus(in *SpaceStatus, out *t
 }
 
 func autoConvert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus(in *tenancy.SpaceStatus, out *SpaceStatus, s conversion.Scope) error {
-	out.Phase = corev1.NamespacePhase(in.Phase)
+	out.Phase = v1.NamespacePhase(in.Phase)
 	return nil
 }
 
 // Convert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus is an autogenerated conversion function.
 func Convert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus(in *tenancy.SpaceStatus, out *SpaceStatus, s conversion.Scope) error {
 	return autoConvert_tenancy_SpaceStatus_To_v1alpha1_SpaceStatus(in, out, s)
-}
-
-func autoConvert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(in *TemplateInstanceSpec, out *tenancy.TemplateInstanceSpec, s conversion.Scope) error {
-	out.Template = in.Template
-	out.Sync = in.Sync
-	return nil
-}
-
-// Convert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec is an autogenerated conversion function.
-func Convert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(in *TemplateInstanceSpec, out *tenancy.TemplateInstanceSpec, s conversion.Scope) error {
-	return autoConvert_v1alpha1_TemplateInstanceSpec_To_tenancy_TemplateInstanceSpec(in, out, s)
-}
-
-func autoConvert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(in *tenancy.TemplateInstanceSpec, out *TemplateInstanceSpec, s conversion.Scope) error {
-	out.Template = in.Template
-	out.Sync = in.Sync
-	return nil
-}
-
-// Convert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec is an autogenerated conversion function.
-func Convert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(in *tenancy.TemplateInstanceSpec, out *TemplateInstanceSpec, s conversion.Scope) error {
-	return autoConvert_tenancy_TemplateInstanceSpec_To_v1alpha1_TemplateInstanceSpec(in, out, s)
 }

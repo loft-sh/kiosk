@@ -22,8 +22,8 @@ import (
 	"context"
 	"fmt"
 
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -125,33 +125,12 @@ type Account struct {
 	Status AccountStatus
 }
 
-type AccountNamespaceStatus struct {
-	Name string
-}
-
-type AccountSpace struct {
-	ClusterRole       *string
-	Limit             *int
-	TemplateInstances []AccountTemplateInstanceTemplate
-	SpaceTemplate     AccountSpaceTemplate
-}
-
-type AccountSpaceTemplate struct {
-	metav1.ObjectMeta
-}
-
 type AccountSpec struct {
-	Space    AccountSpace
-	Subjects []rbacv1.Subject
+	configv1alpha1.AccountSpec
 }
 
 type AccountStatus struct {
-	Namespaces []AccountNamespaceStatus
-}
-
-type AccountTemplateInstanceTemplate struct {
-	metav1.ObjectMeta
-	Spec TemplateInstanceSpec
+	configv1alpha1.AccountStatus
 }
 
 // +genclient
@@ -172,11 +151,6 @@ type SpaceSpec struct {
 
 type SpaceStatus struct {
 	Phase corev1.NamespacePhase
-}
-
-type TemplateInstanceSpec struct {
-	Template string
-	Sync     bool
 }
 
 //

@@ -84,7 +84,6 @@ func main() {
 	injectClient(mgr.GetClient(), scheme)
 
 	// Add required indices
-	// TODO
 	err = controllers.AddManagerIndices(mgr.GetCache())
 	if err != nil {
 		setupLog.Error(err, "unable to set manager indices")

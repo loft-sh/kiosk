@@ -29,7 +29,6 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/util/convert"
 
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -64,7 +63,7 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	// Retrieve account
 	templateInstance := &configv1alpha1.TemplateInstance{}
 	if err := r.Get(ctx, req.NamespacedName, templateInstance); err != nil {
-		if errors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
 
@@ -190,8 +189,7 @@ func shouldSetOwner(templateInstance *configv1alpha1.TemplateInstance) bool {
 }
 
 func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) (ctrl.Result, error) {
-	r.Log.Info("Template instance failed: " + message)
-
+	r.Log.Info(fmt.Sprintf("Template instance %s/%s failed: %s", templateInstance.Namespace, templateInstance.Name, message))
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
 		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
 		Reason:                  reason,
@@ -200,7 +198,7 @@ func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInst
 		TemplateResourceVersion: templateInstance.Status.TemplateResourceVersion,
 	}
 
-	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, r.Status().Update(ctx, templateInstance)
+	return ctrl.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, r.Status().Update(ctx, templateInstance)
 }
 
 type templateMapper struct {

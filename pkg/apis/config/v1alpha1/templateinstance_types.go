@@ -70,10 +70,11 @@ const (
 	TemplateInstanceDeploymentStatusPending TemplateInstanceDeploymentStatus = ""
 )
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TemplateInstance is the Schema for the templatesinstance API
+// +k8s:openapi-gen=true
 type TemplateInstance struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -84,7 +85,7 @@ type TemplateInstance struct {
 	Status TemplateInstanceStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TemplateInstanceList contains a list of Account
 type TemplateInstanceList struct {

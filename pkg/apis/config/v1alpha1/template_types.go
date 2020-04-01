@@ -103,10 +103,11 @@ type HelmSetValue struct {
 	ForceString bool `json:"forceString,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Template is the Schema for the templates API
+// +k8s:openapi-gen=true
 type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -115,7 +116,7 @@ type Template struct {
 	Resources TemplateResources `json:"resources,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TemplateList contains a list of Account
 type TemplateList struct {
