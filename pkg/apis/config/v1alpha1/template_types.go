@@ -70,6 +70,10 @@ type HelmChartRepository struct {
 	// Name of the chart to deploy
 	Name string `json:"name"`
 
+	// Version is the version of the chart to deploy
+	// +optional
+	Version string `json:"version,omitempty"`
+
 	// The repo url to use
 	// +optional
 	RepoURL string `json:"repoUrl,omitempty"`
