@@ -55,6 +55,10 @@ func (h *helm) Template(client client.Client, name, namespace string, config *co
 	args = append(args, config.Chart.Repository.Name)
 	args = append(args, "--repo", config.Chart.Repository.RepoURL)
 	args = append(args, "--namespace", namespace)
+	if config.Chart.Repository.Version != "" {
+		args = append(args, "--version", config.Chart.Repository.Version)
+	}
+
 	if config.Chart.Repository.Username != nil {
 		username, err := readSecret(client, config.Chart.Repository.Username)
 		if err != nil {

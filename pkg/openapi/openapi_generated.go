@@ -1248,6 +1248,13 @@ func schema_pkg_apis_config_v1alpha1_HelmChartRepository(ref common.ReferenceCal
 							Format:      "",
 						},
 					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Version is the version of the chart to deploy",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"repoUrl": {
 						SchemaProps: spec.SchemaProps{
 							Description: "The repo url to use",
