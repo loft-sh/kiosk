@@ -31,7 +31,6 @@ import (
 // FakeTemplates implements TemplateInterface
 type FakeTemplates struct {
 	Fake *FakeConfigV1alpha1
-	ns   string
 }
 
 var templatesResource = schema.GroupVersionResource{Group: "config.kiosk.sh", Version: "v1alpha1", Resource: "templates"}
@@ -41,8 +40,7 @@ var templatesKind = schema.GroupVersionKind{Group: "config.kiosk.sh", Version: "
 // Get takes name of the template, and returns the corresponding template object, and an error if there is any.
 func (c *FakeTemplates) Get(name string, options v1.GetOptions) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(templatesResource, c.ns, name), &v1alpha1.Template{})
-
+		Invokes(testing.NewRootGetAction(templatesResource, name), &v1alpha1.Template{})
 	if obj == nil {
 		return nil, err
 	}
@@ -52,8 +50,7 @@ func (c *FakeTemplates) Get(name string, options v1.GetOptions) (result *v1alpha
 // List takes label and field selectors, and returns the list of Templates that match those selectors.
 func (c *FakeTemplates) List(opts v1.ListOptions) (result *v1alpha1.TemplateList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(templatesResource, templatesKind, c.ns, opts), &v1alpha1.TemplateList{})
-
+		Invokes(testing.NewRootListAction(templatesResource, templatesKind, opts), &v1alpha1.TemplateList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -74,15 +71,13 @@ func (c *FakeTemplates) List(opts v1.ListOptions) (result *v1alpha1.TemplateList
 // Watch returns a watch.Interface that watches the requested templates.
 func (c *FakeTemplates) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(templatesResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(templatesResource, opts))
 }
 
 // Create takes the representation of a template and creates it.  Returns the server's representation of the template, and an error, if there is any.
 func (c *FakeTemplates) Create(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(templatesResource, c.ns, template), &v1alpha1.Template{})
-
+		Invokes(testing.NewRootCreateAction(templatesResource, template), &v1alpha1.Template{})
 	if obj == nil {
 		return nil, err
 	}
@@ -92,8 +87,7 @@ func (c *FakeTemplates) Create(template *v1alpha1.Template) (result *v1alpha1.Te
 // Update takes the representation of a template and updates it. Returns the server's representation of the template, and an error, if there is any.
 func (c *FakeTemplates) Update(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(templatesResource, c.ns, template), &v1alpha1.Template{})
-
+		Invokes(testing.NewRootUpdateAction(templatesResource, template), &v1alpha1.Template{})
 	if obj == nil {
 		return nil, err
 	}
@@ -103,14 +97,13 @@ func (c *FakeTemplates) Update(template *v1alpha1.Template) (result *v1alpha1.Te
 // Delete takes name of the template and deletes it. Returns an error if one occurs.
 func (c *FakeTemplates) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(templatesResource, c.ns, name), &v1alpha1.Template{})
-
+		Invokes(testing.NewRootDeleteAction(templatesResource, name), &v1alpha1.Template{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeTemplates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(templatesResource, c.ns, listOptions)
+	action := testing.NewRootDeleteCollectionAction(templatesResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.TemplateList{})
 	return err
@@ -119,8 +112,7 @@ func (c *FakeTemplates) DeleteCollection(options *v1.DeleteOptions, listOptions 
 // Patch applies the patch and returns the patched template.
 func (c *FakeTemplates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(templatesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Template{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(templatesResource, name, pt, data, subresources...), &v1alpha1.Template{})
 	if obj == nil {
 		return nil, err
 	}

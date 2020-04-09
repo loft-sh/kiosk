@@ -48,7 +48,10 @@ var tenancyApiGroup = builders.NewApiGroupBuilder(
 	WithVersionedApis(
 		tenancyv1alpha1.ApiVersion,
 	).
-	WithRootScopedKinds()
+	WithRootScopedKinds(
+		"Account",
+		"Space",
+	)
 
 func GetTenancyAPIBuilder() *builders.APIGroupBuilder {
 	return tenancyApiGroup

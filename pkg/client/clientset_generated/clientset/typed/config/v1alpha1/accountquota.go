@@ -32,7 +32,7 @@ import (
 // AccountQuotasGetter has a method to return a AccountQuotaInterface.
 // A group's client should implement this interface.
 type AccountQuotasGetter interface {
-	AccountQuotas(namespace string) AccountQuotaInterface
+	AccountQuotas() AccountQuotaInterface
 }
 
 // AccountQuotaInterface has methods to work with AccountQuota resources.
@@ -52,14 +52,12 @@ type AccountQuotaInterface interface {
 // accountQuotas implements AccountQuotaInterface
 type accountQuotas struct {
 	client rest.Interface
-	ns     string
 }
 
 // newAccountQuotas returns a AccountQuotas
-func newAccountQuotas(c *ConfigV1alpha1Client, namespace string) *accountQuotas {
+func newAccountQuotas(c *ConfigV1alpha1Client) *accountQuotas {
 	return &accountQuotas{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -67,7 +65,6 @@ func newAccountQuotas(c *ConfigV1alpha1Client, namespace string) *accountQuotas 
 func (c *accountQuotas) Get(name string, options v1.GetOptions) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -84,7 +81,6 @@ func (c *accountQuotas) List(opts v1.ListOptions) (result *v1alpha1.AccountQuota
 	}
 	result = &v1alpha1.AccountQuotaList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -101,7 +97,6 @@ func (c *accountQuotas) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -112,7 +107,6 @@ func (c *accountQuotas) Watch(opts v1.ListOptions) (watch.Interface, error) {
 func (c *accountQuotas) Create(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		Body(accountQuota).
 		Do().
@@ -124,7 +118,6 @@ func (c *accountQuotas) Create(accountQuota *v1alpha1.AccountQuota) (result *v1a
 func (c *accountQuotas) Update(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		Name(accountQuota.Name).
 		Body(accountQuota).
@@ -139,7 +132,6 @@ func (c *accountQuotas) Update(accountQuota *v1alpha1.AccountQuota) (result *v1a
 func (c *accountQuotas) UpdateStatus(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		Name(accountQuota.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *accountQuotas) UpdateStatus(accountQuota *v1alpha1.AccountQuota) (resul
 // Delete takes name of the accountQuota and deletes it. Returns an error if one occurs.
 func (c *accountQuotas) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		Name(name).
 		Body(options).
@@ -167,7 +158,6 @@ func (c *accountQuotas) DeleteCollection(options *v1.DeleteOptions, listOptions 
 		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("accountquotas").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *accountQuotas) DeleteCollection(options *v1.DeleteOptions, listOptions 
 func (c *accountQuotas) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("accountquotas").
 		SubResource(subresources...).
 		Name(name).

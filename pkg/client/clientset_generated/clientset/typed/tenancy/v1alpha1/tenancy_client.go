@@ -35,12 +35,12 @@ type TenancyV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *TenancyV1alpha1Client) Accounts(namespace string) AccountInterface {
-	return newAccounts(c, namespace)
+func (c *TenancyV1alpha1Client) Accounts() AccountInterface {
+	return newAccounts(c)
 }
 
-func (c *TenancyV1alpha1Client) Spaces(namespace string) SpaceInterface {
-	return newSpaces(c, namespace)
+func (c *TenancyV1alpha1Client) Spaces() SpaceInterface {
+	return newSpaces(c)
 }
 
 // NewForConfig creates a new TenancyV1alpha1Client for the given config.

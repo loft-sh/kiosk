@@ -37,16 +37,16 @@ type ConfigV1alpha1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ConfigV1alpha1Client) Accounts(namespace string) AccountInterface {
-	return newAccounts(c, namespace)
+func (c *ConfigV1alpha1Client) Accounts() AccountInterface {
+	return newAccounts(c)
 }
 
-func (c *ConfigV1alpha1Client) AccountQuotas(namespace string) AccountQuotaInterface {
-	return newAccountQuotas(c, namespace)
+func (c *ConfigV1alpha1Client) AccountQuotas() AccountQuotaInterface {
+	return newAccountQuotas(c)
 }
 
-func (c *ConfigV1alpha1Client) Templates(namespace string) TemplateInterface {
-	return newTemplates(c, namespace)
+func (c *ConfigV1alpha1Client) Templates() TemplateInterface {
+	return newTemplates(c)
 }
 
 func (c *ConfigV1alpha1Client) TemplateInstances(namespace string) TemplateInstanceInterface {

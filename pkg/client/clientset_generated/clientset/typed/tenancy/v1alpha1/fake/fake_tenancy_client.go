@@ -28,12 +28,12 @@ type FakeTenancyV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeTenancyV1alpha1) Accounts(namespace string) v1alpha1.AccountInterface {
-	return &FakeAccounts{c, namespace}
+func (c *FakeTenancyV1alpha1) Accounts() v1alpha1.AccountInterface {
+	return &FakeAccounts{c}
 }
 
-func (c *FakeTenancyV1alpha1) Spaces(namespace string) v1alpha1.SpaceInterface {
-	return &FakeSpaces{c, namespace}
+func (c *FakeTenancyV1alpha1) Spaces() v1alpha1.SpaceInterface {
+	return &FakeSpaces{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

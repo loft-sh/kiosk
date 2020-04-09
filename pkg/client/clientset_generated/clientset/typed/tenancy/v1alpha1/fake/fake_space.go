@@ -31,7 +31,6 @@ import (
 // FakeSpaces implements SpaceInterface
 type FakeSpaces struct {
 	Fake *FakeTenancyV1alpha1
-	ns   string
 }
 
 var spacesResource = schema.GroupVersionResource{Group: "tenancy.kiosk.sh", Version: "v1alpha1", Resource: "spaces"}
@@ -41,8 +40,7 @@ var spacesKind = schema.GroupVersionKind{Group: "tenancy.kiosk.sh", Version: "v1
 // Get takes name of the space, and returns the corresponding space object, and an error if there is any.
 func (c *FakeSpaces) Get(name string, options v1.GetOptions) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(spacesResource, c.ns, name), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootGetAction(spacesResource, name), &v1alpha1.Space{})
 	if obj == nil {
 		return nil, err
 	}
@@ -52,8 +50,7 @@ func (c *FakeSpaces) Get(name string, options v1.GetOptions) (result *v1alpha1.S
 // List takes label and field selectors, and returns the list of Spaces that match those selectors.
 func (c *FakeSpaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(spacesResource, spacesKind, c.ns, opts), &v1alpha1.SpaceList{})
-
+		Invokes(testing.NewRootListAction(spacesResource, spacesKind, opts), &v1alpha1.SpaceList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -74,15 +71,13 @@ func (c *FakeSpaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err 
 // Watch returns a watch.Interface that watches the requested spaces.
 func (c *FakeSpaces) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(spacesResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(spacesResource, opts))
 }
 
 // Create takes the representation of a space and creates it.  Returns the server's representation of the space, and an error, if there is any.
 func (c *FakeSpaces) Create(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(spacesResource, c.ns, space), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootCreateAction(spacesResource, space), &v1alpha1.Space{})
 	if obj == nil {
 		return nil, err
 	}
@@ -92,8 +87,7 @@ func (c *FakeSpaces) Create(space *v1alpha1.Space) (result *v1alpha1.Space, err 
 // Update takes the representation of a space and updates it. Returns the server's representation of the space, and an error, if there is any.
 func (c *FakeSpaces) Update(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(spacesResource, c.ns, space), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootUpdateAction(spacesResource, space), &v1alpha1.Space{})
 	if obj == nil {
 		return nil, err
 	}
@@ -104,8 +98,7 @@ func (c *FakeSpaces) Update(space *v1alpha1.Space) (result *v1alpha1.Space, err 
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeSpaces) UpdateStatus(space *v1alpha1.Space) (*v1alpha1.Space, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(spacesResource, "status", c.ns, space), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootUpdateSubresourceAction(spacesResource, "status", space), &v1alpha1.Space{})
 	if obj == nil {
 		return nil, err
 	}
@@ -115,14 +108,13 @@ func (c *FakeSpaces) UpdateStatus(space *v1alpha1.Space) (*v1alpha1.Space, error
 // Delete takes name of the space and deletes it. Returns an error if one occurs.
 func (c *FakeSpaces) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(spacesResource, c.ns, name), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootDeleteAction(spacesResource, name), &v1alpha1.Space{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeSpaces) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(spacesResource, c.ns, listOptions)
+	action := testing.NewRootDeleteCollectionAction(spacesResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.SpaceList{})
 	return err
@@ -131,8 +123,7 @@ func (c *FakeSpaces) DeleteCollection(options *v1.DeleteOptions, listOptions v1.
 // Patch applies the patch and returns the patched space.
 func (c *FakeSpaces) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(spacesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Space{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(spacesResource, name, pt, data, subresources...), &v1alpha1.Space{})
 	if obj == nil {
 		return nil, err
 	}

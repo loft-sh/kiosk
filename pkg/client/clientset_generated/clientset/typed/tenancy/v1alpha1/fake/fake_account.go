@@ -31,7 +31,6 @@ import (
 // FakeAccounts implements AccountInterface
 type FakeAccounts struct {
 	Fake *FakeTenancyV1alpha1
-	ns   string
 }
 
 var accountsResource = schema.GroupVersionResource{Group: "tenancy.kiosk.sh", Version: "v1alpha1", Resource: "accounts"}
@@ -41,8 +40,7 @@ var accountsKind = schema.GroupVersionKind{Group: "tenancy.kiosk.sh", Version: "
 // Get takes name of the account, and returns the corresponding account object, and an error if there is any.
 func (c *FakeAccounts) Get(name string, options v1.GetOptions) (result *v1alpha1.Account, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(accountsResource, c.ns, name), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootGetAction(accountsResource, name), &v1alpha1.Account{})
 	if obj == nil {
 		return nil, err
 	}
@@ -52,8 +50,7 @@ func (c *FakeAccounts) Get(name string, options v1.GetOptions) (result *v1alpha1
 // List takes label and field selectors, and returns the list of Accounts that match those selectors.
 func (c *FakeAccounts) List(opts v1.ListOptions) (result *v1alpha1.AccountList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(accountsResource, accountsKind, c.ns, opts), &v1alpha1.AccountList{})
-
+		Invokes(testing.NewRootListAction(accountsResource, accountsKind, opts), &v1alpha1.AccountList{})
 	if obj == nil {
 		return nil, err
 	}
@@ -74,15 +71,13 @@ func (c *FakeAccounts) List(opts v1.ListOptions) (result *v1alpha1.AccountList, 
 // Watch returns a watch.Interface that watches the requested accounts.
 func (c *FakeAccounts) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(accountsResource, c.ns, opts))
-
+		InvokesWatch(testing.NewRootWatchAction(accountsResource, opts))
 }
 
 // Create takes the representation of a account and creates it.  Returns the server's representation of the account, and an error, if there is any.
 func (c *FakeAccounts) Create(account *v1alpha1.Account) (result *v1alpha1.Account, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(accountsResource, c.ns, account), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootCreateAction(accountsResource, account), &v1alpha1.Account{})
 	if obj == nil {
 		return nil, err
 	}
@@ -92,8 +87,7 @@ func (c *FakeAccounts) Create(account *v1alpha1.Account) (result *v1alpha1.Accou
 // Update takes the representation of a account and updates it. Returns the server's representation of the account, and an error, if there is any.
 func (c *FakeAccounts) Update(account *v1alpha1.Account) (result *v1alpha1.Account, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(accountsResource, c.ns, account), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootUpdateAction(accountsResource, account), &v1alpha1.Account{})
 	if obj == nil {
 		return nil, err
 	}
@@ -104,8 +98,7 @@ func (c *FakeAccounts) Update(account *v1alpha1.Account) (result *v1alpha1.Accou
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
 func (c *FakeAccounts) UpdateStatus(account *v1alpha1.Account) (*v1alpha1.Account, error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(accountsResource, "status", c.ns, account), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootUpdateSubresourceAction(accountsResource, "status", account), &v1alpha1.Account{})
 	if obj == nil {
 		return nil, err
 	}
@@ -115,14 +108,13 @@ func (c *FakeAccounts) UpdateStatus(account *v1alpha1.Account) (*v1alpha1.Accoun
 // Delete takes name of the account and deletes it. Returns an error if one occurs.
 func (c *FakeAccounts) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(accountsResource, c.ns, name), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootDeleteAction(accountsResource, name), &v1alpha1.Account{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
 func (c *FakeAccounts) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(accountsResource, c.ns, listOptions)
+	action := testing.NewRootDeleteCollectionAction(accountsResource, listOptions)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.AccountList{})
 	return err
@@ -131,8 +123,7 @@ func (c *FakeAccounts) DeleteCollection(options *v1.DeleteOptions, listOptions v
 // Patch applies the patch and returns the patched account.
 func (c *FakeAccounts) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Account, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(accountsResource, c.ns, name, pt, data, subresources...), &v1alpha1.Account{})
-
+		Invokes(testing.NewRootPatchSubresourceAction(accountsResource, name, pt, data, subresources...), &v1alpha1.Account{})
 	if obj == nil {
 		return nil, err
 	}

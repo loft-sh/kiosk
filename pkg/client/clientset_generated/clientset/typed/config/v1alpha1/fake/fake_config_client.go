@@ -28,16 +28,16 @@ type FakeConfigV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeConfigV1alpha1) Accounts(namespace string) v1alpha1.AccountInterface {
-	return &FakeAccounts{c, namespace}
+func (c *FakeConfigV1alpha1) Accounts() v1alpha1.AccountInterface {
+	return &FakeAccounts{c}
 }
 
-func (c *FakeConfigV1alpha1) AccountQuotas(namespace string) v1alpha1.AccountQuotaInterface {
-	return &FakeAccountQuotas{c, namespace}
+func (c *FakeConfigV1alpha1) AccountQuotas() v1alpha1.AccountQuotaInterface {
+	return &FakeAccountQuotas{c}
 }
 
-func (c *FakeConfigV1alpha1) Templates(namespace string) v1alpha1.TemplateInterface {
-	return &FakeTemplates{c, namespace}
+func (c *FakeConfigV1alpha1) Templates() v1alpha1.TemplateInterface {
+	return &FakeTemplates{c}
 }
 
 func (c *FakeConfigV1alpha1) TemplateInstances(namespace string) v1alpha1.TemplateInstanceInterface {
