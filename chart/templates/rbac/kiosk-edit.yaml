@@ -5,7 +5,4 @@ metadata:
 rules:
 - apiGroups: ["tenancy.kiosk.sh"]
   resources: ["spaces"]
-  verbs: ["get", "watch", "list", "create", "update", "delete"]
-- apiGroups: ["tenancy.kiosk.sh"]
-  resources: ["accounts"]
-  verbs: ["get", "watch", "list"]
+  verbs: ["create", "update", "delete"]

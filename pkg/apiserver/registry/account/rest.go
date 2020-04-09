@@ -67,7 +67,7 @@ func (r *accountREST) NewList() runtime.Object {
 
 func (r *accountREST) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	configAccountList := &config.AccountList{}
-	_, err := r.filter.List(ctx, configAccountList, tenancy.SchemeGroupVersion, options)
+	_, err := r.filter.List(ctx, configAccountList, tenancy.SchemeGroupVersion.WithResource("accounts"), options)
 	if err != nil {
 		return nil, err
 	}

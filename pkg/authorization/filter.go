@@ -2,6 +2,7 @@ package authorization
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -13,7 +14,7 @@ import (
 )
 
 type FilteredLister interface {
-	List(ctx context.Context, list runtime.Object, groupVersion schema.GroupVersion, options *metainternalversion.ListOptions) (runtime.Object, error)
+	List(ctx context.Context, list runtime.Object, groupVersion schema.GroupVersionResource, options *metainternalversion.ListOptions) (runtime.Object, error)
 }
 
 func NewFilteredLister(client client.Client, authorizer authorizer.Authorizer) FilteredLister {
@@ -28,7 +29,7 @@ type filter struct {
 	authorizer authorizer.Authorizer
 }
 
-func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion schema.GroupVersion, options *metainternalversion.ListOptions) (runtime.Object, error) {
+func (f *filter) List(ctx context.Context, list runtime.Object, groupVersionResource schema.GroupVersionResource, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	a, err := filters.GetAuthorizerAttributes(ctx)
 	if err != nil {
 		return nil, err
@@ -51,14 +52,15 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion sch
 		return nil, err
 	}
 
+	nameAsNamespace := groupVersionResource.Group == corev1.SchemeGroupVersion.Group && groupVersionResource.Version == corev1.SchemeGroupVersion.Version && groupVersionResource.Resource == "namespaces"
 	if len(objs) > 0 {
 		attributes := authorizer.AttributesRecord{
 			User:            a.GetUser(),
 			Verb:            "get",
 			Namespace:       a.GetNamespace(),
-			APIGroup:        groupVersion.Group,
-			APIVersion:      groupVersion.Version,
-			Resource:        a.GetResource(),
+			APIGroup:        groupVersionResource.Group,
+			APIVersion:      groupVersionResource.Version,
+			Resource:        groupVersionResource.Resource,
 			Subresource:     a.GetSubresource(),
 			ResourceRequest: a.IsResourceRequest(),
 			Path:            a.GetPath(),
@@ -72,6 +74,9 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersion sch
 			}
 
 			attributes.Name = m.GetName()
+			if nameAsNamespace {
+				attributes.Namespace = attributes.Name
+			}
 			// TODO: change because group version is different?
 			attributes.Path = a.GetPath() + "/" + m.GetName()
 

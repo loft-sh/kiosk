@@ -81,7 +81,7 @@ func (r *spaceStorage) NewList() runtime.Object {
 
 func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
 	namespaces := &corev1.NamespaceList{}
-	_, err := r.filter.List(ctx, namespaces, corev1.SchemeGroupVersion, options)
+	_, err := r.filter.List(ctx, namespaces, corev1.SchemeGroupVersion.WithResource("namespaces"), options)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (r *spaceStorage) Get(ctx context.Context, name string, options *metav1.Get
 		return nil, err
 	}
 
-	decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
 	if err != nil {
 		return nil, err
 	} else if decision != authorizer.DecisionAllow {
@@ -347,7 +347,7 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, err
 	}
 
-	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
 	if err != nil {
 		return nil, false, err
 	} else if decision != authorizer.DecisionAllow {
@@ -388,7 +388,7 @@ func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation
 		return nil, false, err
 	}
 
-	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces")))
+	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
 	if err != nil {
 		return nil, false, err
 	} else if decision != authorizer.DecisionAllow {
