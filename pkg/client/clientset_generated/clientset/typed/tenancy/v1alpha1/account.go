@@ -32,7 +32,7 @@ import (
 // AccountsGetter has a method to return a AccountInterface.
 // A group's client should implement this interface.
 type AccountsGetter interface {
-	Accounts(namespace string) AccountInterface
+	Accounts() AccountInterface
 }
 
 // AccountInterface has methods to work with Account resources.
@@ -52,14 +52,12 @@ type AccountInterface interface {
 // accounts implements AccountInterface
 type accounts struct {
 	client rest.Interface
-	ns     string
 }
 
 // newAccounts returns a Accounts
-func newAccounts(c *TenancyV1alpha1Client, namespace string) *accounts {
+func newAccounts(c *TenancyV1alpha1Client) *accounts {
 	return &accounts{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -67,7 +65,6 @@ func newAccounts(c *TenancyV1alpha1Client, namespace string) *accounts {
 func (c *accounts) Get(name string, options v1.GetOptions) (result *v1alpha1.Account, err error) {
 	result = &v1alpha1.Account{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("accounts").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -84,7 +81,6 @@ func (c *accounts) List(opts v1.ListOptions) (result *v1alpha1.AccountList, err 
 	}
 	result = &v1alpha1.AccountList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("accounts").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -101,7 +97,6 @@ func (c *accounts) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("accounts").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -112,7 +107,6 @@ func (c *accounts) Watch(opts v1.ListOptions) (watch.Interface, error) {
 func (c *accounts) Create(account *v1alpha1.Account) (result *v1alpha1.Account, err error) {
 	result = &v1alpha1.Account{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("accounts").
 		Body(account).
 		Do().
@@ -124,7 +118,6 @@ func (c *accounts) Create(account *v1alpha1.Account) (result *v1alpha1.Account, 
 func (c *accounts) Update(account *v1alpha1.Account) (result *v1alpha1.Account, err error) {
 	result = &v1alpha1.Account{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("accounts").
 		Name(account.Name).
 		Body(account).
@@ -139,7 +132,6 @@ func (c *accounts) Update(account *v1alpha1.Account) (result *v1alpha1.Account, 
 func (c *accounts) UpdateStatus(account *v1alpha1.Account) (result *v1alpha1.Account, err error) {
 	result = &v1alpha1.Account{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("accounts").
 		Name(account.Name).
 		SubResource("status").
@@ -152,7 +144,6 @@ func (c *accounts) UpdateStatus(account *v1alpha1.Account) (result *v1alpha1.Acc
 // Delete takes name of the account and deletes it. Returns an error if one occurs.
 func (c *accounts) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("accounts").
 		Name(name).
 		Body(options).
@@ -167,7 +158,6 @@ func (c *accounts) DeleteCollection(options *v1.DeleteOptions, listOptions v1.Li
 		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("accounts").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -180,7 +170,6 @@ func (c *accounts) DeleteCollection(options *v1.DeleteOptions, listOptions v1.Li
 func (c *accounts) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Account, err error) {
 	result = &v1alpha1.Account{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("accounts").
 		SubResource(subresources...).
 		Name(name).

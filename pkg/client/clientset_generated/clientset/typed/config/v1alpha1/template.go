@@ -32,7 +32,7 @@ import (
 // TemplatesGetter has a method to return a TemplateInterface.
 // A group's client should implement this interface.
 type TemplatesGetter interface {
-	Templates(namespace string) TemplateInterface
+	Templates() TemplateInterface
 }
 
 // TemplateInterface has methods to work with Template resources.
@@ -51,14 +51,12 @@ type TemplateInterface interface {
 // templates implements TemplateInterface
 type templates struct {
 	client rest.Interface
-	ns     string
 }
 
 // newTemplates returns a Templates
-func newTemplates(c *ConfigV1alpha1Client, namespace string) *templates {
+func newTemplates(c *ConfigV1alpha1Client) *templates {
 	return &templates{
 		client: c.RESTClient(),
-		ns:     namespace,
 	}
 }
 
@@ -66,7 +64,6 @@ func newTemplates(c *ConfigV1alpha1Client, namespace string) *templates {
 func (c *templates) Get(name string, options v1.GetOptions) (result *v1alpha1.Template, err error) {
 	result = &v1alpha1.Template{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("templates").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
@@ -83,7 +80,6 @@ func (c *templates) List(opts v1.ListOptions) (result *v1alpha1.TemplateList, er
 	}
 	result = &v1alpha1.TemplateList{}
 	err = c.client.Get().
-		Namespace(c.ns).
 		Resource("templates").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -100,7 +96,6 @@ func (c *templates) Watch(opts v1.ListOptions) (watch.Interface, error) {
 	}
 	opts.Watch = true
 	return c.client.Get().
-		Namespace(c.ns).
 		Resource("templates").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -111,7 +106,6 @@ func (c *templates) Watch(opts v1.ListOptions) (watch.Interface, error) {
 func (c *templates) Create(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
 	result = &v1alpha1.Template{}
 	err = c.client.Post().
-		Namespace(c.ns).
 		Resource("templates").
 		Body(template).
 		Do().
@@ -123,7 +117,6 @@ func (c *templates) Create(template *v1alpha1.Template) (result *v1alpha1.Templa
 func (c *templates) Update(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
 	result = &v1alpha1.Template{}
 	err = c.client.Put().
-		Namespace(c.ns).
 		Resource("templates").
 		Name(template.Name).
 		Body(template).
@@ -135,7 +128,6 @@ func (c *templates) Update(template *v1alpha1.Template) (result *v1alpha1.Templa
 // Delete takes name of the template and deletes it. Returns an error if one occurs.
 func (c *templates) Delete(name string, options *v1.DeleteOptions) error {
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("templates").
 		Name(name).
 		Body(options).
@@ -150,7 +142,6 @@ func (c *templates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
-		Namespace(c.ns).
 		Resource("templates").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
 		Timeout(timeout).
@@ -163,7 +154,6 @@ func (c *templates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.L
 func (c *templates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Template, err error) {
 	result = &v1alpha1.Template{}
 	err = c.client.Patch(pt).
-		Namespace(c.ns).
 		Resource("templates").
 		SubResource(subresources...).
 		Name(name).

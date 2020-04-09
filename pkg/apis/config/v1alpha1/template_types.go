@@ -108,6 +108,7 @@ type HelmSetValue struct {
 }
 
 // +genclient
+// +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Template is the Schema for the templates API
