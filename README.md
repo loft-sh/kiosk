@@ -508,9 +508,9 @@ spec:
 
 Now, let's create a Space for this Account:
 ```bash
-# Run this as cluster admin:
+# Run this as john:
 # Create Space johns-space-deletable
-kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/space-deletable.yaml
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/space-deletable.yaml --as=john
 ```
 
 <details>
