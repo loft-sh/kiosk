@@ -967,7 +967,7 @@ spec:
 
 ## Upgrade kiosk
 ```bash
-helm upgrade kiosk --repo https://charts.devspace.sh/ kiosk -n kiosk --atomic
+helm upgrade kiosk --repo https://charts.devspace.sh/ kiosk -n kiosk --atomic --reuse-values
 ```
 Check the [release notes](https://github.com/kiosk-sh/kiosk/releases) for details on how to upgrade to a specific release.  
 **Do not skip releases with release notes containing upgrade instructions!**
