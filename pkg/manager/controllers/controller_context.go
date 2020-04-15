@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
 	"math/rand"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/metadata"
 	"k8s.io/client-go/metadata/metadatainformer"
-	"k8s.io/kubernetes/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 

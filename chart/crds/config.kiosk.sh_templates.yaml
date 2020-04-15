@@ -1,134 +1,22 @@
-
----
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
-  creationTimestamp: null
   name: templates.config.kiosk.sh
 spec:
+  conversion:
+    strategy: None
   group: config.kiosk.sh
-  preserveUnknownFields: false
   names:
     kind: Template
     listKind: TemplateList
     plural: templates
     singular: template
   scope: Cluster
-  validation:
-    openAPIV3Schema:
-      description: Template is the Schema for the templates API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        resources:
-          description: TemplateResources defines a templates resources
-          properties:
-            helm:
-              description: helm defines the configuration for a helm deployment
-              properties:
-                chart:
-                  description: Tells us where to find the helm chart to deploy
-                  properties:
-                    repository:
-                      description: Load helm chart from a repository
-                      properties:
-                        name:
-                          description: Name of the chart to deploy
-                          type: string
-                        password:
-                          description: The password to use for the selected repository
-                          properties:
-                            key:
-                              type: string
-                            name:
-                              type: string
-                            namespace:
-                              type: string
-                          required:
-                          - key
-                          - name
-                          - namespace
-                          type: object
-                        repoUrl:
-                          description: The repo url to use
-                          type: string
-                        username:
-                          description: The username to use for the selected repository
-                          properties:
-                            key:
-                              type: string
-                            name:
-                              type: string
-                            namespace:
-                              type: string
-                          required:
-                          - key
-                          - name
-                          - namespace
-                          type: object
-                      required:
-                      - name
-                      type: object
-                  type: object
-                releaseName:
-                  description: The helm release name. If omitted the template name
-                    will be used
-                  type: string
-                setValues:
-                  description: Values in the form of name=value that will be passed
-                    to the helm command during helm template
-                  items:
-                    description: HelmSetValue defines a name=value pair that will
-                      be passed to helm template
-                    properties:
-                      forceString:
-                        description: ForceString specifies if the parameter `--set`
-                          or `--set-string` should be used
-                        type: boolean
-                      name:
-                        description: The path of the value to set
-                        type: string
-                      value:
-                        description: The value to set
-                        type: string
-                    required:
-                    - name
-                    - value
-                    type: object
-                  type: array
-                values:
-                  description: The additional helm values to use. Expected block string
-                  type: string
-              type: object
-            manifests:
-              items:
-                description: EmbeddedResource holds a kubernetes resource
-                type: object
-                x-kubernetes-embedded-resource: true
-                x-kubernetes-preserve-unknown-fields: true
-              type: array
-          type: object
-      type: object
+  preserveUnknownFields: true
+  subresources:
+    status: {}
   version: v1alpha1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
+    - name: v1alpha1
+      served: true
+      storage: true

@@ -30,11 +30,13 @@ import (
 	utilwait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/admission"
 
+	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"k8s.io/kubernetes/pkg/quota/v1"
-	"k8s.io/kubernetes/pkg/quota/v1/generic"
-	"k8s.io/kubernetes/plugin/pkg/admission/resourcequota"
-	resourcequotaapi "k8s.io/kubernetes/plugin/pkg/admission/resourcequota/apis/resourcequota"
+
+	"github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota"
+	resourcequotaapi "github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
+
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

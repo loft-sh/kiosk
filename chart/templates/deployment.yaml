@@ -22,22 +22,13 @@ spec:
     spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ template "kiosk.serviceAccountName" . }}
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: {{ .Values.certSecret }}
-      - name: cert-apiservice
-        secret:
-          defaultMode: 420
-          secretName: {{ .Values.certSecret }}-apiservice
       containers:
       - command:
-        {{- range $f := .Values.apiserver.command }}
+        {{- range $f := .Values.kiosk.command }}
         - {{ $f | quote }}
         {{- end }}
         args:
-        {{- range $f := .Values.apiserver.args }}
+        {{- range $f := .Values.kiosk.args }}
         - {{ $f | quote }}
         {{- end }}
         {{- if .Values.image }}
@@ -45,30 +36,11 @@ spec:
         {{- else }}
         image: "kiosksh/kiosk:{{ .Chart.Version }}"
         {{- end }}
-        name: apiserver
-        volumeMounts:
-        - mountPath: /tmp/k8s-apiserver/serving-certs
-          name: cert-apiservice
-          readOnly: true
+        name: kiosk
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         resources:
-{{ toYaml .Values.apiserver.resources | indent 10 }}
-      - command:
-        {{- range $f := .Values.manager.command }}
-        - {{ $f | quote }}
-        {{- end }}
-        args:
-        {{- range $f := .Values.manager.args }}
-        - {{ $f | quote }}
-        {{- end }}
-        {{- if .Values.image }}
-        image: "{{ .Values.image }}"
-        {{- else }}
-        image: "kiosksh/kiosk:{{ .Chart.Version }}"
-        {{- end }}
-        name: manager
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-        resources:
-{{ toYaml .Values.manager.resources | indent 10 }}
+{{ toYaml .Values.kiosk.resources | indent 10 }}

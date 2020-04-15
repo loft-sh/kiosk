@@ -70,6 +70,10 @@ type HelmChartRepository struct {
 	// Name of the chart to deploy
 	Name string `json:"name"`
 
+	// Version is the version of the chart to deploy
+	// +optional
+	Version string `json:"version,omitempty"`
+
 	// The repo url to use
 	// +optional
 	RepoURL string `json:"repoUrl,omitempty"`
@@ -103,10 +107,12 @@ type HelmSetValue struct {
 	ForceString bool `json:"forceString,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope=Cluster
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Template is the Schema for the templates API
+// +k8s:openapi-gen=true
 type Template struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -115,7 +121,7 @@ type Template struct {
 	Resources TemplateResources `json:"resources,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // TemplateList contains a list of Account
 type TemplateList struct {

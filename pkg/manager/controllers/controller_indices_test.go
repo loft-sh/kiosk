@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"github.com/kiosk-sh/kiosk/pkg/util"
 	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
@@ -59,7 +58,7 @@ func TestAddManagerIndices(t *testing.T) {
 			in: &corev1.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						tenancy.SpaceLabelAccount: "myAccount2",
+						constants.SpaceLabelAccount: "myAccount2",
 					},
 				},
 			},

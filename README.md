@@ -359,39 +359,8 @@ spec:
 
 ---
 
-#### 2.2. Allow Users To View Accounts
-By default, only cluster admins can view accounts. Account users **cannot** list or view any accounts. Run the following command to add an RBAC ClusterRoleBinding to allow users to view their **own** accounts:
-```bash
-# Run this as cluster admin:
-kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/rbac-viewer.yaml
-```
-<details>
-<summary><b>View: rbac-viewer.yaml</b></summary>
-<br>
-
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: kiosk-viewer
-subjects:
-- kind: Group
-  name: system:authenticated
-  apiGroup: rbac.authorization.k8s.io
-roleRef:
-  kind: ClusterRole
-  name: kiosk-view
-  apiGroup: rbac.authorization.k8s.io
-```
-
-> Of course, you can also adjust this ClusterRoleBinding in a way that only certain subjects/users can list or view their Accounts. Just modify the `subjects` section.
-
-</details>
-
----
-
-#### 2.3. View Accounts
-After granting Account Users viewer access to their Accounts (see ClusterRoleBinding in 2.2.), all Account Users are able to view their Account. Let's try this by impersonating `john`:
+#### 2.2. View Accounts
+All Account Users are able to view their Account through their generated ClusterRole. Let's try this by impersonating `john`:
 ```bash
 # View your own accounts as regular account user
 kubectl get accounts --as=john
@@ -478,8 +447,6 @@ kubectl get spaces --as=john
 kubectl get space johns-space -o yaml --as=john
 ```
 
-By default, Account Users **cannot** list their Spaces. However, we created the RBAC ClusterRoleBinding in 2.2. for the kiosk default Role `kiosk-view` and this Role does not only allow subjects to view their own Accounts, it also allows subjects to view all Spaces that belong to their Accounts.
-
 ---
 
 #### 3.4. Use Spaces
@@ -531,9 +498,9 @@ spec:
 
 Now, let's create a Space for this Account:
 ```bash
-# Run this as cluster admin:
+# Run this as john:
 # Create Space johns-space-deletable
-kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/space-deletable.yaml
+kubectl apply -f https://raw.githubusercontent.com/kiosk-sh/kiosk/master/examples/space-deletable.yaml --as=john
 ```
 
 <details>

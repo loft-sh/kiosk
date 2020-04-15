@@ -1,9 +1,8 @@
 package util
 
 import (
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"testing"
-
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 
 	"gotest.tools/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -96,7 +95,7 @@ func TestGetAccountFromNamespace(t *testing.T) {
 		{
 			name: "Get account",
 			labels: map[string]string{
-				tenancy.SpaceLabelAccount: "myAccount",
+				constants.SpaceLabelAccount: "myAccount",
 			},
 			expectedAccount: "myAccount",
 		},
@@ -128,7 +127,7 @@ func TestIsNamespaceInitializing(t *testing.T) {
 		{
 			name: "It is initializing",
 			annotations: map[string]string{
-				tenancy.SpaceAnnotationInitializing: "true",
+				constants.SpaceAnnotationInitializing: "true",
 			},
 			expected: true,
 		},

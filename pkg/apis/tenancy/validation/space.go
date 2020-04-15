@@ -43,29 +43,5 @@ func ValidateSpaceUpdate(newSpace *tenancy.Space, oldSpace *tenancy.Space) field
 		allErrs = append(allErrs, field.Invalid(field.NewPath("status"), oldSpace.Status, "field is immutable"))
 	}
 
-	// TODO this restriction exists because our authorizer/admission cannot properly express and restrict mutation on the field level.
-	for name, value := range newSpace.Annotations {
-		if value != oldSpace.Annotations[name] {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "annotations").Key(name), value, "field is immutable, try updating the namespace"))
-		}
-	}
-	// check for deletions
-	for name, value := range oldSpace.Annotations {
-		if _, inNew := newSpace.Annotations[name]; !inNew {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "annotations").Key(name), value, "field is immutable, try updating the namespace"))
-		}
-	}
-
-	for name, value := range newSpace.Labels {
-		if value != oldSpace.Labels[name] {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "labels").Key(name), value, "field is immutable, , try updating the namespace"))
-		}
-	}
-	for name, value := range oldSpace.Labels {
-		if _, inNew := newSpace.Labels[name]; !inNew {
-			allErrs = append(allErrs, field.Invalid(field.NewPath("metadata", "labels").Key(name), value, "field is immutable, try updating the namespace"))
-		}
-	}
-
 	return allErrs
 }

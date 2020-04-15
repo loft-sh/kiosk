@@ -60,11 +60,12 @@ type AccountQuotaStatusByNamespace struct {
 	Status corev1.ResourceQuotaStatus `json:"status"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+// +genclient
+// +genclient:nonNamespaced
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AccountQuota is the Schema for the accountquotas API
+// +k8s:openapi-gen=true
 type AccountQuota struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -75,7 +76,7 @@ type AccountQuota struct {
 	Status AccountQuotaStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // AccountQuotaList contains a list of AccountQuota
 type AccountQuotaList struct {
