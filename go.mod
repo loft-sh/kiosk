@@ -27,18 +27,19 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	gomodules.xyz/jsonpatch v2.0.0+incompatible // indirect
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.17.3
-	k8s.io/apiextensions-apiserver v0.17.3
-	k8s.io/apimachinery v0.17.3
-	k8s.io/apiserver v0.17.3
-	k8s.io/cli-runtime v0.17.3
-	k8s.io/client-go v0.17.3
-	k8s.io/component-base v0.17.3
+	k8s.io/api v0.17.4
+	k8s.io/apiextensions-apiserver v0.17.4
+	k8s.io/apimachinery v0.17.4
+	k8s.io/apiserver v0.17.4
+	k8s.io/cli-runtime v0.17.4
+	k8s.io/client-go v0.17.4
+	k8s.io/component-base v0.17.4
 	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e
 	k8s.io/klog v1.0.0
-	k8s.io/kube-controller-manager v0.17.3
+	k8s.io/kube-aggregator v0.17.4
+	k8s.io/kube-controller-manager v0.17.4
 	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
-	k8s.io/kubectl v0.17.3
+	k8s.io/kubectl v0.17.4
 	sigs.k8s.io/apiserver-builder-alpha v0.0.0-20200103114340-ef5d9b9c01aa
 	sigs.k8s.io/controller-runtime v0.5.2
 	sigs.k8s.io/controller-tools v0.1.11-0.20190405182121-56d42b19e55a // indirect
