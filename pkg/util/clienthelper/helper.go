@@ -6,9 +6,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog"
+	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func CurrentNamespace() string {
+	return os.Getenv("NAMESPACE")
+}
 
 func CreateWithOwner(ctx context.Context, client client.Client, object runtime.Object, owner metav1.Object, scheme *runtime.Scheme) error {
 	accessor, err := meta.Accessor(object)

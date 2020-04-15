@@ -22,15 +22,6 @@ spec:
     spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ template "kiosk.serviceAccountName" . }}
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: {{ .Values.certSecret }}
-      - name: cert-apiservice
-        secret:
-          defaultMode: 420
-          secretName: {{ .Values.certSecret }}-apiservice
       containers:
       - command:
         {{- range $f := .Values.kiosk.command }}
@@ -46,12 +37,10 @@ spec:
         image: "kiosksh/kiosk:{{ .Chart.Version }}"
         {{- end }}
         name: kiosk
-        volumeMounts:
-        - mountPath: /tmp/k8s-apiserver/serving-certs
-          name: cert-apiservice
-          readOnly: true
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
+        env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         resources:
 {{ toYaml .Values.kiosk.resources | indent 10 }}

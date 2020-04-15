@@ -1,9 +1,0 @@
-{{- if .Values.certManager.issuer.create }}
-apiVersion: cert-manager.io/v1alpha2
-kind: Issuer
-metadata:
-  name: {{ template "kiosk.fullname" . }}
-  namespace: {{ .Release.Namespace }}
-spec:
-  selfSigned: {}
-{{- end }}

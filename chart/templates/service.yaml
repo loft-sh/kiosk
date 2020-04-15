@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "kiosk.fullname" . }}
+  name: kiosk
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ template "kiosk.fullname" . }}

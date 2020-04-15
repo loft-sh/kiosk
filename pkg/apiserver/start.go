@@ -20,9 +20,11 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -142,9 +144,8 @@ func NewServerOptions(etcdPath, title, version string, b []*builders.APIGroupBui
 	o.RecommendedOptions.Admission = genericoptions.NewAdmissionOptions()
 	o.RecommendedOptions.Admission.DefaultOffPlugins = sets.String{lifecycle.PluginName: sets.Empty{}}
 
-	// TODO don't hardcode this
-	o.RecommendedOptions.SecureServing.ServerCert.CertKey.CertFile = "/tmp/k8s-apiserver/serving-certs/tls.crt"
-	o.RecommendedOptions.SecureServing.ServerCert.CertKey.KeyFile = "/tmp/k8s-apiserver/serving-certs/tls.key"
+	o.RecommendedOptions.SecureServing.ServerCert.CertKey.CertFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.crt")
+	o.RecommendedOptions.SecureServing.ServerCert.CertKey.KeyFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.key")
 	o.RecommendedOptions.SecureServing.BindPort = 8443
 
 	o.RecommendedOptions.Authorization.RemoteKubeConfigFileOptional = true

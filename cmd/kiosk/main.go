@@ -17,14 +17,19 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"github.com/kiosk-sh/kiosk/pkg/apis"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apiserver"
 	_ "github.com/kiosk-sh/kiosk/pkg/apiserver/registry"
 	"github.com/kiosk-sh/kiosk/pkg/openapi"
+	"github.com/kiosk-sh/kiosk/pkg/store/apiservice"
+	"github.com/kiosk-sh/kiosk/pkg/store/validatingwebhookconfiguration"
+	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"os"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -57,6 +62,7 @@ func init() {
 	// and must thus be added separately.
 	_ = apiextensionsv1beta1.AddToScheme(scheme)
 	_ = apiextensionsv1.AddToScheme(scheme)
+	_ = apiregistrationv1.AddToScheme(scheme)
 
 	_ = tenancy.AddToScheme(scheme)
 	_ = tenancyv1alpha1.AddToScheme(scheme)
@@ -68,6 +74,13 @@ func main() {
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = os.Getenv("DEBUG") != ""
 	}))
+
+	// Make sure the certificates are there
+	err := certhelper.WriteCertificates()
+	if err != nil {
+		setupLog.Error(err, "unable to generate certificates")
+		os.Exit(1)
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
@@ -142,6 +155,20 @@ func main() {
 			panic(err)
 		}
 	}()
+
+	// setup validatingwebhookconfiguration
+	err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
+	if err != nil {
+		setupLog.Error(err, "unable to set up validating webhook configuration")
+		os.Exit(1)
+	}
+
+	// setup apiservice
+	err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
+	if err != nil {
+		setupLog.Error(err, "unable to set up apiservice")
+		os.Exit(1)
+	}
 
 	// Wait till stopChan is closed
 	<-stopChan
