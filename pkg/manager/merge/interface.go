@@ -17,7 +17,7 @@ package merge
 //
 // A KubernetesClient must be concurrency safe.
 type Interface interface {
-	Merge(oldManifests, newManifests string) error
+	Merge(oldManifests, newManifests string, force bool) error
 }
 
 var _ Interface = (*Client)(nil)

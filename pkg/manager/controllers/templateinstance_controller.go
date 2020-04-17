@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strings"
 	"time"
 
@@ -48,6 +50,7 @@ type TemplateInstanceReconciler struct {
 	client.Client
 	helm           helm.Helm
 	newMergeClient newMergeClient
+	restMapper     meta.RESTMapper
 
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -87,7 +90,7 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	}
 
 	// Check if template instance has changed to last deployment
-	if templateInstance.Status.TemplateResourceVersion == template.ResourceVersion {
+	if templateInstance.Status.TemplateResourceVersion == template.ResourceVersion && templateInstance.Status.Status == configv1alpha1.TemplateInstanceDeploymentStatusDeployed {
 		return ctrl.Result{}, nil
 	}
 
@@ -137,10 +140,37 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 	manifestsArray := []string{}
 	for _, object := range objects {
 		object.SetNamespace(templateInstance.Namespace)
+		if r.restMapper != nil {
+			// check what scope the object has
+			groupVersion, err := schema.ParseGroupVersion(object.GetAPIVersion())
+			if err != nil {
+				return r.setFailed(ctx, templateInstance, "ParseGroupVersion", err.Error())
+			}
 
-		// Set owner controller
-		if shouldSetOwner(templateInstance) {
-			_ = ctrl.SetControllerReference(templateInstance, object, r.Scheme)
+			mapping, err := r.restMapper.RESTMapping(schema.GroupKind{
+				Group: groupVersion.Group,
+				Kind:  object.GetKind(),
+			})
+			if err != nil {
+				if meta.IsNoMatchError(err) == false {
+					return r.setFailed(ctx, templateInstance, "FindObjectMapping", err.Error())
+				}
+			}
+
+			// Should set namespace and owner
+			if mapping != nil && mapping.Scope != nil && mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+				// Set owner controller
+				if shouldSetOwner(templateInstance) {
+					_ = ctrl.SetControllerReference(templateInstance, object, r.Scheme)
+				}
+			} else {
+				// global scoped objects cannot have namespaced scope resources as owners, so instead of setting the template
+				// instance as owner, we set the template as owner instead, so if the complete template is deleted, the
+				// resource is deleted as well, which is better than never deleting the resource
+				if shouldSetOwner(templateInstance) {
+					_ = ctrl.SetControllerReference(template, object, r.Scheme)
+				}
+			}
 		}
 
 		yaml, err := convert.ObjectToYaml(object)
@@ -164,7 +194,7 @@ func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template
 
 	// Apply the manifests
 	if oldManifests != manifests {
-		err = r.newMergeClient().Merge(oldManifests, manifests)
+		err = r.newMergeClient().Merge(oldManifests, manifests, true)
 		if err != nil {
 			return r.setFailed(ctx, templateInstance, "ApplyManifests", err.Error())
 		}
@@ -238,6 +268,7 @@ type newMergeClient func() merge.Interface
 func (r *TemplateInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.helm = helm.NewHelmRunner()
 	r.newMergeClient = func() merge.Interface { return merge.New(nil) }
+	r.restMapper = mgr.GetRESTMapper()
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: &templateMapper{client: r, Log: r.Log}}).

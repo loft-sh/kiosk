@@ -30,19 +30,19 @@ spec:
     app: nginx2`
 
 	// Create
-	err := c.Merge("", before)
+	err := c.Merge("", before, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Update
-	err = c.Merge(before, after)
+	err = c.Merge(before, after, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Delete
-	err = c.Merge(after, "")
+	err = c.Merge(after, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}

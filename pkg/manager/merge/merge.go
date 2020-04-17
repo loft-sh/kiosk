@@ -10,7 +10,7 @@ import (
 )
 
 // Merge performs a three-way-merge on the old manifests and new manifests
-func (c *Client) Merge(oldManifests, newManifests string) error {
+func (c *Client) Merge(oldManifests, newManifests string, force bool) error {
 	current, err := c.Build(bytes.NewBufferString(oldManifests), false)
 	if err != nil {
 		return errors.Wrap(err, "unable to build kubernetes objects from current release manifest")
@@ -20,21 +20,23 @@ func (c *Client) Merge(oldManifests, newManifests string) error {
 		return errors.Wrap(err, "unable to build kubernetes objects from new release manifest")
 	}
 
-	// Do a basic diff using gvk + name to figure out what new resources are being created so we can validate they don't already exist
-	existingResources := make(map[string]bool)
-	for _, r := range current {
-		existingResources[objectKey(r)] = true
-	}
-
-	var toBeCreated ResourceList
-	for _, r := range target {
-		if !existingResources[objectKey(r)] {
-			toBeCreated = append(toBeCreated, r)
+	if !force {
+		// Do a basic diff using gvk + name to figure out what new resources are being created so we can validate they don't already exist
+		existingResources := make(map[string]bool)
+		for _, r := range current {
+			existingResources[objectKey(r)] = true
 		}
-	}
 
-	if err := existingResourceConflict(toBeCreated); err != nil {
-		return errors.Wrap(err, "rendered manifests contain a new resource that already exists. Unable to continue with update")
+		var toBeCreated ResourceList
+		for _, r := range target {
+			if !existingResources[objectKey(r)] {
+				toBeCreated = append(toBeCreated, r)
+			}
+		}
+
+		if err := existingResourceConflict(toBeCreated); err != nil {
+			return errors.Wrap(err, "rendered manifests contain a new resource that already exists. Unable to continue with update")
+		}
 	}
 
 	_, err = c.Update(current, target)
