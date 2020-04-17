@@ -126,7 +126,8 @@ func (c *Client) Update(original, target ResourceList) (*Result, error) {
 		}
 
 		helper := resource.NewHelper(info.Client, info.Mapping)
-		if _, err := helper.Get(info.Namespace, info.Name, info.Export); err != nil {
+		currentObj, err := helper.Get(info.Namespace, info.Name, info.Export)
+		if err != nil {
 			if !apierrors.IsNotFound(err) {
 				return errors.Wrap(err, "could not get information about the resource")
 			}
@@ -146,14 +147,17 @@ func (c *Client) Update(original, target ResourceList) (*Result, error) {
 
 		originalInfo := original.Get(info)
 		if originalInfo == nil {
-			kind := info.Mapping.GroupVersionKind.Kind
-			return errors.Errorf("no %s with the name %q found", kind, info.Name)
+			if err := updateResource(c, info, currentObj); err != nil {
+				c.Log("error updating the resource %q:\n\t %v", info.Name, err)
+				updateErrors = append(updateErrors, err.Error())
+			}
+		} else {
+			if err := updateResource(c, info, originalInfo.Object); err != nil {
+				c.Log("error updating the resource %q:\n\t %v", info.Name, err)
+				updateErrors = append(updateErrors, err.Error())
+			}
 		}
 
-		if err := updateResource(c, info, originalInfo.Object); err != nil {
-			c.Log("error updating the resource %q:\n\t %v", info.Name, err)
-			updateErrors = append(updateErrors, err.Error())
-		}
 		// Because we check for errors later, append the info regardless
 		res.Updated = append(res.Updated, info)
 

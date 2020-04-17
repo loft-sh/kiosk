@@ -212,7 +212,7 @@ type fakeMerger struct {
 	client client.Client
 }
 
-func (f *fakeMerger) Merge(oldManifests, newManifests string) error {
+func (f *fakeMerger) Merge(oldManifests, newManifests string, force bool) error {
 	fmt.Println(newManifests)
 	unstructured, err := convert.StringToUnstructuredArray(newManifests)
 	if err != nil {
