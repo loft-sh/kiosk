@@ -25,10 +25,13 @@ import (
 	_ "github.com/kiosk-sh/kiosk/pkg/apiserver/registry"
 	"github.com/kiosk-sh/kiosk/pkg/openapi"
 	"github.com/kiosk-sh/kiosk/pkg/store/apiservice"
+	"github.com/kiosk-sh/kiosk/pkg/store/crd"
 	"github.com/kiosk-sh/kiosk/pkg/store/validatingwebhookconfiguration"
 	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/client-go/rest"
+	"k8s.io/klog"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"os"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,7 +85,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// retrieve in cluster config
+	config := ctrl.GetConfigOrDie()
+
+	// Make sure the needed crds are installed in the cluster
+	err = initialize(config)
+	if err != nil {
+		klog.Fatal(err)
+	}
+
+	// create the manager
+	mgr, err := ctrl.NewManager(config, ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: ":8080",
 		LeaderElection:     false,
@@ -172,6 +185,22 @@ func main() {
 
 	// Wait till stopChan is closed
 	<-stopChan
+}
+
+func initialize(config *rest.Config) error {
+	klog.Info("Initialize...")
+	defer klog.Info("Done initializing...")
+
+	client, err := client2.New(config, client2.Options{Scheme: scheme})
+	if err != nil {
+		return err
+	}
+
+	klog.Info("Installing crds...")
+
+	builder := crd.NewBuilder(client)
+	_, err = builder.CreateCRDs(context.Background(), apis.TypeDefinitions...)
+	return err
 }
 
 func injectClient(client client2.Client, scheme *runtime.Scheme) {
