@@ -43,7 +43,7 @@ profiles:
               - hack/
               - /gen
               - /docs
-              - config/
+              - /config
               - bin/
               - .vscode/
               - .git/

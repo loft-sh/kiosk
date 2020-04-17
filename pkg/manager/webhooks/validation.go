@@ -88,6 +88,12 @@ func (v *Validator) Handle(ctx context.Context, req admission.Request) admission
 		} else {
 			errs = validation.ValidateAccountQuotaUpdate(obj.(*configv1alpha1.AccountQuota), oldObj.(*configv1alpha1.AccountQuota))
 		}
+	case "TemplateInstance":
+		if req.Operation == v1beta1.Create {
+			errs = validation.ValidateTemplateInstance(obj.(*configv1alpha1.TemplateInstance))
+		} else {
+			errs = validation.ValidateTemplateInstanceUpdate(obj.(*configv1alpha1.TemplateInstance), oldObj.(*configv1alpha1.TemplateInstance))
+		}
 	}
 
 	if len(errs) > 0 {

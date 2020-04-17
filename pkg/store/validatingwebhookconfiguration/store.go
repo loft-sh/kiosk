@@ -2,9 +2,9 @@ package validatingwebhookconfiguration
 
 import (
 	"context"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"io/ioutil"
 
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
 	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
 
@@ -57,13 +57,18 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.
 	namespaceScope := admissionregistrationv1beta1.NamespacedScope
 	quotaPath := "/quota"
 	validatePath := "/validate"
+	namespace, err := clienthelper.CurrentNamespace()
+	if err != nil {
+		return err
+	}
+
 	config.Webhooks = []admissionregistrationv1beta1.ValidatingWebhook{
 		{
 			Name:          "accountquota.kiosk.sh",
 			FailurePolicy: &failPolicy,
 			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 				Service: &admissionregistrationv1beta1.ServiceReference{
-					Namespace: clienthelper.CurrentNamespace(),
+					Namespace: namespace,
 					Name:      certhelper.WebhookServiceName,
 					Path:      &quotaPath,
 				},
@@ -94,7 +99,7 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.
 			FailurePolicy: &failPolicy,
 			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
 				Service: &admissionregistrationv1beta1.ServiceReference{
-					Namespace: clienthelper.CurrentNamespace(),
+					Namespace: namespace,
 					Name:      certhelper.WebhookServiceName,
 					Path:      &validatePath,
 				},

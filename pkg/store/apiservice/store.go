@@ -48,9 +48,14 @@ func prepareAPIService(service *apiregistrationv1.APIService) error {
 		return err
 	}
 
+	namespace, err := clienthelper.CurrentNamespace()
+	if err != nil {
+		return err
+	}
+
 	service.Spec = apiregistrationv1.APIServiceSpec{
 		Service: &apiregistrationv1.ServiceReference{
-			Namespace: clienthelper.CurrentNamespace(),
+			Namespace: namespace,
 			Name:      certhelper.APIServiceName,
 		},
 		Group:                tenancyv1alpha1.SchemeGroupVersion.Group,

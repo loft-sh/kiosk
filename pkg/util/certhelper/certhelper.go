@@ -99,14 +99,19 @@ func generateCertificate(folder string, service string) error {
 		return err
 	}
 
+	namespace, err := clienthelper.CurrentNamespace()
+	if err != nil {
+		return err
+	}
+
 	template := &x509.Certificate{
 		SerialNumber: big.NewInt(1),
 		Subject: pkix.Name{
 			Organization: []string{"kiosk"},
 		},
 		DNSNames: []string{
-			fmt.Sprintf("%s.%s.svc", service, clienthelper.CurrentNamespace()),
-			fmt.Sprintf("%s.%s.svc.cluster.local", service, clienthelper.CurrentNamespace()),
+			fmt.Sprintf("%s.%s.svc", service, namespace),
+			fmt.Sprintf("%s.%s.svc.cluster.local", service, namespace),
 		},
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(10, 0, 0),
