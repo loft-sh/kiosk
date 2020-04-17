@@ -1,8 +1,6 @@
 package validation
 
 import (
-	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
-	"k8s.io/apimachinery/pkg/api/validation/path"
 	"reflect"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -11,21 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
-
-func ValidateName(name string, prefix bool) []string {
-	if reasons := path.ValidatePathSegmentName(name, prefix); len(reasons) != 0 {
-		return reasons
-	}
-
-	if len(name) < 2 {
-		return []string{"must be at least 2 characters long"}
-	}
-
-	if reasons := apimachineryvalidation.ValidateNamespaceName(name, false); len(reasons) != 0 {
-		return reasons
-	}
-	return nil
-}
 
 func verifySubjects(account *configv1alpha1.Account) field.ErrorList {
 	subjects := []rbac.Subject{}
@@ -50,8 +33,7 @@ func validateSubjects(subjects []rbac.Subject) field.ErrorList {
 
 // ValidateAccount tests required fields for an account
 func ValidateAccount(account *configv1alpha1.Account) field.ErrorList {
-	result := validation.ValidateObjectMeta(&account.ObjectMeta, false, ValidateName, field.NewPath("metadata"))
-
+	result := field.ErrorList{}
 	// Verify subjects
 	result = append(result, verifySubjects(account)...)
 
@@ -60,7 +42,7 @@ func ValidateAccount(account *configv1alpha1.Account) field.ErrorList {
 
 // ValidateAccountUpdate tests updated fields for an account
 func ValidateAccountUpdate(newAccount *configv1alpha1.Account, oldAccount *configv1alpha1.Account) field.ErrorList {
-	allErrs := validation.ValidateObjectMetaUpdate(&newAccount.ObjectMeta, &oldAccount.ObjectMeta, field.NewPath("metadata"))
+	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, ValidateAccount(newAccount)...)
 
 	if !reflect.DeepEqual(newAccount.Status, oldAccount.Status) {
