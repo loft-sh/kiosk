@@ -33,7 +33,7 @@ func ConvertConfigAccount(configAccount *config.Account) (*tenancy.Account, erro
 		return nil, err
 	}
 
-	outAccount := &tenancy.Account{}
+	outAccount := &tenancyv1alpha1.Account{}
 	err = json.Unmarshal(out, outAccount)
 	if err != nil {
 		return nil, err
@@ -44,11 +44,20 @@ func ConvertConfigAccount(configAccount *config.Account) (*tenancy.Account, erro
 		APIVersion: tenancyv1alpha1.SchemeGroupVersion.String(),
 	}
 	outAccount.ObjectMeta = *configAccount.ObjectMeta.DeepCopy()
-	return outAccount, nil
+
+	tenancyAccount := &tenancy.Account{}
+	err = tenancyv1alpha1.Convert_v1alpha1_Account_To_tenancy_Account(outAccount, tenancyAccount, nil)
+	return tenancyAccount, err
 }
 
 // ConvertTenancyAccount converts a tenancy account into a config account
-func ConvertTenancyAccount(tenancyAccount *tenancy.Account) (*config.Account, error) {
+func ConvertTenancyAccount(originalAccount *tenancy.Account) (*config.Account, error) {
+	tenancyAccount := &tenancyv1alpha1.Account{}
+	err := tenancyv1alpha1.Convert_tenancy_Account_To_v1alpha1_Account(originalAccount, tenancyAccount, nil)
+	if err != nil {
+		return nil, err
+	}
+
 	out, err := json.Marshal(tenancyAccount)
 	if err != nil {
 		return nil, err
