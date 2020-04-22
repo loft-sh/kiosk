@@ -37,7 +37,7 @@ func SyncClusterRoleBindings(ctx context.Context, client client.Client, clusterR
 				return nil, err
 			}
 
-			klog.V(3).Info("updated cluster role binding " + crb.Name)
+			klog.Info("updated cluster role binding " + crb.Name)
 		}
 
 		bindings = append(bindings, crb)
@@ -56,7 +56,7 @@ func SyncClusterRoles(ctx context.Context, client client.Client, clusterRoles []
 				return nil, err
 			}
 
-			klog.V(3).Info("deleted cluster role " + clusterRole.Name)
+			klog.Info("deleted cluster role " + clusterRole.Name)
 			continue
 		}
 
@@ -67,7 +67,7 @@ func SyncClusterRoles(ctx context.Context, client client.Client, clusterRoles []
 				return nil, err
 			}
 
-			klog.V(3).Info("updated cluster role " + clusterRole.Name)
+			klog.Info("updated cluster role " + clusterRole.Name)
 		}
 
 		roles = append(roles, clusterRole)

@@ -106,6 +106,6 @@ func CreateWithOwner(ctx context.Context, client client.Client, object runtime.O
 		return err
 	}
 
-	klog.V(3).Info("created " + typeAccessor.GetKind() + "  " + accessor.GetName())
+	klog.Info("created " + typeAccessor.GetKind() + "  " + accessor.GetName())
 	return nil
 }

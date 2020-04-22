@@ -169,7 +169,18 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 		// check if user is part of account
 		if util.IsUserPartOfAccount(userInfo, account) == false {
-			return nil, fmt.Errorf("user " + userInfo.GetName() + " is not part of the account " + account.Name)
+			// check if user can create namespaces
+			a, err := filters.GetAuthorizerAttributes(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), space.Name))
+			if err != nil {
+				return nil, err
+			} else if decision != authorizer.DecisionAllow {
+				return nil, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), space.Name, errors.New(util.ForbiddenMessage(a)))
+			}
 		}
 	}
 

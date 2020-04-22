@@ -73,6 +73,12 @@ func (r *AccountReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
+	// Ensure our role bindings have the correct subjects
+	err = r.syncRoleBindings(ctx, account, log)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// Ensure our clusterroles are still correct
 	err = r.syncClusterRoles(ctx, account, log)
 	if err != nil {
@@ -98,6 +104,29 @@ func (r *AccountReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *configv1alpha1.Account, log logr.Logger) error {
+	roleBindings := &rbacv1.RoleBindingList{}
+	err := r.List(ctx, roleBindings, client.MatchingFields{constants.IndexByAccount: account.Name})
+	if err != nil {
+		return err
+	}
+
+	for _, crb := range roleBindings.Items {
+		// Update cluster role binding
+		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
+			crb.Subjects = account.Spec.Subjects
+			err := r.Update(ctx, &crb)
+			if err != nil {
+				return err
+			}
+
+			log.V(1).Info("updated role binding " + crb.Namespace + "/" + crb.Name)
+		}
+	}
+
+	return nil
 }
 
 func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *configv1alpha1.Account, log logr.Logger) error {
@@ -126,6 +155,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 			return err
 		}
 
+		log.Info("Created cluster role " + clusterRole.Name)
 		clusterRoles = []rbacv1.ClusterRole{*clusterRole}
 	}
 
@@ -157,6 +187,8 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 		if err != nil {
 			return err
 		}
+
+		log.Info("Created cluster role binding " + clusterRoleBinding.Name)
 	}
 
 	return nil
@@ -184,7 +216,6 @@ func (r *AccountReconciler) getClusterRoleRules(account *configv1alpha1.Account)
 
 	return rules
 }
-
 
 // NamespaceEventHandler handles events
 type NamespaceEventHandler struct {
@@ -239,6 +270,7 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, &NamespaceEventHandler{}).
 		Owns(&rbacv1.ClusterRoleBinding{}).
 		Owns(&rbacv1.ClusterRole{}).
+		Owns(&rbacv1.RoleBinding{}).
 		For(&configv1alpha1.Account{}).
 		Complete(r)
 }
