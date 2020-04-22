@@ -169,7 +169,18 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 		// check if user is part of account
 		if util.IsUserPartOfAccount(userInfo, account) == false {
-			return nil, fmt.Errorf("user " + userInfo.GetName() + " is not part of the account " + account.Name)
+			// check if user can create namespaces
+			a, err := filters.GetAuthorizerAttributes(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), space.Name))
+			if err != nil {
+				return nil, err
+			} else if decision != authorizer.DecisionAllow {
+				return nil, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), space.Name, errors.New(util.ForbiddenMessage(a)))
+			}
 		}
 	}
 
@@ -347,11 +358,11 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, err
 	}
 
-	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
+	decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
 	if err != nil {
 		return nil, false, err
 	} else if decision != authorizer.DecisionAllow {
-		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(reason))
+		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(util.ForbiddenMessage(a)))
 	}
 
 	oldObj, err := r.Get(ctx, name, nil)
@@ -388,11 +399,11 @@ func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation
 		return nil, false, err
 	}
 
-	decision, reason, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
+	decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), name))
 	if err != nil {
 		return nil, false, err
 	} else if decision != authorizer.DecisionAllow {
-		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(reason))
+		return nil, false, kerrors.NewForbidden(tenancy.SchemeGroupVersion.WithResource("space").GroupResource(), name, errors.New(util.ForbiddenMessage(a)))
 	}
 
 	namespace := &corev1.Namespace{}
