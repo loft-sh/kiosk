@@ -114,7 +114,7 @@ func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *confi
 	}
 
 	for _, crb := range roleBindings.Items {
-		// Update cluster role binding
+		// Update role binding
 		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
 			crb.Subjects = account.Spec.Subjects
 			err := r.Update(ctx, &crb)
@@ -167,10 +167,29 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 	}
 
 	// sync cluster role bindings
-	bindings, err := clusterrole.SyncClusterRoleBindings(ctx, r.Client, clusterRoleBindingsList.Items, clusterRoles[0].Name, account.Spec.Subjects, true)
-	if err != nil {
-		return err
-	} else if len(bindings) == 0 {
+	// tasks:
+	// - make sure all cluster role bindings we own have the correct subjects
+	// - make sure there is at least one cluster role binding for the cluster role ensured above
+	found := false
+	for _, crb := range clusterRoleBindingsList.Items {
+		if crb.RoleRef.Name == clusterRoles[0].Name {
+			found = true
+		}
+
+		// Update cluster role binding if subjects differ
+		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
+			crb.Subjects = account.Spec.Subjects
+			err := r.Client.Update(ctx, &crb)
+			if err != nil {
+				return err
+			}
+
+			log.Info("Updated cluster role binding " + crb.Name)
+		}
+	}
+
+	// if no cluster role binding was found for the above role, then create one
+	if !found {
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				GenerateName: "kiosk-account-" + account.Name + "-",
