@@ -145,7 +145,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 		// Create new cluster role
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "kiosk-account-" + account.Name + "-",
+				GenerateName: RBACGenerateName(account),
 			},
 			Rules: newRules,
 		}
@@ -192,7 +192,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 	if !found {
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "kiosk-account-" + account.Name + "-",
+				GenerateName: RBACGenerateName(account),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -292,4 +292,13 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&rbacv1.RoleBinding{}).
 		For(&configv1alpha1.Account{}).
 		Complete(r)
+}
+
+func RBACGenerateName(account *configv1alpha1.Account) string {
+	name := account.Name
+	if len(name) > 42 {
+		name = name[:42]
+	}
+
+	return "kiosk-account-" + name + "-"
 }
