@@ -157,7 +157,7 @@ func TestTemplate(t *testing.T) {
 			retArgs = args
 
 			if test.expectedArgs != "" {
-				valuesFileName := args[len(args)-1]
+				valuesFileName := args[len(args)-2]
 				bs, err := ioutil.ReadFile(valuesFileName)
 				if err != nil {
 					t.Fatalf("Test %s: could not read values file: %s", testName, err)

@@ -101,6 +101,7 @@ func (h *helm) Template(client client.Client, name, namespace string, config *co
 		args = append(args, "--values", p)
 	}
 
+	args = append(args, "--include-crds")
 	out, err := h.runner(args)
 	if err != nil {
 		return nil, err
