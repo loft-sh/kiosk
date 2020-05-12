@@ -114,7 +114,7 @@ func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *confi
 	}
 
 	for _, crb := range roleBindings.Items {
-		// Update cluster role binding
+		// Update role binding
 		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
 			crb.Subjects = account.Spec.Subjects
 			err := r.Update(ctx, &crb)
@@ -145,7 +145,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 		// Create new cluster role
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "kiosk-account-" + account.Name + "-",
+				GenerateName: RBACGenerateName(account),
 			},
 			Rules: newRules,
 		}
@@ -167,13 +167,32 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 	}
 
 	// sync cluster role bindings
-	bindings, err := clusterrole.SyncClusterRoleBindings(ctx, r.Client, clusterRoleBindingsList.Items, clusterRoles[0].Name, account.Spec.Subjects, true)
-	if err != nil {
-		return err
-	} else if len(bindings) == 0 {
+	// tasks:
+	// - make sure all cluster role bindings we own have the correct subjects
+	// - make sure there is at least one cluster role binding for the cluster role ensured above
+	found := false
+	for _, crb := range clusterRoleBindingsList.Items {
+		if crb.RoleRef.Name == clusterRoles[0].Name {
+			found = true
+		}
+
+		// Update cluster role binding if subjects differ
+		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
+			crb.Subjects = account.Spec.Subjects
+			err := r.Client.Update(ctx, &crb)
+			if err != nil {
+				return err
+			}
+
+			log.Info("Updated cluster role binding " + crb.Name)
+		}
+	}
+
+	// if no cluster role binding was found for the above role, then create one
+	if !found {
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
-				GenerateName: "kiosk-account-" + account.Name + "-",
+				GenerateName: RBACGenerateName(account),
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -273,4 +292,13 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&rbacv1.RoleBinding{}).
 		For(&configv1alpha1.Account{}).
 		Complete(r)
+}
+
+func RBACGenerateName(account *configv1alpha1.Account) string {
+	name := account.Name
+	if len(name) > 42 {
+		name = name[:42]
+	}
+
+	return "kiosk-account-" + name + "-"
 }
