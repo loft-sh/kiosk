@@ -320,10 +320,24 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	}
 
 	// Update namespace intialization
-	delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
-	err = r.client.Update(ctx, namespace)
-	if err != nil {
-		return err
+	for true {
+		delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
+		err = r.client.Update(ctx, namespace)
+		if err != nil {
+			if kerrors.IsConflict(err) {
+				// re get namespace to avoid conflict errors
+				err = r.client.Get(ctx, types.NamespacedName{Name: namespace.Name}, namespace)
+				if err != nil {
+					return err
+				}
+
+				continue
+			}
+
+			return err
+		}
+
+		break
 	}
 
 	return nil
