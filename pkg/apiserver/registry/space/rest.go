@@ -151,15 +151,18 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 	// Check if user can access account and create space
 	var account *configv1alpha1.Account
 	if space.Spec.Account == "" {
-		accounts, err := util.GetAccountsByUserInfo(ctx, r.client, userInfo)
+		// check if user can create namespaces
+		a, err := filters.GetAuthorizerAttributes(ctx)
 		if err != nil {
 			return nil, err
-		} else if len(accounts) != 1 {
-			return nil, kerrors.NewBadRequest("spec.account is required")
 		}
 
-		space.Spec.Account = accounts[0].Name
-		account = accounts[0]
+		decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), space.Name))
+		if err != nil {
+			return nil, err
+		} else if decision != authorizer.DecisionAllow {
+			return nil, kerrors.NewBadRequest("spec.account is required")
+		}
 	} else {
 		account = &configv1alpha1.Account{}
 		err := r.client.Get(ctx, types.NamespacedName{Name: space.Spec.Account}, account)
@@ -185,33 +188,35 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 	}
 
 	// Check if account is at limit
-	if account.Spec.Space.Limit != nil {
-		namespaceList := &corev1.NamespaceList{}
-		err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
-		if err != nil {
-			return nil, err
+	if account != nil {
+		if account.Spec.Space.Limit != nil {
+			namespaceList := &corev1.NamespaceList{}
+			err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
+			if err != nil {
+				return nil, err
+			}
+
+			if len(namespaceList.Items) >= *account.Spec.Space.Limit {
+				return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.Space.Limit, account.Name))
+			}
 		}
 
-		if len(namespaceList.Items) >= *account.Spec.Space.Limit {
-			return nil, kerrors.NewForbidden(tenancy.Resource("spaces"), space.Name, fmt.Errorf("space limit of %d reached for account %s", *account.Spec.Space.Limit, account.Name))
+		// Apply namespace annotations & labels
+		if account.Spec.Space.SpaceTemplate.Labels != nil {
+			if space.ObjectMeta.Labels == nil {
+				space.ObjectMeta.Labels = map[string]string{}
+			}
+			for k, v := range account.Spec.Space.SpaceTemplate.Labels {
+				space.ObjectMeta.Labels[k] = v
+			}
 		}
-	}
-
-	// Apply namespace annotations & labels
-	if account.Spec.Space.SpaceTemplate.Labels != nil {
-		if space.ObjectMeta.Labels == nil {
-			space.ObjectMeta.Labels = map[string]string{}
-		}
-		for k, v := range account.Spec.Space.SpaceTemplate.Labels {
-			space.ObjectMeta.Labels[k] = v
-		}
-	}
-	if account.Spec.Space.SpaceTemplate.Annotations != nil {
-		if space.ObjectMeta.Annotations == nil {
-			space.ObjectMeta.Annotations = map[string]string{}
-		}
-		for k, v := range account.Spec.Space.SpaceTemplate.Annotations {
-			space.ObjectMeta.Annotations[k] = v
+		if account.Spec.Space.SpaceTemplate.Annotations != nil {
+			if space.ObjectMeta.Annotations == nil {
+				space.ObjectMeta.Annotations = map[string]string{}
+			}
+			for k, v := range account.Spec.Space.SpaceTemplate.Annotations {
+				space.ObjectMeta.Annotations[k] = v
+			}
 		}
 	}
 
