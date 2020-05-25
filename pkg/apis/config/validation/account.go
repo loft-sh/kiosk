@@ -31,6 +31,23 @@ func validateSubjects(subjects []rbac.Subject) field.ErrorList {
 	return allErrs
 }
 
+func verifySpace(account *configv1alpha1.Account) field.ErrorList {
+	space := configv1alpha1.AccountSpace{}
+	err := convert.ObjectToObject(account.Spec.Space, &space)
+	if err != nil {
+		return field.ErrorList{field.InternalError(field.NewPath("spec.space"), err)}
+	}
+	return validateSpace(space)
+}
+
+func validateSpace(space configv1alpha1.AccountSpace) field.ErrorList{
+	allErrs := field.ErrorList{}
+
+	spacePath := field.NewPath("spec.space")
+	allErrs = append(allErrs, ValidateAccountSpaceTemplate(space.SpaceTemplate, spacePath)...)
+	return allErrs
+}
+
 // ValidateAccount tests required fields for an account
 func ValidateAccount(account *configv1alpha1.Account) field.ErrorList {
 	result := field.ErrorList{}
@@ -90,6 +107,16 @@ func ValidateRoleBindingSubject(subject rbac.Subject, isNamespaced bool, fldPath
 
 	default:
 		allErrs = append(allErrs, field.NotSupported(fldPath.Child("kind"), subject.Kind, []string{rbac.ServiceAccountKind, rbac.UserKind, rbac.GroupKind}))
+	}
+
+	return allErrs
+}
+
+func ValidateAccountSpaceTemplate(space configv1alpha1.AccountSpaceTemplate, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if reflect.DeepEqual(space,configv1alpha1.AccountSpaceTemplate{}) == true {
+		allErrs = append(allErrs, field.Required(fldPath.Child("metadata"), ""))
 	}
 
 	return allErrs
