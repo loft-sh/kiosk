@@ -1,6 +1,24 @@
 apiVersion: v2
 name: kiosk
-description: A multi tenancy solution for kubernetes
+description: Multi-Tenancy Extension For Kubernetes
+home: https://github.com/kiosk-sh/kiosk
+icon: https://static.devspace.cloud/kiosk/logo-compact/kiosk-logo-compact.svg
+sources:
+- https://github.com/kiosk-sh/kiosk
+keywords:
+- multi-tenancy
+- tenancy
+- cluster
+- sharing
+- share
+- space
+- namespace
+- developer
+- development
+maintainers:
+- name: DevSpace Technologies Inc.
+  email: info@devspace.cloud
+  url: https://twitter.com/DevSpace
 
 # A chart can be either an 'application' or a 'library' chart.
 #
