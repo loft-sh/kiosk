@@ -1,4 +1,16 @@
-{{- if .Values.apiService.enabled }}
+apiVersion: apiregistration.k8s.io/v1
+kind: APIService
+metadata:
+  name: v1alpha1.tenancy.kiosk.sh
+spec:
+  version: v1alpha1
+  versionPriority: 1000
+  group: tenancy.kiosk.sh
+  groupPriorityMinimum: 10000
+  service:
+    name: kiosk-apiservice
+    namespace: {{ .Release.Namespace }}
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -17,4 +29,3 @@ spec:
   selector:
     app: {{ template "kiosk.fullname" . }}
     release: {{ .Release.Name }}
-{{- end }}
