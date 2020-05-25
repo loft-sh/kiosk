@@ -297,31 +297,8 @@ func TestCreateSpace(t *testing.T) {
 			Name: "test4",
 		},
 	}, fakeCreateValidation, &metav1.CreateOptions{})
-	if err != nil {
-		t.Fatalf("Expected no error but got %v", err)
-	}
-
-	// Set index value
-	fakeClient.SetIndexValue(corev1.SchemeGroupVersion.WithKind("Namespace"), constants.IndexByAccount, "test", []runtime.Object{
-		&corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test",
-			},
-		}, &corev1.Namespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "test2",
-			},
-		},
-	})
-
-	// Create a space that would exceed the limit
-	_, err = spaceStorage.Create(userCtx, &tenancy.Space{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test5",
-		},
-	}, fakeCreateValidation, &metav1.CreateOptions{})
-	if err == nil || kerrors.IsForbidden(err) == false {
-		t.Fatalf("Expected forbidden but got %v", err)
+	if err == nil {
+		t.Fatalf("Expected error but got no error")
 	}
 }
 
