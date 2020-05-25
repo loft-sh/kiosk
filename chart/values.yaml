@@ -13,17 +13,6 @@ kiosk:
       memory: 128Mi
       cpu: 50m
 
-certManager:
-  certificate:
-    create: true
-  issuer:
-    create: true
-
-apiService:
-  enabled: true
-
-certSecret: webhook-server-cert
-
 serviceAccount:
   name: serviceaccount
   create: true
@@ -36,9 +25,3 @@ service:
   type: ClusterIP
   port: 443
   targetPort: 9443
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
