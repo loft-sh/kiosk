@@ -1,13 +1,15 @@
 package validation
 
 import (
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"reflect"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util/convert"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/kiosk-sh/kiosk/pkg/util/convert"
 )
 
 func verifySubjects(account *configv1alpha1.Account) field.ErrorList {
@@ -32,12 +34,7 @@ func validateSubjects(subjects []rbac.Subject) field.ErrorList {
 }
 
 func verifySpace(account *configv1alpha1.Account) field.ErrorList {
-	space := configv1alpha1.AccountSpace{}
-	err := convert.ObjectToObject(account.Spec.Space, &space)
-	if err != nil {
-		return field.ErrorList{field.InternalError(field.NewPath("spec.space"), err)}
-	}
-	return validateSpace(space)
+	return validateSpace(account.Spec.Space)
 }
 
 func validateSpace(space configv1alpha1.AccountSpace) field.ErrorList{
@@ -68,6 +65,7 @@ func ValidateAccountUpdate(newAccount *configv1alpha1.Account, oldAccount *confi
 
 	// Verify subjects
 	allErrs = append(allErrs, verifySubjects(newAccount)...)
+	allErrs = append(allErrs, verifySpace(newAccount)...)
 	return allErrs
 }
 
@@ -115,9 +113,20 @@ func ValidateRoleBindingSubject(subject rbac.Subject, isNamespaced bool, fldPath
 func ValidateAccountSpaceTemplate(space configv1alpha1.AccountSpaceTemplate, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if reflect.DeepEqual(space,configv1alpha1.AccountSpaceTemplate{}) == true {
+	if !spaceTemplateLabelAccountValidation(space.Labels) {
 		allErrs = append(allErrs, field.Required(fldPath.Child("metadata"), ""))
 	}
 
 	return allErrs
+}
+
+func spaceTemplateLabelAccountValidation (labels map[string]string) bool {
+	for key,value := range labels {
+		if key == constants.SpaceLabelAccount {
+			if value != "" {
+				return false
+			}
+		}
+	}
+	return true
 }
