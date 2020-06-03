@@ -112,6 +112,7 @@ func ValidateRoleBindingSubject(subject rbac.Subject, isNamespaced bool, fldPath
 	return allErrs
 }
 
+// ValidateAccountSpaceTemplate is exported to validate space template labels and reuse this validation logic
 func ValidateAccountSpaceTemplate(space configv1alpha1.AccountSpaceTemplate, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
