@@ -1,8 +1,9 @@
 package validation
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/constants"
 	"reflect"
+
+	"github.com/kiosk-sh/kiosk/pkg/constants"
 
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/validation"
@@ -37,7 +38,7 @@ func verifySpace(account *configv1alpha1.Account) field.ErrorList {
 	return validateSpace(account.Spec.Space)
 }
 
-func validateSpace(space configv1alpha1.AccountSpace) field.ErrorList{
+func validateSpace(space configv1alpha1.AccountSpace) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	spacePath := field.NewPath("spec.space")
@@ -50,6 +51,7 @@ func ValidateAccount(account *configv1alpha1.Account) field.ErrorList {
 	result := field.ErrorList{}
 	// Verify subjects
 	result = append(result, verifySubjects(account)...)
+	result = append(result, verifySpace(account)...)
 
 	return result
 }
@@ -120,8 +122,8 @@ func ValidateAccountSpaceTemplate(space configv1alpha1.AccountSpaceTemplate, fld
 	return allErrs
 }
 
-func spaceTemplateLabelAccountValidation (labels map[string]string) bool {
-	for key,value := range labels {
+func spaceTemplateLabelAccountValidation(labels map[string]string) bool {
+	for key, value := range labels {
 		if key == constants.SpaceLabelAccount {
 			if value != "" {
 				return false
