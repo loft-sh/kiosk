@@ -8,6 +8,6 @@ resources:
     chart:
       repository:
         name: redis
-        repoUrl: https://kubernetes-charts.storage.googleapis.com
+        repoUrl: https://charts.bitnami.com/bitnami
     values: |
       redisPort: 6379
