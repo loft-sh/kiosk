@@ -119,12 +119,12 @@ func (q *accountQuotaAdmission) lockAquisition(quotas []corev1.ResourceQuota) fu
 }
 
 func (q *accountQuotaAdmission) waitForSyncedStore(timeout <-chan time.Time) bool {
-	namespaceInformer, err := q.cache.GetInformer(&corev1.Namespace{})
+	namespaceInformer, err := q.cache.GetInformer(context.TODO(), &corev1.Namespace{})
 	if err != nil {
 		return false
 	}
 
-	accountQuotaInformer, err := q.cache.GetInformer(&configv1alpha1.AccountQuota{})
+	accountQuotaInformer, err := q.cache.GetInformer(context.TODO(), &configv1alpha1.AccountQuota{})
 	if err != nil {
 		return false
 	}

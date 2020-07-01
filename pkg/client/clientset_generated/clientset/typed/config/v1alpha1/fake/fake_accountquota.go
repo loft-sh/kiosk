@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var accountquotasResource = schema.GroupVersionResource{Group: "config.kiosk.sh"
 var accountquotasKind = schema.GroupVersionKind{Group: "config.kiosk.sh", Version: "v1alpha1", Kind: "AccountQuota"}
 
 // Get takes name of the accountQuota, and returns the corresponding accountQuota object, and an error if there is any.
-func (c *FakeAccountQuotas) Get(name string, options v1.GetOptions) (result *v1alpha1.AccountQuota, err error) {
+func (c *FakeAccountQuotas) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccountQuota, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(accountquotasResource, name), &v1alpha1.AccountQuota{})
 	if obj == nil {
@@ -48,7 +50,7 @@ func (c *FakeAccountQuotas) Get(name string, options v1.GetOptions) (result *v1a
 }
 
 // List takes label and field selectors, and returns the list of AccountQuotas that match those selectors.
-func (c *FakeAccountQuotas) List(opts v1.ListOptions) (result *v1alpha1.AccountQuotaList, err error) {
+func (c *FakeAccountQuotas) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccountQuotaList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(accountquotasResource, accountquotasKind, opts), &v1alpha1.AccountQuotaList{})
 	if obj == nil {
@@ -69,13 +71,13 @@ func (c *FakeAccountQuotas) List(opts v1.ListOptions) (result *v1alpha1.AccountQ
 }
 
 // Watch returns a watch.Interface that watches the requested accountQuotas.
-func (c *FakeAccountQuotas) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeAccountQuotas) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(accountquotasResource, opts))
 }
 
 // Create takes the representation of a accountQuota and creates it.  Returns the server's representation of the accountQuota, and an error, if there is any.
-func (c *FakeAccountQuotas) Create(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
+func (c *FakeAccountQuotas) Create(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.CreateOptions) (result *v1alpha1.AccountQuota, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(accountquotasResource, accountQuota), &v1alpha1.AccountQuota{})
 	if obj == nil {
@@ -85,7 +87,7 @@ func (c *FakeAccountQuotas) Create(accountQuota *v1alpha1.AccountQuota) (result 
 }
 
 // Update takes the representation of a accountQuota and updates it. Returns the server's representation of the accountQuota, and an error, if there is any.
-func (c *FakeAccountQuotas) Update(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
+func (c *FakeAccountQuotas) Update(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (result *v1alpha1.AccountQuota, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(accountquotasResource, accountQuota), &v1alpha1.AccountQuota{})
 	if obj == nil {
@@ -96,7 +98,7 @@ func (c *FakeAccountQuotas) Update(accountQuota *v1alpha1.AccountQuota) (result 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeAccountQuotas) UpdateStatus(accountQuota *v1alpha1.AccountQuota) (*v1alpha1.AccountQuota, error) {
+func (c *FakeAccountQuotas) UpdateStatus(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (*v1alpha1.AccountQuota, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(accountquotasResource, "status", accountQuota), &v1alpha1.AccountQuota{})
 	if obj == nil {
@@ -106,22 +108,22 @@ func (c *FakeAccountQuotas) UpdateStatus(accountQuota *v1alpha1.AccountQuota) (*
 }
 
 // Delete takes name of the accountQuota and deletes it. Returns an error if one occurs.
-func (c *FakeAccountQuotas) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeAccountQuotas) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(accountquotasResource, name), &v1alpha1.AccountQuota{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeAccountQuotas) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(accountquotasResource, listOptions)
+func (c *FakeAccountQuotas) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(accountquotasResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.AccountQuotaList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched accountQuota.
-func (c *FakeAccountQuotas) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.AccountQuota, err error) {
+func (c *FakeAccountQuotas) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccountQuota, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(accountquotasResource, name, pt, data, subresources...), &v1alpha1.AccountQuota{})
 	if obj == nil {

@@ -22,6 +22,7 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/util"
 	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
 	"github.com/kiosk-sh/kiosk/pkg/util/clusterrole"
+	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -45,16 +46,15 @@ import (
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
 	client.Client
-	Log    logr.Logger
+	Log    loghelper.Logger
 	Scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for an Account object and makes changes based on the state read
 func (r *AccountReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("account", req.NamespacedName)
-
-	log.Info("Account reconcile started")
+	log := loghelper.NewFromExisting(r.Log, req.Name)
+	log.Debugf("reconcile started")
 
 	// Retrieve account
 	account := &configv1alpha1.Account{}
@@ -106,7 +106,7 @@ func (r *AccountReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
-func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *configv1alpha1.Account, log logr.Logger) error {
+func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *configv1alpha1.Account, log loghelper.Logger) error {
 	roleBindings := &rbacv1.RoleBindingList{}
 	err := r.List(ctx, roleBindings, client.MatchingFields{constants.IndexByAccount: account.Name})
 	if err != nil {
@@ -122,14 +122,14 @@ func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *confi
 				return err
 			}
 
-			log.V(1).Info("updated role binding " + crb.Namespace + "/" + crb.Name)
+			log.Debugf("updated role binding %s/%s", crb.Namespace, crb.Name)
 		}
 	}
 
 	return nil
 }
 
-func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *configv1alpha1.Account, log logr.Logger) error {
+func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *configv1alpha1.Account, log loghelper.Logger) error {
 	// Ensure cluster role
 	clusterRoleList := &rbacv1.ClusterRoleList{}
 	err := r.List(ctx, clusterRoleList, client.MatchingFields{constants.IndexByAccount: account.Name})
@@ -155,7 +155,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 			return err
 		}
 
-		log.Info("Created cluster role " + clusterRole.Name)
+		log.Infof("created cluster role %s", clusterRole.Name)
 		clusterRoles = []rbacv1.ClusterRole{*clusterRole}
 	}
 
@@ -184,7 +184,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 				return err
 			}
 
-			log.Info("Updated cluster role binding " + crb.Name)
+			log.Infof("updated cluster role binding %s", crb.Name)
 		}
 	}
 
@@ -207,7 +207,7 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 			return err
 		}
 
-		log.Info("Created cluster role binding " + clusterRoleBinding.Name)
+		log.Infof("created cluster role binding %s", clusterRoleBinding.Name)
 	}
 
 	return nil

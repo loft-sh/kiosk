@@ -5,6 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
+	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,6 +33,12 @@ func NewFakeManager() *FakeManager {
 	}
 }
 
+func (fm *FakeManager) AddMetricsExtraHandler(path string, handler http.Handler) error {
+	return nil
+}
+func (fm *FakeManager) Elected() <-chan struct{} {
+	return nil
+}
 func (fm *FakeManager) Add(manager.Runnable) error {
 	return nil
 }

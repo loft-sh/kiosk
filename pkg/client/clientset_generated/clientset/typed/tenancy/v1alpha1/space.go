@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
@@ -37,15 +38,15 @@ type SpacesGetter interface {
 
 // SpaceInterface has methods to work with Space resources.
 type SpaceInterface interface {
-	Create(*v1alpha1.Space) (*v1alpha1.Space, error)
-	Update(*v1alpha1.Space) (*v1alpha1.Space, error)
-	UpdateStatus(*v1alpha1.Space) (*v1alpha1.Space, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.Space, error)
-	List(opts v1.ListOptions) (*v1alpha1.SpaceList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Space, err error)
+	Create(ctx context.Context, space *v1alpha1.Space, opts v1.CreateOptions) (*v1alpha1.Space, error)
+	Update(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (*v1alpha1.Space, error)
+	UpdateStatus(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (*v1alpha1.Space, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Space, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.SpaceList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Space, err error)
 	SpaceExpansion
 }
 
@@ -62,19 +63,19 @@ func newSpaces(c *TenancyV1alpha1Client) *spaces {
 }
 
 // Get takes name of the space, and returns the corresponding space object, and an error if there is any.
-func (c *spaces) Get(name string, options v1.GetOptions) (result *v1alpha1.Space, err error) {
+func (c *spaces) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Space, err error) {
 	result = &v1alpha1.Space{}
 	err = c.client.Get().
 		Resource("spaces").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of Spaces that match those selectors.
-func (c *spaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err error) {
+func (c *spaces) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SpaceList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -84,13 +85,13 @@ func (c *spaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err erro
 		Resource("spaces").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested spaces.
-func (c *spaces) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *spaces) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -100,81 +101,84 @@ func (c *spaces) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("spaces").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a space and creates it.  Returns the server's representation of the space, and an error, if there is any.
-func (c *spaces) Create(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
+func (c *spaces) Create(ctx context.Context, space *v1alpha1.Space, opts v1.CreateOptions) (result *v1alpha1.Space, err error) {
 	result = &v1alpha1.Space{}
 	err = c.client.Post().
 		Resource("spaces").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(space).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a space and updates it. Returns the server's representation of the space, and an error, if there is any.
-func (c *spaces) Update(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
+func (c *spaces) Update(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (result *v1alpha1.Space, err error) {
 	result = &v1alpha1.Space{}
 	err = c.client.Put().
 		Resource("spaces").
 		Name(space.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(space).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *spaces) UpdateStatus(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
+func (c *spaces) UpdateStatus(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (result *v1alpha1.Space, err error) {
 	result = &v1alpha1.Space{}
 	err = c.client.Put().
 		Resource("spaces").
 		Name(space.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(space).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the space and deletes it. Returns an error if one occurs.
-func (c *spaces) Delete(name string, options *v1.DeleteOptions) error {
+func (c *spaces) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("spaces").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *spaces) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *spaces) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("spaces").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched space.
-func (c *spaces) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Space, err error) {
+func (c *spaces) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Space, err error) {
 	result = &v1alpha1.Space{}
 	err = c.client.Patch(pt).
 		Resource("spaces").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

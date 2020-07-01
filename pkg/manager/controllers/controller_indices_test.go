@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -134,7 +135,7 @@ func (fi *fakeIndexer) GetIndexValues(obj runtime.Object, field string) ([]strin
 	return fi.indices[gvk][field](obj), nil
 }
 
-func (fi *fakeIndexer) IndexField(obj runtime.Object, field string, extractValue client.IndexerFunc) error {
+func (fi *fakeIndexer) IndexField(ctx context.Context, obj runtime.Object, field string, extractValue client.IndexerFunc) error {
 	gvk, err := apiutil.GVKForObject(obj, fi.scheme)
 	if err != nil {
 		return err

@@ -25,8 +25,6 @@ import (
 var clusterAdminBinding = &rbacv1.ClusterRoleBinding{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:            "test",
-		UID:             "123",
-		ResourceVersion: "1",
 	},
 	Subjects: []rbacv1.Subject{
 		{
@@ -46,8 +44,6 @@ func clientWithDefaultRoles(scheme *runtime.Scheme, objs ...runtime.Object) *tes
 	objs = append(objs, &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "test",
-			UID:             "123",
-			ResourceVersion: "1",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -95,7 +91,10 @@ func TestGetSpace(t *testing.T) {
 	}
 
 	// make user cluster admin
-	fakeClient.Create(context.TODO(), clusterAdminBinding)
+	err = fakeClient.Create(context.TODO(), clusterAdminBinding.DeepCopy())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// We are not allowed to retrieve it so this should return a not found
 	test, err := spaceStorage.Get(withRequestInfo(userCtx, "get", "test"), "test", &metav1.GetOptions{})
@@ -150,11 +149,9 @@ func TestListSpaces(t *testing.T) {
 	}
 
 	// create role for 2 spaces
-	fakeClient.Create(context.TODO(), &rbacv1.ClusterRole{
+	err = fakeClient.Create(context.TODO(), &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "test",
-			UID:             "123",
-			ResourceVersion: "1",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -167,7 +164,13 @@ func TestListSpaces(t *testing.T) {
 		},
 		AggregationRule: nil,
 	})
-	fakeClient.Create(context.TODO(), clusterAdminBinding)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = fakeClient.Create(context.TODO(), clusterAdminBinding.DeepCopy())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	obj, err = spaceStorage.List(userCtx, &metainternalversion.ListOptions{})
 	if err != nil {
@@ -268,7 +271,10 @@ func TestCreateSpace(t *testing.T) {
 	fakeClient.SetIndexValue(configv1alpha1.SchemeGroupVersion.WithKind("Account"), constants.IndexBySubjects, "user:foo", []runtime.Object{
 		newAccount,
 	})
-	fakeClient.Update(context.TODO(), newAccount)
+	err = fakeClient.Update(context.TODO(), newAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Create a space with account
 	createdObj, err := spaceStorage.Create(userCtx, &tenancy.Space{
@@ -331,12 +337,14 @@ func TestSpaceUpdate(t *testing.T) {
 	}
 
 	// Allow namespace update
-	fakeClient.Create(context.TODO(), clusterAdminBinding)
+	err = fakeClient.Create(context.TODO(), clusterAdminBinding.DeepCopy())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, updated, err = spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "test",
-			ResourceVersion: "123456",
 			Labels: map[string]string{
 				"Updated": "true",
 			},
@@ -369,7 +377,10 @@ func TestSpaceDelete(t *testing.T) {
 	}
 
 	// Allow account delete
-	fakeClient.Create(context.TODO(), clusterAdminBinding)
+	err = fakeClient.Create(context.TODO(), clusterAdminBinding.DeepCopy())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, deleted, err = spaceStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err != nil || deleted == false {

@@ -234,7 +234,7 @@ func batchPerform(infos ResourceList, fn func(*resource.Info) error, errs chan<-
 }
 
 func createResource(info *resource.Info) error {
-	obj, err := resource.NewHelper(info.Client, info.Mapping).Create(info.Namespace, true, info.Object, nil)
+	obj, err := resource.NewHelper(info.Client, info.Mapping).Create(info.Namespace, true, info.Object)
 	if err != nil {
 		return err
 	}

@@ -23,8 +23,6 @@ import (
 var clusterBinding = &rbacv1.ClusterRoleBinding{
 	ObjectMeta: metav1.ObjectMeta{
 		Name:            "test",
-		UID:             "123",
-		ResourceVersion: "1",
 	},
 	Subjects: []rbacv1.Subject{
 		{
@@ -102,7 +100,6 @@ func TestListAccount(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "test",
 				UID:             "123",
-				ResourceVersion: "1",
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
@@ -221,7 +218,6 @@ func TestAccountUpdate(t *testing.T) {
 	newObj, updated, err := accountStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Account{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            "test",
-			ResourceVersion: "123456",
 			Labels: map[string]string{
 				"Updated": "true",
 			},

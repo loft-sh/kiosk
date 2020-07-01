@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -39,7 +41,7 @@ var templateinstancesResource = schema.GroupVersionResource{Group: "config.kiosk
 var templateinstancesKind = schema.GroupVersionKind{Group: "config.kiosk.sh", Version: "v1alpha1", Kind: "TemplateInstance"}
 
 // Get takes name of the templateInstance, and returns the corresponding templateInstance object, and an error if there is any.
-func (c *FakeTemplateInstances) Get(name string, options v1.GetOptions) (result *v1alpha1.TemplateInstance, err error) {
+func (c *FakeTemplateInstances) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.TemplateInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(templateinstancesResource, c.ns, name), &v1alpha1.TemplateInstance{})
 
@@ -50,7 +52,7 @@ func (c *FakeTemplateInstances) Get(name string, options v1.GetOptions) (result 
 }
 
 // List takes label and field selectors, and returns the list of TemplateInstances that match those selectors.
-func (c *FakeTemplateInstances) List(opts v1.ListOptions) (result *v1alpha1.TemplateInstanceList, err error) {
+func (c *FakeTemplateInstances) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.TemplateInstanceList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(templateinstancesResource, templateinstancesKind, c.ns, opts), &v1alpha1.TemplateInstanceList{})
 
@@ -72,14 +74,14 @@ func (c *FakeTemplateInstances) List(opts v1.ListOptions) (result *v1alpha1.Temp
 }
 
 // Watch returns a watch.Interface that watches the requested templateInstances.
-func (c *FakeTemplateInstances) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeTemplateInstances) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(templateinstancesResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a templateInstance and creates it.  Returns the server's representation of the templateInstance, and an error, if there is any.
-func (c *FakeTemplateInstances) Create(templateInstance *v1alpha1.TemplateInstance) (result *v1alpha1.TemplateInstance, err error) {
+func (c *FakeTemplateInstances) Create(ctx context.Context, templateInstance *v1alpha1.TemplateInstance, opts v1.CreateOptions) (result *v1alpha1.TemplateInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(templateinstancesResource, c.ns, templateInstance), &v1alpha1.TemplateInstance{})
 
@@ -90,7 +92,7 @@ func (c *FakeTemplateInstances) Create(templateInstance *v1alpha1.TemplateInstan
 }
 
 // Update takes the representation of a templateInstance and updates it. Returns the server's representation of the templateInstance, and an error, if there is any.
-func (c *FakeTemplateInstances) Update(templateInstance *v1alpha1.TemplateInstance) (result *v1alpha1.TemplateInstance, err error) {
+func (c *FakeTemplateInstances) Update(ctx context.Context, templateInstance *v1alpha1.TemplateInstance, opts v1.UpdateOptions) (result *v1alpha1.TemplateInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(templateinstancesResource, c.ns, templateInstance), &v1alpha1.TemplateInstance{})
 
@@ -102,7 +104,7 @@ func (c *FakeTemplateInstances) Update(templateInstance *v1alpha1.TemplateInstan
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeTemplateInstances) UpdateStatus(templateInstance *v1alpha1.TemplateInstance) (*v1alpha1.TemplateInstance, error) {
+func (c *FakeTemplateInstances) UpdateStatus(ctx context.Context, templateInstance *v1alpha1.TemplateInstance, opts v1.UpdateOptions) (*v1alpha1.TemplateInstance, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(templateinstancesResource, "status", c.ns, templateInstance), &v1alpha1.TemplateInstance{})
 
@@ -113,7 +115,7 @@ func (c *FakeTemplateInstances) UpdateStatus(templateInstance *v1alpha1.Template
 }
 
 // Delete takes name of the templateInstance and deletes it. Returns an error if one occurs.
-func (c *FakeTemplateInstances) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeTemplateInstances) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(templateinstancesResource, c.ns, name), &v1alpha1.TemplateInstance{})
 
@@ -121,15 +123,15 @@ func (c *FakeTemplateInstances) Delete(name string, options *v1.DeleteOptions) e
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeTemplateInstances) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(templateinstancesResource, c.ns, listOptions)
+func (c *FakeTemplateInstances) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(templateinstancesResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.TemplateInstanceList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched templateInstance.
-func (c *FakeTemplateInstances) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.TemplateInstance, err error) {
+func (c *FakeTemplateInstances) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.TemplateInstance, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(templateinstancesResource, c.ns, name, pt, data, subresources...), &v1alpha1.TemplateInstance{})
 

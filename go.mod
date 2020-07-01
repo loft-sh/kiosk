@@ -8,15 +8,10 @@ require (
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-logr/logr v0.1.0
-	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/go-openapi/loads v0.19.4
 	github.com/go-openapi/spec v0.19.3
-	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190723091251-e0797f438f94 // indirect
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/juju/errors v0.0.0-20190930114154-d42613fe1ab9 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/lib/pq v1.2.0 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c // indirect
@@ -25,25 +20,27 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	gomodules.xyz/jsonpatch v2.0.0+incompatible // indirect
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.17.4
-	k8s.io/apiextensions-apiserver v0.17.4
-	k8s.io/apimachinery v0.17.4
-	k8s.io/apiserver v0.17.4
-	k8s.io/cli-runtime v0.17.4
-	k8s.io/client-go v0.17.4
-	k8s.io/component-base v0.17.4
-	k8s.io/gengo v0.0.0-20191120174120-e74f70b9b27e
+	k8s.io/api v0.18.4
+	k8s.io/apiextensions-apiserver v0.18.4
+	k8s.io/apimachinery v0.18.4
+	k8s.io/apiserver v0.18.4
+	k8s.io/cli-runtime v0.18.4
+	k8s.io/client-go v0.18.4
+	k8s.io/component-base v0.18.4
+	k8s.io/gengo v0.0.0-20200114144118-36b2048a9120
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.17.4
-	k8s.io/kube-controller-manager v0.17.4
-	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
-	k8s.io/kubectl v0.17.4
-	sigs.k8s.io/apiserver-builder-alpha v0.0.0-20200103114340-ef5d9b9c01aa
-	sigs.k8s.io/controller-runtime v0.5.2
-	sigs.k8s.io/controller-tools v0.1.11-0.20190405182121-56d42b19e55a // indirect
+	k8s.io/kube-aggregator v0.18.4
+	k8s.io/kube-controller-manager v0.18.4
+	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
+	k8s.io/kubectl v0.18.4
+	sigs.k8s.io/apiserver-builder-alpha v1.18.0
+	sigs.k8s.io/controller-runtime v0.6.0
 )
 
 go 1.13
+
+replace github.com/kubernetes-incubator/reference-docs => github.com/kubernetes-sigs/reference-docs v0.0.0-20170929004150-fcf65347b256
+
+replace github.com/markbates/inflect => github.com/markbates/inflect v1.0.4

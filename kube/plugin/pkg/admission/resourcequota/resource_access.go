@@ -14,6 +14,7 @@ limitations under the License.
 package resourcequota
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -75,7 +76,7 @@ func newQuotaAccessor() (*quotaAccessor, error) {
 }
 
 func (e *quotaAccessor) UpdateQuotaStatus(newQuota *corev1.ResourceQuota) error {
-	updatedQuota, err := e.client.CoreV1().ResourceQuotas(newQuota.Namespace).UpdateStatus(newQuota)
+	updatedQuota, err := e.client.CoreV1().ResourceQuotas(newQuota.Namespace).UpdateStatus(context.TODO(), newQuota, metav1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func (e *quotaAccessor) GetQuotas(namespace string) ([]corev1.ResourceQuota, err
 			// If there is already in-flight List() for a given namespace, we should wait until
 			// it is finished and cache is updated instead of doing the same, also to avoid
 			// throttling - see #22422 for details.
-			liveList, err := e.client.CoreV1().ResourceQuotas(namespace).List(metav1.ListOptions{})
+			liveList, err := e.client.CoreV1().ResourceQuotas(namespace).List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				return nil, err
 			}

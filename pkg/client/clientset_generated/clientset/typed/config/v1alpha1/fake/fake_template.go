@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var templatesResource = schema.GroupVersionResource{Group: "config.kiosk.sh", Ve
 var templatesKind = schema.GroupVersionKind{Group: "config.kiosk.sh", Version: "v1alpha1", Kind: "Template"}
 
 // Get takes name of the template, and returns the corresponding template object, and an error if there is any.
-func (c *FakeTemplates) Get(name string, options v1.GetOptions) (result *v1alpha1.Template, err error) {
+func (c *FakeTemplates) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(templatesResource, name), &v1alpha1.Template{})
 	if obj == nil {
@@ -48,7 +50,7 @@ func (c *FakeTemplates) Get(name string, options v1.GetOptions) (result *v1alpha
 }
 
 // List takes label and field selectors, and returns the list of Templates that match those selectors.
-func (c *FakeTemplates) List(opts v1.ListOptions) (result *v1alpha1.TemplateList, err error) {
+func (c *FakeTemplates) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.TemplateList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(templatesResource, templatesKind, opts), &v1alpha1.TemplateList{})
 	if obj == nil {
@@ -69,13 +71,13 @@ func (c *FakeTemplates) List(opts v1.ListOptions) (result *v1alpha1.TemplateList
 }
 
 // Watch returns a watch.Interface that watches the requested templates.
-func (c *FakeTemplates) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeTemplates) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(templatesResource, opts))
 }
 
 // Create takes the representation of a template and creates it.  Returns the server's representation of the template, and an error, if there is any.
-func (c *FakeTemplates) Create(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
+func (c *FakeTemplates) Create(ctx context.Context, template *v1alpha1.Template, opts v1.CreateOptions) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(templatesResource, template), &v1alpha1.Template{})
 	if obj == nil {
@@ -85,7 +87,7 @@ func (c *FakeTemplates) Create(template *v1alpha1.Template) (result *v1alpha1.Te
 }
 
 // Update takes the representation of a template and updates it. Returns the server's representation of the template, and an error, if there is any.
-func (c *FakeTemplates) Update(template *v1alpha1.Template) (result *v1alpha1.Template, err error) {
+func (c *FakeTemplates) Update(ctx context.Context, template *v1alpha1.Template, opts v1.UpdateOptions) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(templatesResource, template), &v1alpha1.Template{})
 	if obj == nil {
@@ -95,22 +97,22 @@ func (c *FakeTemplates) Update(template *v1alpha1.Template) (result *v1alpha1.Te
 }
 
 // Delete takes name of the template and deletes it. Returns an error if one occurs.
-func (c *FakeTemplates) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeTemplates) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(templatesResource, name), &v1alpha1.Template{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeTemplates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(templatesResource, listOptions)
+func (c *FakeTemplates) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(templatesResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.TemplateList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched template.
-func (c *FakeTemplates) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Template, err error) {
+func (c *FakeTemplates) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Template, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(templatesResource, name, pt, data, subresources...), &v1alpha1.Template{})
 	if obj == nil {

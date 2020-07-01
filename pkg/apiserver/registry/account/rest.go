@@ -29,11 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apiserver/pkg/registry/rest"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type accountREST struct {
+	rest.TableConvertor
+
 	client client.Client
 	filter authorization.FilteredLister
 }
@@ -42,8 +43,9 @@ type accountREST struct {
 func NewAccountREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
 	ruleClient := authorization.NewRuleClient(client)
 	return &accountREST{
-		client: client,
-		filter: authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
+		TableConvertor: rest.NewDefaultTableConvertor(tenancy.Resource("accounts")),
+		client:         client,
+		filter:         authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
 	}
 }
 

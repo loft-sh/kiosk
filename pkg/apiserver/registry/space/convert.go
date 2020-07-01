@@ -18,7 +18,9 @@ package space
 
 import (
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
+	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/kiosk-sh/kiosk/pkg/util/metahelper"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -26,7 +28,7 @@ import (
 // ConvertSpace converts a space into a namespace
 func ConvertSpace(space *tenancy.Space) *corev1.Namespace {
 	namespace := &corev1.Namespace{
-		ObjectMeta: space.ObjectMeta,
+		ObjectMeta: *space.ObjectMeta.DeepCopy(),
 		Spec: corev1.NamespaceSpec{
 			Finalizers: space.Spec.Finalizers,
 		},
@@ -43,13 +45,14 @@ func ConvertSpace(space *tenancy.Space) *corev1.Namespace {
 	}
 
 	namespace.Labels[constants.SpaceLabelAccount] = space.Spec.Account
+	metahelper.ReplaceManagedFieldsApiVersion(namespace, corev1.SchemeGroupVersion)
 	return namespace
 }
 
 // ConvertNamespace converts a namespace into a space
 func ConvertNamespace(namespace *corev1.Namespace) *tenancy.Space {
 	space := &tenancy.Space{
-		ObjectMeta: namespace.ObjectMeta,
+		ObjectMeta: *namespace.ObjectMeta.DeepCopy(),
 		Spec: tenancy.SpaceSpec{
 			Finalizers: namespace.Spec.Finalizers,
 		},
@@ -64,5 +67,6 @@ func ConvertNamespace(namespace *corev1.Namespace) *tenancy.Space {
 
 	space.Spec.Account = namespace.Labels[constants.SpaceLabelAccount]
 	delete(space.Labels, constants.SpaceLabelAccount)
+	metahelper.ReplaceManagedFieldsApiVersion(space, tenancyv1alpha1.SchemeGroupVersion)
 	return space
 }

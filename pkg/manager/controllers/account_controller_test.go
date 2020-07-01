@@ -3,9 +3,11 @@ package controllers
 import (
 	"context"
 	"github.com/ghodss/yaml"
+	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
 	"gotest.tools/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"testing"
 
@@ -67,6 +69,7 @@ func TestAccountController(t *testing.T) {
 		},
 	}
 	scheme := testingutil.NewScheme()
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {}))
 
 	for testName, test := range tests {
 		fakeClient := testingutil.NewFakeClient(scheme)
@@ -74,7 +77,7 @@ func TestAccountController(t *testing.T) {
 
 		accountController := &AccountReconciler{
 			Client: fakeClient,
-			Log:    zap.New(func(o *zap.Options) {}),
+			Log:    loghelper.New("test-reconciler"),
 			Scheme: scheme,
 		}
 

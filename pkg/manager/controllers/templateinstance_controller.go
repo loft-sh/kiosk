@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strings"
@@ -52,16 +53,15 @@ type TemplateInstanceReconciler struct {
 	newMergeClient newMergeClient
 	restMapper     meta.RESTMapper
 
-	Log    logr.Logger
+	Log    loghelper.Logger
 	Scheme *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for an Account object and makes changes based on the state read
 func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("templateinstance", req.NamespacedName)
-
-	log.Info("Template Instance reconcile started")
+	log := loghelper.NewFromExisting(r.Log, req.Namespace + "/" + req.Name)
+	log.Debugf("reconcile started")
 
 	// Retrieve account
 	templateInstance := &configv1alpha1.TemplateInstance{}
@@ -95,10 +95,10 @@ func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, e
 	}
 
 	// Try to deploy the template
-	return r.deploy(ctx, template, templateInstance, log)
+	return r.deploy(ctx, template, templateInstance)
 }
 
-func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, log logr.Logger) (ctrl.Result, error) {
+func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance) (ctrl.Result, error) {
 	objects := []*unstructured.Unstructured{}
 
 	// Gather objects from manifest
@@ -123,10 +123,10 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 		objects = append(objects, objs...)
 	}
 
-	return r.deployObjects(ctx, template, templateInstance, objects, log)
+	return r.deployObjects(ctx, template, templateInstance, objects)
 }
 
-func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured, log logr.Logger) (ctrl.Result, error) {
+func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured) (ctrl.Result, error) {
 	var err error
 	now := metav1.Now()
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
@@ -219,7 +219,7 @@ func shouldSetOwner(templateInstance *configv1alpha1.TemplateInstance) bool {
 }
 
 func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, reason, message string) (ctrl.Result, error) {
-	r.Log.Info(fmt.Sprintf("Template instance %s/%s failed: %s", templateInstance.Namespace, templateInstance.Name, message))
+	r.Log.Infof("Template instance %s/%s failed: %s", templateInstance.Namespace, templateInstance.Name, message)
 	templateInstance.Status = configv1alpha1.TemplateInstanceStatus{
 		Status:                  configv1alpha1.TemplateInstanceDeploymentStatusFailed,
 		Reason:                  reason,
@@ -241,7 +241,7 @@ func (t *templateMapper) Map(obj handler.MapObject) []reconcile.Request {
 	templateInstanceList := &configv1alpha1.TemplateInstanceList{}
 	err := t.client.List(context.TODO(), templateInstanceList, client.MatchingFields{constants.IndexByTemplate: obj.Meta.GetName()})
 	if err != nil {
-		t.Log.Info("Template instance list failed: " + err.Error())
+		t.Log.Info("template instance list failed: " + err.Error())
 	}
 
 	requests := []reconcile.Request{}

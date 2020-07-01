@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -161,6 +163,7 @@ func TestTemplateInstanceController(t *testing.T) {
 		},
 	}
 
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {}))
 	for _, test := range tests {
 		fakeClient := testingutil.NewFakeClient(scheme, test.template.DeepCopy(), test.templateInstance.DeepCopy())
 		fakeHelmRunner := &fakeHelmRunner{
@@ -172,7 +175,7 @@ func TestTemplateInstanceController(t *testing.T) {
 			Client:         fakeClient,
 			helm:           fakeHelmRunner,
 			newMergeClient: func() merge.Interface { return &fakeMerger{client: fakeClient} },
-			Log:            zap.New(func(o *zap.Options) {}),
+			Log:            loghelper.New("test-reconciler"),
 			Scheme:         scheme,
 		}
 

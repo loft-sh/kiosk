@@ -43,6 +43,8 @@ import (
 )
 
 type spaceStorage struct {
+	rest.TableConvertor
+
 	authorizer authorizer.Authorizer
 	scheme     *runtime.Scheme
 	filter     authorization.FilteredLister
@@ -54,10 +56,11 @@ func NewSpaceREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
 	ruleClient := authorization.NewRuleClient(client)
 	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
 	return &spaceStorage{
-		client:     client,
-		authorizer: authorizer,
-		scheme:     scheme,
-		filter:     authorization.NewFilteredLister(client, authorizer),
+		TableConvertor: rest.NewDefaultTableConvertor(tenancy.Resource("spaces")),
+		client:         client,
+		authorizer:     authorizer,
+		scheme:         scheme,
+		filter:         authorization.NewFilteredLister(client, authorizer),
 	}
 }
 
