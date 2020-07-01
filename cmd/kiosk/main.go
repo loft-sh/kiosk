@@ -42,6 +42,8 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/manager/quota"
 	"github.com/kiosk-sh/kiosk/pkg/manager/webhooks"
 	"k8s.io/apimachinery/pkg/runtime"
+	genericfeatures "k8s.io/apiserver/pkg/features"
+	featureutil "k8s.io/apiserver/pkg/util/feature"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -160,6 +162,13 @@ func main() {
 	// Start the api server
 	go func() {
 		version := "v0"
+		if os.Getenv("SERVER_SIDE_APPLY_ENABLED") != "true" {
+			err := featureutil.DefaultMutableFeatureGate.Set(string(genericfeatures.ServerSideApply) + "=false")
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		err = apiserver.StartApiServerWithOptions(&apiserver.StartOptions{
 			Apis:        apis.GetAllApiBuilders(),
 			Openapidefs: openapi.GetOpenAPIDefinitions,
