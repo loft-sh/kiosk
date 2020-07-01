@@ -34,6 +34,8 @@ import (
 )
 
 type accountREST struct {
+	rest.TableConvertor
+
 	client client.Client
 	filter authorization.FilteredLister
 }
@@ -42,8 +44,9 @@ type accountREST struct {
 func NewAccountREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
 	ruleClient := authorization.NewRuleClient(client)
 	return &accountREST{
-		client: client,
-		filter: authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
+		TableConvertor: rest.NewDefaultTableConvertor(tenancy.Resource("accounts")),
+		client:         client,
+		filter:         authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
 	}
 }
 

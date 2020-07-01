@@ -19,6 +19,8 @@ limitations under the License.
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -38,7 +40,7 @@ var spacesResource = schema.GroupVersionResource{Group: "tenancy.kiosk.sh", Vers
 var spacesKind = schema.GroupVersionKind{Group: "tenancy.kiosk.sh", Version: "v1alpha1", Kind: "Space"}
 
 // Get takes name of the space, and returns the corresponding space object, and an error if there is any.
-func (c *FakeSpaces) Get(name string, options v1.GetOptions) (result *v1alpha1.Space, err error) {
+func (c *FakeSpaces) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(spacesResource, name), &v1alpha1.Space{})
 	if obj == nil {
@@ -48,7 +50,7 @@ func (c *FakeSpaces) Get(name string, options v1.GetOptions) (result *v1alpha1.S
 }
 
 // List takes label and field selectors, and returns the list of Spaces that match those selectors.
-func (c *FakeSpaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err error) {
+func (c *FakeSpaces) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SpaceList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(spacesResource, spacesKind, opts), &v1alpha1.SpaceList{})
 	if obj == nil {
@@ -69,13 +71,13 @@ func (c *FakeSpaces) List(opts v1.ListOptions) (result *v1alpha1.SpaceList, err 
 }
 
 // Watch returns a watch.Interface that watches the requested spaces.
-func (c *FakeSpaces) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeSpaces) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(spacesResource, opts))
 }
 
 // Create takes the representation of a space and creates it.  Returns the server's representation of the space, and an error, if there is any.
-func (c *FakeSpaces) Create(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
+func (c *FakeSpaces) Create(ctx context.Context, space *v1alpha1.Space, opts v1.CreateOptions) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(spacesResource, space), &v1alpha1.Space{})
 	if obj == nil {
@@ -85,7 +87,7 @@ func (c *FakeSpaces) Create(space *v1alpha1.Space) (result *v1alpha1.Space, err 
 }
 
 // Update takes the representation of a space and updates it. Returns the server's representation of the space, and an error, if there is any.
-func (c *FakeSpaces) Update(space *v1alpha1.Space) (result *v1alpha1.Space, err error) {
+func (c *FakeSpaces) Update(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(spacesResource, space), &v1alpha1.Space{})
 	if obj == nil {
@@ -96,7 +98,7 @@ func (c *FakeSpaces) Update(space *v1alpha1.Space) (result *v1alpha1.Space, err 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeSpaces) UpdateStatus(space *v1alpha1.Space) (*v1alpha1.Space, error) {
+func (c *FakeSpaces) UpdateStatus(ctx context.Context, space *v1alpha1.Space, opts v1.UpdateOptions) (*v1alpha1.Space, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateSubresourceAction(spacesResource, "status", space), &v1alpha1.Space{})
 	if obj == nil {
@@ -106,22 +108,22 @@ func (c *FakeSpaces) UpdateStatus(space *v1alpha1.Space) (*v1alpha1.Space, error
 }
 
 // Delete takes name of the space and deletes it. Returns an error if one occurs.
-func (c *FakeSpaces) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeSpaces) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(spacesResource, name), &v1alpha1.Space{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeSpaces) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(spacesResource, listOptions)
+func (c *FakeSpaces) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(spacesResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.SpaceList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched space.
-func (c *FakeSpaces) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Space, err error) {
+func (c *FakeSpaces) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Space, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(spacesResource, name, pt, data, subresources...), &v1alpha1.Space{})
 	if obj == nil {

@@ -96,7 +96,7 @@ func SetOwnerReference(owner, object metav1.Object, scheme *runtime.Scheme) erro
 	// Validate the owner.
 	ro, ok := owner.(runtime.Object)
 	if !ok {
-		return fmt.Errorf("%T is not a runtime.Object, cannot call SetControllerReference", owner)
+		return fmt.Errorf("%T is not a runtime.Object, cannot call SetOwnerReference", owner)
 	}
 	if err := validateOwner(owner, object); err != nil {
 		return err
@@ -262,9 +262,10 @@ func AddFinalizerWithError(o runtime.Object, finalizer string) error {
 // RemoveFinalizer accepts a metav1 object and removes the provided finalizer if present.
 func RemoveFinalizer(o metav1.Object, finalizer string) {
 	f := o.GetFinalizers()
-	for i, e := range f {
-		if e == finalizer {
+	for i := 0; i < len(f); i++ {
+		if f[i] == finalizer {
 			f = append(f[:i], f[i+1:]...)
+			i--
 		}
 	}
 	o.SetFinalizers(f)

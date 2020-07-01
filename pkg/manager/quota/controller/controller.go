@@ -111,12 +111,12 @@ type AccountQuotaController struct {
 
 // NewAccountQuotaController creates a quota controller with specified options
 func NewAccountQuotaController(options *AccountQuotaControllerOptions) (*AccountQuotaController, error) {
-	quotaInf, err := options.Manager.GetCache().GetInformer(&configv1alpha1.AccountQuota{})
+	quotaInf, err := options.Manager.GetCache().GetInformer(context.TODO(), &configv1alpha1.AccountQuota{})
 	if err != nil {
 		return nil, err
 	}
 
-	namespaceInf, err := options.Manager.GetCache().GetInformer(&v1.Namespace{})
+	namespaceInf, err := options.Manager.GetCache().GetInformer(context.TODO(), &v1.Namespace{})
 	if err != nil {
 		return nil, err
 	}

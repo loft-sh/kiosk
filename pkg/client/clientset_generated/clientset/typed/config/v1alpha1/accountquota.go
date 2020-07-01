@@ -19,6 +19,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -37,15 +38,15 @@ type AccountQuotasGetter interface {
 
 // AccountQuotaInterface has methods to work with AccountQuota resources.
 type AccountQuotaInterface interface {
-	Create(*v1alpha1.AccountQuota) (*v1alpha1.AccountQuota, error)
-	Update(*v1alpha1.AccountQuota) (*v1alpha1.AccountQuota, error)
-	UpdateStatus(*v1alpha1.AccountQuota) (*v1alpha1.AccountQuota, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.AccountQuota, error)
-	List(opts v1.ListOptions) (*v1alpha1.AccountQuotaList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.AccountQuota, err error)
+	Create(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.CreateOptions) (*v1alpha1.AccountQuota, error)
+	Update(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (*v1alpha1.AccountQuota, error)
+	UpdateStatus(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (*v1alpha1.AccountQuota, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.AccountQuota, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AccountQuotaList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccountQuota, err error)
 	AccountQuotaExpansion
 }
 
@@ -62,19 +63,19 @@ func newAccountQuotas(c *ConfigV1alpha1Client) *accountQuotas {
 }
 
 // Get takes name of the accountQuota, and returns the corresponding accountQuota object, and an error if there is any.
-func (c *accountQuotas) Get(name string, options v1.GetOptions) (result *v1alpha1.AccountQuota, err error) {
+func (c *accountQuotas) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Get().
 		Resource("accountquotas").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of AccountQuotas that match those selectors.
-func (c *accountQuotas) List(opts v1.ListOptions) (result *v1alpha1.AccountQuotaList, err error) {
+func (c *accountQuotas) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AccountQuotaList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -84,13 +85,13 @@ func (c *accountQuotas) List(opts v1.ListOptions) (result *v1alpha1.AccountQuota
 		Resource("accountquotas").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested accountQuotas.
-func (c *accountQuotas) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *accountQuotas) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -100,81 +101,84 @@ func (c *accountQuotas) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("accountquotas").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a accountQuota and creates it.  Returns the server's representation of the accountQuota, and an error, if there is any.
-func (c *accountQuotas) Create(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
+func (c *accountQuotas) Create(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.CreateOptions) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Post().
 		Resource("accountquotas").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(accountQuota).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a accountQuota and updates it. Returns the server's representation of the accountQuota, and an error, if there is any.
-func (c *accountQuotas) Update(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
+func (c *accountQuotas) Update(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Put().
 		Resource("accountquotas").
 		Name(accountQuota.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(accountQuota).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *accountQuotas) UpdateStatus(accountQuota *v1alpha1.AccountQuota) (result *v1alpha1.AccountQuota, err error) {
+func (c *accountQuotas) UpdateStatus(ctx context.Context, accountQuota *v1alpha1.AccountQuota, opts v1.UpdateOptions) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Put().
 		Resource("accountquotas").
 		Name(accountQuota.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(accountQuota).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the accountQuota and deletes it. Returns an error if one occurs.
-func (c *accountQuotas) Delete(name string, options *v1.DeleteOptions) error {
+func (c *accountQuotas) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("accountquotas").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *accountQuotas) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *accountQuotas) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("accountquotas").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched accountQuota.
-func (c *accountQuotas) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.AccountQuota, err error) {
+func (c *accountQuotas) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.AccountQuota, err error) {
 	result = &v1alpha1.AccountQuota{}
 	err = c.client.Patch(pt).
 		Resource("accountquotas").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
