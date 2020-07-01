@@ -18,6 +18,8 @@ package account
 
 import (
 	"encoding/json"
+	"github.com/kiosk-sh/kiosk/pkg/util/metahelper"
+	"github.com/pkg/errors"
 
 	config "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
@@ -47,6 +49,7 @@ func ConvertConfigAccount(configAccount *config.Account) (*tenancy.Account, erro
 
 	tenancyAccount := &tenancy.Account{}
 	err = tenancyv1alpha1.Convert_v1alpha1_Account_To_tenancy_Account(outAccount, tenancyAccount, nil)
+	metahelper.ReplaceManagedFieldsApiVersion(tenancyAccount, tenancyv1alpha1.SchemeGroupVersion)
 	return tenancyAccount, err
 }
 
@@ -55,7 +58,7 @@ func ConvertTenancyAccount(originalAccount *tenancy.Account) (*config.Account, e
 	tenancyAccount := &tenancyv1alpha1.Account{}
 	err := tenancyv1alpha1.Convert_tenancy_Account_To_v1alpha1_Account(originalAccount, tenancyAccount, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "convert account")
 	}
 
 	out, err := json.Marshal(tenancyAccount)
@@ -70,5 +73,7 @@ func ConvertTenancyAccount(originalAccount *tenancy.Account) (*config.Account, e
 	}
 
 	outAccount.ObjectMeta = *tenancyAccount.ObjectMeta.DeepCopy()
+	outAccount.APIVersion = config.SchemeGroupVersion.String()
+	metahelper.ReplaceManagedFieldsApiVersion(outAccount, config.SchemeGroupVersion)
 	return outAccount, nil
 }

@@ -28,6 +28,7 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/store/crd"
 	"github.com/kiosk-sh/kiosk/pkg/store/validatingwebhookconfiguration"
 	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
+	"github.com/kiosk-sh/kiosk/pkg/util/log"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
@@ -44,8 +45,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
 	// +kubebuilder:scaffold:imports
 
 	// Make sure dep tools picks up these dependencies
@@ -74,9 +73,12 @@ func init() {
 }
 
 func main() {
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = os.Getenv("DEBUG") != ""
-	}))
+	// set global logger
+	if os.Getenv("DEBUG") == "true" {
+		ctrl.SetLogger(log.NewLog(0))
+	} else {
+		ctrl.SetLogger(log.NewLog(2))
+	}
 
 	// Make sure the certificates are there
 	err := certhelper.WriteCertificates()

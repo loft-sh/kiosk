@@ -38,7 +38,7 @@ type FakeInformers struct {
 }
 
 // GetInformerForKind implements Informers
-func (c *FakeInformers) GetInformerForKind(gvk schema.GroupVersionKind) (cache.Informer, error) {
+func (c *FakeInformers) GetInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (cache.Informer, error) {
 	if c.Scheme == nil {
 		c.Scheme = scheme.Scheme
 	}
@@ -50,7 +50,7 @@ func (c *FakeInformers) GetInformerForKind(gvk schema.GroupVersionKind) (cache.I
 }
 
 // FakeInformerForKind implements Informers
-func (c *FakeInformers) FakeInformerForKind(gvk schema.GroupVersionKind) (*FakeInformer, error) {
+func (c *FakeInformers) FakeInformerForKind(ctx context.Context, gvk schema.GroupVersionKind) (*FakeInformer, error) {
 	if c.Scheme == nil {
 		c.Scheme = scheme.Scheme
 	}
@@ -66,7 +66,7 @@ func (c *FakeInformers) FakeInformerForKind(gvk schema.GroupVersionKind) (*FakeI
 }
 
 // GetInformer implements Informers
-func (c *FakeInformers) GetInformer(obj runtime.Object) (cache.Informer, error) {
+func (c *FakeInformers) GetInformer(ctx context.Context, obj runtime.Object) (cache.Informer, error) {
 	if c.Scheme == nil {
 		c.Scheme = scheme.Scheme
 	}
@@ -87,7 +87,7 @@ func (c *FakeInformers) WaitForCacheSync(stop <-chan struct{}) bool {
 }
 
 // FakeInformerFor implements Informers
-func (c *FakeInformers) FakeInformerFor(obj runtime.Object) (*FakeInformer, error) {
+func (c *FakeInformers) FakeInformerFor(ctx context.Context, obj runtime.Object) (*FakeInformer, error) {
 	if c.Scheme == nil {
 		c.Scheme = scheme.Scheme
 	}
@@ -125,7 +125,7 @@ func (c *FakeInformers) Start(stopCh <-chan struct{}) error {
 }
 
 // IndexField implements Cache
-func (c *FakeInformers) IndexField(obj runtime.Object, field string, extractValue client.IndexerFunc) error {
+func (c *FakeInformers) IndexField(ctx context.Context, obj runtime.Object, field string, extractValue client.IndexerFunc) error {
 	return nil
 }
 

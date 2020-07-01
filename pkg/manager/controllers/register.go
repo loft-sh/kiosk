@@ -18,8 +18,8 @@ package controllers
 
 import (
 	"fmt"
+	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -27,7 +27,7 @@ import (
 func Register(mgr manager.Manager) error {
 	err := (&AccountReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Account"),
+		Log:    loghelper.New("account-controller"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	if err != nil {
@@ -36,7 +36,7 @@ func Register(mgr manager.Manager) error {
 
 	err = (&TemplateInstanceReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("TemplateInstance"),
+		Log:    loghelper.New("template-instance-controller"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	if err != nil {
