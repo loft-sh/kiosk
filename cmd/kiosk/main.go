@@ -23,6 +23,7 @@ import (
 	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/apiserver"
 	_ "github.com/kiosk-sh/kiosk/pkg/apiserver/registry"
+	"github.com/kiosk-sh/kiosk/pkg/manager/blockingcacheclient"
 	"github.com/kiosk-sh/kiosk/pkg/openapi"
 	"github.com/kiosk-sh/kiosk/pkg/store/apiservice"
 	"github.com/kiosk-sh/kiosk/pkg/store/crd"
@@ -92,6 +93,11 @@ func main() {
 	// retrieve in cluster config
 	config := ctrl.GetConfigOrDie()
 
+	// set qps, burst & timeout
+	config.QPS = 80
+	config.Burst = 100
+	config.Timeout = 0
+
 	// Make sure the needed crds are installed in the cluster
 	err = initialize(config)
 	if err != nil {
@@ -100,6 +106,7 @@ func main() {
 
 	// create the manager
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
+		NewClient:          blockingcacheclient.NewCacheClient,
 		Scheme:             scheme,
 		MetricsBindAddress: ":8080",
 		LeaderElection:     false,
