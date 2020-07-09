@@ -4,6 +4,7 @@ images:
     image: kiosksh/kiosktest
     build:
       docker:
+        skipPush: true
         options:
           target: builder
 deployments:

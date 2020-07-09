@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"time"
 )
 
@@ -63,14 +64,19 @@ func (c *CacheClient) poll(obj runtime.Object, condition func(newObj runtime.Obj
 		return err
 	}
 
-	newObj, err := c.scheme.New(obj.GetObjectKind().GroupVersionKind())
+	gvk, err := apiutil.GVKForObject(obj, c.scheme)
 	if err != nil {
 		return nil
 	}
-	err = wait.PollImmediate(time.Millisecond*5, time.Second*2, func() (bool, error) {
+
+	newObj, err := c.scheme.New(gvk)
+	if err != nil {
+		return nil
+	}
+
+	return wait.PollImmediate(time.Millisecond*10, time.Second*2, func() (bool, error) {
 		return condition(newObj, accessor)
 	})
-	return err
 }
 
 func (c *CacheClient) blockCreate(ctx context.Context, obj runtime.Object) error {
