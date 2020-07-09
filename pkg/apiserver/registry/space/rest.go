@@ -328,27 +328,9 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	}
 
 	// Update namespace intialization
-	for true {
-		delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
-		err = r.client.Update(ctx, namespace)
-		if err != nil {
-			if kerrors.IsConflict(err) {
-				// re get namespace to avoid conflict errors
-				err = r.client.Get(ctx, types.NamespacedName{Name: namespace.Name}, namespace)
-				if err != nil {
-					return err
-				}
-
-				continue
-			}
-
-			return err
-		}
-
-		break
-	}
-
-	return nil
+	originalNamespace := namespace.DeepCopy()
+	delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
+	return r.client.Patch(ctx, namespace, client.MergeFrom(originalNamespace))
 }
 
 // waitForAccess blocks until the namespace is created and in our cache
@@ -399,7 +381,7 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 
 	newSpace, ok := newObj.(*tenancy.Space)
 	if !ok {
-		return nil, false, fmt.Errorf("New object is not a space")
+		return nil, false, fmt.Errorf("new object is not a space")
 	}
 
 	namespace := ConvertSpace(newSpace)
@@ -410,7 +392,7 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, err
 	}
 
-	return newSpace, true, nil
+	return ConvertNamespace(namespace), true, nil
 }
 
 var _ = rest.GracefulDeleter(&spaceStorage{})
