@@ -24,10 +24,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apiserver/pkg/admission"
-	utilfeature "k8s.io/apiserver/pkg/util/feature"
 	"k8s.io/component-base/featuregate"
 )
-
 
 // owner: @gnufied
 // beta: v1.11
@@ -94,7 +92,7 @@ func (p *pvcEvaluator) Handles(a admission.Attributes) bool {
 	if op == admission.Create {
 		return true
 	}
-	if op == admission.Update && utilfeature.DefaultFeatureGate.Enabled(ExpandPersistentVolumes) {
+	if op == admission.Update {
 		return true
 	}
 	return false
