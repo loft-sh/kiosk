@@ -8,13 +8,23 @@ import (
 
 // ValidateAccountQuota tests required fields for an account quota
 func ValidateAccountQuota(accountQuota *configv1alpha1.AccountQuota) field.ErrorList {
-	return field.ErrorList{}
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateAccountQuotaSpec(&accountQuota.Spec)...)
+
+	return allErrs
 }
 
 // ValidateAccountQuotaUpdate tests updated fields for an account quota
 func ValidateAccountQuotaUpdate(newAccountQuota *configv1alpha1.AccountQuota, oldAccountQuota *configv1alpha1.AccountQuota) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(newAccountQuota.Spec.Account, oldAccountQuota.Spec.Account, field.NewPath("spec", "account"))...)
+	allErrs = append(allErrs, ValidateAccountQuotaSpec(&newAccountQuota.Spec)...)
 
+	return allErrs
+}
+
+func ValidateAccountQuotaSpec(accountQuotaSpec *configv1alpha1.AccountQuotaSpec) field.ErrorList {
+	allErrs := field.ErrorList{}
+	allErrs = append(allErrs, ValidateResourceQuotaSpec(&accountQuotaSpec.Quota, field.NewPath("spec", "quota"))...)
 	return allErrs
 }
