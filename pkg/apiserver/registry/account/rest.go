@@ -24,17 +24,17 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
 	"github.com/kiosk-sh/kiosk/pkg/authorization"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
 )
 
 type accountREST struct {
-	rest.TableConvertor
-
 	client client.Client
 	filter authorization.FilteredLister
 }
@@ -43,9 +43,8 @@ type accountREST struct {
 func NewAccountREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
 	ruleClient := authorization.NewRuleClient(client)
 	return &accountREST{
-		TableConvertor: rest.NewDefaultTableConvertor(tenancy.Resource("accounts")),
-		client:         client,
-		filter:         authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
+		client: client,
+		filter: authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
 	}
 }
 
@@ -65,6 +64,53 @@ var _ = rest.Lister(&accountREST{})
 
 func (r *accountREST) NewList() runtime.Object {
 	return &tenancy.AccountList{}
+}
+
+var swaggerMetadataDescriptions = metav1.ObjectMeta{}.SwaggerDoc()
+
+func (r *accountREST) ConvertToTable(ctx context.Context, object runtime.Object, tableOptions runtime.Object) (*metav1.Table, error) {
+	var table metav1.Table
+	fn := func(obj runtime.Object) error {
+		account, ok := obj.(*tenancy.Account)
+		if !ok {
+			return fmt.Errorf("cannot convert to account: %#+v", obj)
+		}
+
+		table.Rows = append(table.Rows, metav1.TableRow{
+			Cells:  []interface{}{account.GetName(), len(account.Status.Namespaces), account.GetCreationTimestamp().Time.UTC().Format(time.RFC3339)},
+			Object: runtime.RawExtension{Object: obj},
+		})
+		return nil
+	}
+	switch {
+	case meta.IsListType(object):
+		if err := meta.EachListItem(object, fn); err != nil {
+			return nil, err
+		}
+	default:
+		if err := fn(object); err != nil {
+			return nil, err
+		}
+	}
+	if m, err := meta.ListAccessor(object); err == nil {
+		table.ResourceVersion = m.GetResourceVersion()
+		table.SelfLink = m.GetSelfLink()
+		table.Continue = m.GetContinue()
+		table.RemainingItemCount = m.GetRemainingItemCount()
+	} else {
+		if m, err := meta.CommonAccessor(object); err == nil {
+			table.ResourceVersion = m.GetResourceVersion()
+			table.SelfLink = m.GetSelfLink()
+		}
+	}
+	if opt, ok := tableOptions.(*metav1.TableOptions); !ok || !opt.NoHeaders {
+		table.ColumnDefinitions = []metav1.TableColumnDefinition{
+			{Name: "Name", Type: "string", Format: "name", Description: swaggerMetadataDescriptions["name"]},
+			{Name: "Spaces", Type: "integer", Description: "The number of spaces this account owns"},
+			{Name: "Created At", Type: "date", Description: swaggerMetadataDescriptions["creationTimestamp"]},
+		}
+	}
+	return &table, nil
 }
 
 func (r *accountREST) List(ctx context.Context, options *metainternalversion.ListOptions) (runtime.Object, error) {
