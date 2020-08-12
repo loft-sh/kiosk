@@ -40,6 +40,12 @@ profiles:
         path: deployments[0].helm.values.livenessProbe
         value:
           enabled: false
+      - op: add
+        path: deployments[0].helm.values.kiosk.resources
+        value:
+          limits:
+            memory: 100Gi
+            cpu: "1000"
     replace:
       dev:
         interactive:
