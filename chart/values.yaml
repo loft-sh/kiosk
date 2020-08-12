@@ -4,6 +4,12 @@
 
 replicaCount: 1
 
+readinessProbe:
+  enabled: true
+
+livenessProbe:
+  enabled: true
+
 kiosk:
   command: 
   - /kiosk

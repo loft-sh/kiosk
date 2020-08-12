@@ -37,5 +37,25 @@ spec:
         image: "kiosksh/kiosk:{{ .Chart.Version }}"
         {{- end }}
         name: kiosk
+        {{- if .Values.livenessProbe.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- end }}
+        {{- if .Values.readinessProbe.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8443
+            scheme: HTTPS
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        {{- end }}
         resources:
 {{ toYaml .Values.kiosk.resources | indent 10 }}

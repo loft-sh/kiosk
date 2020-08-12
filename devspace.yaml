@@ -32,6 +32,14 @@ profiles:
       - op: add
         path: deployments[0].helm.values.kiosk.args
         value: ["99999999999"]
+      - op: add
+        path: deployments[0].helm.values.readinessProbe
+        value:
+          enabled: false
+      - op: add
+        path: deployments[0].helm.values.livenessProbe
+        value:
+          enabled: false
     replace:
       dev:
         interactive:
