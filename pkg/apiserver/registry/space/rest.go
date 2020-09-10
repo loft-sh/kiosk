@@ -52,14 +52,14 @@ type spaceStorage struct {
 }
 
 // NewSpaceREST creates a new space storage that implements the rest interface
-func NewSpaceREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
-	ruleClient := authorization.NewRuleClient(client)
+func NewSpaceREST(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage {
+	ruleClient := authorization.NewRuleClient(cachedClient)
 	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
 	return &spaceStorage{
-		client:     client,
+		client:     uncachedClient,
 		authorizer: authorizer,
 		scheme:     scheme,
-		filter:     authorization.NewFilteredLister(client, authorizer),
+		filter:     authorization.NewFilteredLister(uncachedClient, authorizer),
 	}
 }
 
@@ -240,7 +240,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 	if account != nil {
 		if account.Spec.Space.Limit != nil {
 			namespaceList := &corev1.NamespaceList{}
-			err := r.client.List(ctx, namespaceList, client.MatchingFields{constants.IndexByAccount: account.Name})
+			err := r.client.List(ctx, namespaceList, client.MatchingLabels{constants.SpaceLabelAccount: account.Name})
 			if err != nil {
 				return nil, err
 			}
@@ -293,12 +293,6 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	// Wait till we have the namespace in the cache
-	err := r.waitForAccess(ctx, namespace.Name)
-	if err != nil {
-		return nil, err
 	}
 
 	return ConvertNamespace(namespace), nil
@@ -377,26 +371,6 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	originalNamespace := namespace.DeepCopy()
 	delete(namespace.Annotations, constants.SpaceAnnotationInitializing)
 	return r.client.Patch(ctx, namespace, client.MergeFrom(originalNamespace))
-}
-
-// waitForAccess blocks until the namespace is created and in our cache
-func (r *spaceStorage) waitForAccess(ctx context.Context, namespace string) error {
-	backoff := retry.DefaultBackoff
-	backoff.Steps = 6 // this effectively waits for 6-ish seconds
-	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-		err := r.client.Get(ctx, types.NamespacedName{Name: namespace}, &corev1.Namespace{})
-		if err != nil {
-			if kerrors.IsNotFound(err) {
-				return false, nil
-			}
-
-			return false, err
-		}
-
-		return true, nil
-	})
-
-	return err
 }
 
 var _ = rest.Updater(&spaceStorage{})

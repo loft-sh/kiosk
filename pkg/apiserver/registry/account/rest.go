@@ -40,11 +40,11 @@ type accountREST struct {
 }
 
 // NewAccountREST creates a new account storage that implements the rest interface
-func NewAccountREST(client client.Client, scheme *runtime.Scheme) rest.Storage {
-	ruleClient := authorization.NewRuleClient(client)
+func NewAccountREST(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage {
+	ruleClient := authorization.NewRuleClient(cachedClient)
 	return &accountREST{
-		client: client,
-		filter: authorization.NewFilteredLister(client, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
+		client: uncachedClient,
+		filter: authorization.NewFilteredLister(uncachedClient, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
 	}
 }
 

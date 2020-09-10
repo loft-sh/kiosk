@@ -61,7 +61,7 @@ func (d *unversionedGenerator) Finalize(context *generator.Context, w io.Writer)
 }
 
 var UnversionedAPITemplate = `
-type NewRESTFunc func(client client.Client, scheme *runtime.Scheme) rest.Storage
+type NewRESTFunc func(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage
 
 var (
 	{{ range $api := .UnversionedResources -}}
@@ -73,7 +73,7 @@ var (
 			New{{ $api.REST }},
 		)
 		New{{ $api.REST }} = func(getter generic.RESTOptionsGetter) rest.Storage {
-			return New{{ $api.REST }}Func(Client, Scheme)
+			return New{{ $api.REST }}Func(CachedClient, UncachedClient, Scheme)
 		}
 		New{{ $api.REST }}Func NewRESTFunc
 	{{ else -}}
@@ -112,7 +112,7 @@ var (
 		func() runtime.Object { return &{{$subresource.Request}}{} },
 	)
 	New{{$subresource.Kind}}REST = func(getter generic.RESTOptionsGetter) rest.Storage {
-		return New{{$subresource.Kind}}RESTFunc(Client, Scheme)
+		return New{{$subresource.Kind}}RESTFunc(CachedClient, UncachedClient, Scheme)
 	}
 	New{{$subresource.Kind}}RESTFunc NewRESTFunc
 	{{ end -}}

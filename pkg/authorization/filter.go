@@ -35,14 +35,15 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersionReso
 		return nil, err
 	}
 
-	err = f.client.List(ctx, list, &client.ListOptions{
+	listOptions := &client.ListOptions{
 		LabelSelector: options.LabelSelector,
-		// TODO: support this, since it is currently not supported by the underlying cache implementation
-		// FieldSelector: options.FieldSelector,
-		Namespace: a.GetNamespace(),
-		Limit:     options.Limit,
-		Continue:  options.Continue,
-	})
+		FieldSelector: options.FieldSelector,
+		Namespace:     a.GetNamespace(),
+		Limit:         options.Limit,
+		Continue:      options.Continue,
+	}
+
+	err = f.client.List(ctx, list, listOptions)
 	if err != nil {
 		return nil, err
 	}

@@ -8,5 +8,8 @@ import (
 // Scheme will be injected during startup and then passed to the rest storages
 var Scheme *runtime.Scheme
 
-// Client will be injected during startup and then passed to the rest storages
-var Client client.Client
+// CachedClient will be injected during startup and then passed to the rest storages
+var CachedClient client.Client
+
+// UncachedClient will be injected during startup and then passed to the rest storages
+var UncachedClient client.Client
