@@ -82,7 +82,7 @@ func TestGetSpace(t *testing.T) {
 	})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
 
 	// We are not allowed to retrieve it so this should return a not found
 	_, err := spaceStorage.Get(withRequestInfo(userCtx, "get", "test"), "test", &metav1.GetOptions{})
@@ -134,7 +134,7 @@ func TestListSpaces(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
-	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
 
 	// Get empty list
 	obj, err := spaceStorage.List(userCtx, &metainternalversion.ListOptions{})
@@ -231,7 +231,7 @@ func TestCreateSpace(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "create", "")
-	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
 
 	// Try to create if we are not allowed to
 	_, err := spaceStorage.Create(userCtx, &tenancy.Space{
@@ -322,7 +322,7 @@ func TestSpaceUpdate(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "update", "test")
-	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
 
 	_, updated, err := spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -369,7 +369,7 @@ func TestSpaceDelete(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "delete", "test")
-	spaceStorage := NewSpaceREST(fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
 
 	_, deleted, err := spaceStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err == nil || kerrors.IsForbidden(err) == false || deleted == true {
