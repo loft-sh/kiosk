@@ -45,6 +45,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpec":                     schema_pkg_apis_config_v1alpha1_AccountSpec(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountStatus":                   schema_pkg_apis_config_v1alpha1_AccountStatus(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountTemplateInstanceTemplate": schema_pkg_apis_config_v1alpha1_AccountTemplateInstanceTemplate(ref),
+		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.ClusterRoleBindingTemplate":      schema_pkg_apis_config_v1alpha1_ClusterRoleBindingTemplate(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.EmbeddedResource":                schema_pkg_apis_config_v1alpha1_EmbeddedResource(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.HelmChart":                       schema_pkg_apis_config_v1alpha1_HelmChart(ref),
 		"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.HelmChartRepository":             schema_pkg_apis_config_v1alpha1_HelmChartRepository(ref),
@@ -1135,6 +1136,19 @@ func schema_pkg_apis_config_v1alpha1_AccountSpec(ref common.ReferenceCallback) c
 							Ref:         ref("github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace"),
 						},
 					},
+					"clusterRoleBindingTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ClusterRoleBindingTemplates defines cluster role bindings that will be created and managed for the account by kiosk",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/rbac/v1.ClusterRoleBinding"),
+									},
+								},
+							},
+						},
+					},
 					"subjects": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Subjects are the account users",
@@ -1152,7 +1166,7 @@ func schema_pkg_apis_config_v1alpha1_AccountSpec(ref common.ReferenceCallback) c
 			},
 		},
 		Dependencies: []string{
-			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace", "k8s.io/api/rbac/v1.Subject"},
+			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace", "k8s.io/api/rbac/v1.ClusterRoleBinding", "k8s.io/api/rbac/v1.Subject"},
 	}
 }
 
@@ -1207,6 +1221,33 @@ func schema_pkg_apis_config_v1alpha1_AccountTemplateInstanceTemplate(ref common.
 		},
 		Dependencies: []string{
 			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_config_v1alpha1_ClusterRoleBindingTemplate(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"roleRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "RoleRef can only reference a ClusterRole in the global namespace. If the RoleRef cannot be resolved, the Authorizer must return an error.",
+							Ref:         ref("k8s.io/api/rbac/v1.RoleRef"),
+						},
+					},
+				},
+				Required: []string{"roleRef"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/api/rbac/v1.RoleRef", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1805,6 +1846,19 @@ func schema_pkg_apis_tenancy_v1alpha1_AccountSpec(ref common.ReferenceCallback) 
 							Ref:         ref("github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace"),
 						},
 					},
+					"clusterRoleBindingTemplates": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ClusterRoleBindingTemplates defines cluster role bindings that will be created and managed for the account by kiosk",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/api/rbac/v1.ClusterRoleBinding"),
+									},
+								},
+							},
+						},
+					},
 					"subjects": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Subjects are the account users",
@@ -1822,7 +1876,7 @@ func schema_pkg_apis_tenancy_v1alpha1_AccountSpec(ref common.ReferenceCallback) 
 			},
 		},
 		Dependencies: []string{
-			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace", "k8s.io/api/rbac/v1.Subject"},
+			"github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1.AccountSpace", "k8s.io/api/rbac/v1.ClusterRoleBinding", "k8s.io/api/rbac/v1.Subject"},
 	}
 }
 

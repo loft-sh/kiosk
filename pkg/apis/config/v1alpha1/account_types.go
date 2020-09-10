@@ -27,9 +27,24 @@ type AccountSpec struct {
 	// +optional
 	Space AccountSpace `json:"space,omitempty"`
 
+	// ClusterRoleBindingTemplates defines cluster role bindings that will be
+	// created and managed for the account by kiosk
+	// +optional
+	ClusterRoleBindingTemplates []rbacv1.ClusterRoleBinding `json:"clusterRoleBindingTemplates,omitempty"`
+
 	// Subjects are the account users
 	// +optional
 	Subjects []rbacv1.Subject `json:"subjects,omitempty"`
+}
+
+type ClusterRoleBindingTemplate struct {
+	// Standard object's metadata.
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	// RoleRef can only reference a ClusterRole in the global namespace.
+	// If the RoleRef cannot be resolved, the Authorizer must return an error.
+	RoleRef rbacv1.RoleRef `json:"roleRef" protobuf:"bytes,3,opt,name=roleRef"`
 }
 
 // AccountSpace defines properties how many spaces can be owned by the account and how they should be created

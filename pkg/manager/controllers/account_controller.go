@@ -114,7 +114,7 @@ func (r *AccountReconciler) syncRoleBindings(ctx context.Context, account *confi
 	}
 
 	for _, crb := range roleBindings.Items {
-		// Update role binding
+		// Sync subjects
 		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
 			crb.Subjects = account.Spec.Subjects
 			err := r.Update(ctx, &crb)
@@ -176,9 +176,50 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 			found = true
 		}
 
+		// Check if we should delete the cluster role binding
+		shouldUpdate := false
+		if crb.Annotations != nil && crb.Annotations[constants.ClusterRoleBindingAnnotation] == "kiosk" {
+			// sync labels & annotations
+			shouldDelete := true
+			for _, crbt := range account.Spec.ClusterRoleBindingTemplates {
+				if crbt.RoleRef.Kind != crb.RoleRef.Kind || crbt.RoleRef.APIGroup != crb.RoleRef.APIGroup || crbt.RoleRef.Name != crb.RoleRef.Name {
+					continue
+				}
+
+				annotations := crbt.ObjectMeta.DeepCopy().Annotations
+				if crbt.Annotations == nil {
+					annotations = map[string]string{}
+				}
+				annotations[constants.ClusterRoleBindingAnnotation] = "kiosk"
+				labels := crbt.Labels
+				if apiequality.Semantic.DeepEqual(crb.Annotations, annotations) == false || apiequality.Semantic.DeepEqual(crb.Labels, labels) == false {
+					crb.Labels = labels
+					crb.Annotations = annotations
+
+					shouldUpdate = true
+				}
+
+				shouldDelete = false
+				break
+			}
+			if shouldDelete {
+				err = r.Delete(ctx, &crb)
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+
 		// Update cluster role binding if subjects differ
 		if apiequality.Semantic.DeepEqual(crb.Subjects, account.Spec.Subjects) == false {
 			crb.Subjects = account.Spec.Subjects
+
+			shouldUpdate = true
+		}
+
+		// Should we update the cluster role binding?
+		if shouldUpdate {
 			err := r.Client.Update(ctx, &crb)
 			if err != nil {
 				return err
@@ -208,6 +249,37 @@ func (r *AccountReconciler) syncClusterRoles(ctx context.Context, account *confi
 		}
 
 		log.Infof("created cluster role binding %s", clusterRoleBinding.Name)
+	}
+
+	// create the cluster role bindings that are missing but defined in the account
+	for _, clusterRoleBindingTemplate := range account.Spec.ClusterRoleBindingTemplates {
+		found := false
+		for _, clusterRoleBinding := range clusterRoleBindingsList.Items {
+			if clusterRoleBinding.RoleRef.Kind == clusterRoleBindingTemplate.Kind && clusterRoleBinding.RoleRef.APIGroup == clusterRoleBindingTemplate.RoleRef.APIGroup && clusterRoleBinding.RoleRef.Name == clusterRoleBindingTemplate.RoleRef.Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			annotations := clusterRoleBindingTemplate.ObjectMeta.DeepCopy().Annotations
+			annotations[constants.ClusterRoleBindingAnnotation] = "kiosk"
+			clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					GenerateName: RBACGenerateName(account),
+					Labels:       clusterRoleBindingTemplate.Labels,
+					Annotations:  annotations,
+				},
+				RoleRef:  clusterRoleBindingTemplate.RoleRef,
+				Subjects: account.Spec.Subjects,
+			}
+
+			err = clienthelper.CreateWithOwner(ctx, r.Client, clusterRoleBinding, account, r.Scheme)
+			if err != nil {
+				return err
+			}
+
+			log.Infof("created cluster role binding %s", clusterRoleBinding.Name)
+		}
 	}
 
 	return nil
