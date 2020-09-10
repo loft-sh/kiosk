@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type NewRESTFunc func(client client.Client, scheme *runtime.Scheme) rest.Storage
+type NewRESTFunc func(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage
 
 var (
 	TenancyAccountStorage = builders.NewApiResourceWithStorage( // Resource status endpoint
@@ -44,7 +44,7 @@ var (
 		NewAccountREST,
 	)
 	NewAccountREST = func(getter generic.RESTOptionsGetter) rest.Storage {
-		return NewAccountRESTFunc(Client, Scheme)
+		return NewAccountRESTFunc(CachedClient, UncachedClient, Scheme)
 	}
 	NewAccountRESTFunc  NewRESTFunc
 	TenancySpaceStorage = builders.NewApiResourceWithStorage( // Resource status endpoint
@@ -54,7 +54,7 @@ var (
 		NewSpaceREST,
 	)
 	NewSpaceREST = func(getter generic.RESTOptionsGetter) rest.Storage {
-		return NewSpaceRESTFunc(Client, Scheme)
+		return NewSpaceRESTFunc(CachedClient, UncachedClient, Scheme)
 	}
 	NewSpaceRESTFunc NewRESTFunc
 	InternalAccount  = builders.NewInternalResource(

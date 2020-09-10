@@ -22,7 +22,7 @@ import (
 
 var clusterBinding = &rbacv1.ClusterRoleBinding{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:            "test",
+		Name: "test",
 	},
 	Subjects: []rbacv1.Subject{
 		{
@@ -61,7 +61,7 @@ func TestGetAccount(t *testing.T) {
 	})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
+	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 	test, err := accountStorage.Get(userCtx, "test", &metav1.GetOptions{})
 	if err != nil {
 		t.Fatal(err)
@@ -98,8 +98,8 @@ func TestListAccount(t *testing.T) {
 			},
 		}, &rbacv1.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:            "test",
-				UID:             "123",
+				Name: "test",
+				UID:  "123",
 			},
 			Rules: []rbacv1.PolicyRule{
 				{
@@ -114,7 +114,7 @@ func TestListAccount(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
-	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
+	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 
 	// Get empty list
 	obj, err := accountStorage.List(userCtx, &metainternalversion.ListOptions{})
@@ -173,7 +173,7 @@ func TestCreateAccount(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
+	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 
 	// Allow us to create the account
 	// fakeAuthCache.UserAccounts["foo"] = []string{"*"}
@@ -213,11 +213,11 @@ func TestAccountUpdate(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
+	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 
 	newObj, updated, err := accountStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Account{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "test",
+			Name: "test",
 			Labels: map[string]string{
 				"Updated": "true",
 			},
@@ -245,7 +245,7 @@ func TestAccountDelete(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	accountStorage := NewAccountREST(fakeClient, scheme).(*accountREST)
+	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 
 	_, deleted, err := accountStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err != nil || deleted == false {

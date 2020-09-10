@@ -117,8 +117,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Inject the client and scheme
-	injectClient(mgr.GetClient(), scheme)
+	// create an uncached client for api routes
+	uncachedClient, err := client2.New(mgr.GetConfig(), client2.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+
+	// Inject the cached, uncached client and scheme
+	injectClient(mgr.GetClient(), uncachedClient, scheme)
 
 	// Add required indices
 	err = controllers.AddManagerIndices(mgr.GetCache())
@@ -221,7 +227,8 @@ func initialize(config *rest.Config) error {
 	return err
 }
 
-func injectClient(client client2.Client, scheme *runtime.Scheme) {
-	tenancy.Client = client
+func injectClient(cachedClient client2.Client, uncachedClient client2.Client, scheme *runtime.Scheme) {
+	tenancy.CachedClient = cachedClient
+	tenancy.UncachedClient = uncachedClient
 	tenancy.Scheme = scheme
 }
