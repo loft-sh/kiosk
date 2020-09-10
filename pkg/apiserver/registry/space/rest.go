@@ -35,11 +35,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apiserver/pkg/authentication/user"
 	authorizer "k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"k8s.io/client-go/util/retry"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -197,15 +199,15 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		return nil, err
 	}
 
+	// check if user can create namespaces
+	a, err := filters.GetAuthorizerAttributes(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	// Check if user can access account and create space
 	var account *configv1alpha1.Account
 	if space.Spec.Account == "" {
-		// check if user can create namespaces
-		a, err := filters.GetAuthorizerAttributes(ctx)
-		if err != nil {
-			return nil, err
-		}
-
 		decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), space.Name))
 		if err != nil {
 			return nil, err
@@ -221,12 +223,6 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 		// check if user is part of account
 		if util.IsUserPartOfAccount(userInfo, account) == false {
-			// check if user can create namespaces
-			a, err := filters.GetAuthorizerAttributes(ctx)
-			if err != nil {
-				return nil, err
-			}
-
 			decision, _, err := r.authorizer.Authorize(ctx, util.ChangeAttributesResource(a, corev1.SchemeGroupVersion.WithResource("namespaces"), space.Name))
 			if err != nil {
 				return nil, err
@@ -283,7 +279,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		// Create the default space templates and role binding
 		err = r.initializeSpace(ctx, namespace, account)
 		if err != nil {
-			r.client.Delete(ctx, namespace)
+			_ = r.client.Delete(ctx, namespace)
 			return nil, err
 		}
 	} else {
@@ -295,7 +291,38 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		}
 	}
 
+	err = r.waitForAccess(ctx, a.GetUser(), namespace)
+	if err != nil {
+		// if this happens it is kind of weird, but its not a reason to return an error and abort the request
+		klog.Infof("error waiting for access to namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
+	}
+
 	return ConvertNamespace(namespace), nil
+}
+
+func (r *spaceStorage) waitForAccess(ctx context.Context, user user.Info, namespace *corev1.Namespace) error {
+	a := &authorizer.AttributesRecord{
+		User:            user,
+		Verb:            "get",
+		Namespace:       namespace.Name,
+		APIGroup:        corev1.SchemeGroupVersion.Group,
+		APIVersion:      corev1.SchemeGroupVersion.Version,
+		Resource:        "namespaces",
+		Name:            namespace.Name,
+		ResourceRequest: true,
+	}
+
+	// here we wait until the authorizer tells us that the account can get the space
+	backoff := retry.DefaultBackoff
+	backoff.Steps = 8
+	return wait.ExponentialBackoff(backoff, func() (bool, error) {
+		decision, _, err := r.authorizer.Authorize(ctx, a)
+		if err != nil {
+			return false, err
+		}
+
+		return decision == authorizer.DecisionAllow, nil
+	})
 }
 
 func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Namespace, account *configv1alpha1.Account) error {
