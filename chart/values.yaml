@@ -4,6 +4,8 @@
 
 replicaCount: 1
 
+env: {}
+
 readinessProbe:
   enabled: true
 
@@ -21,6 +23,12 @@ kiosk:
     requests:
       memory: 128Mi
       cpu: 50m
+
+webhook:
+  create: true
+
+apiservice:
+  create: true
 
 serviceAccount:
   name: serviceaccount

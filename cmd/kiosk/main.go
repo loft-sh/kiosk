@@ -109,6 +109,7 @@ func main() {
 		NewClient:          blockingcacheclient.NewCacheClient,
 		Scheme:             scheme,
 		MetricsBindAddress: ":8080",
+		CertDir:            certhelper.WebhookCertFolder,
 		LeaderElection:     false,
 		Port:               9443,
 	})
@@ -194,17 +195,21 @@ func main() {
 	}()
 
 	// setup validatingwebhookconfiguration
-	err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
-	if err != nil {
-		setupLog.Error(err, "unable to set up validating webhook configuration")
-		os.Exit(1)
+	if os.Getenv("UPDATE_WEBHOOK") != "false" {
+		err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
+		if err != nil {
+			setupLog.Error(err, "unable to set up validating webhook configuration")
+			os.Exit(1)
+		}
 	}
 
 	// setup apiservice
-	err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
-	if err != nil {
-		setupLog.Error(err, "unable to set up apiservice")
-		os.Exit(1)
+	if os.Getenv("UPDATE_APISERVICE") != "false" {
+		err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
+		if err != nil {
+			setupLog.Error(err, "unable to set up apiservice")
+			os.Exit(1)
+		}
 	}
 
 	// Wait till stopChan is closed
