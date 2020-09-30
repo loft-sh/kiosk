@@ -1,4 +1,8 @@
+{{- if .Values.webhook }}
+{{- if .Values.webhook.create }}
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: kiosk
+{{- end }}
+{{- end }}

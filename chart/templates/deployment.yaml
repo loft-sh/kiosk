@@ -37,6 +37,23 @@ spec:
         image: "kiosksh/kiosk:{{ .Chart.Version }}"
         {{- end }}
         name: kiosk
+        env:
+          {{- if .Values.webhook }}
+          {{- if not .Values.webhook.create }}
+          - name: UPDATE_WEBHOOK
+            value: "false"
+          {{- end }}
+          {{- end }}
+          {{- if .Values.apiservice }}
+          {{- if not .Values.apiservice.create }}
+          - name: UPDATE_APISERVICE
+            value: "false"
+          {{- end }}
+          {{- end }}
+          {{- range $key, $value := .Values.env }}
+          - name: {{ $key | quote }}
+            value: {{ $value | quote }}
+          {{- end }}
         {{- if .Values.livenessProbe.enabled }}
         livenessProbe:
           httpGet:
