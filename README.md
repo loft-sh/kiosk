@@ -1,6 +1,6 @@
 <h1><img src="docs/website/static/img/kiosk-logo-horizontal.svg" alt=kiosk></h1>
 
-### **[Getting Started](#getting-started)** • **[Architecture](#architecture)** • **[Contributing](#contributing)** • **[Roadmap](#roadmap)**
+### **[Getting Started](#getting-started)** • **[Architecture](#architecture)** • **[Contributing](#contributing)**
 
 ![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23D1374D)
 ![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23D1374D)
@@ -15,19 +15,6 @@
 <br>
 
 ![kiosk Demo Video](docs/website/static/img/kiosk-demo-readme.gif)
-
-<br>
-
-## [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
-kiosk community calls are Zoom calls that are open for anyone to join. Feel free to invite colleagues or friends who may be interested. The goal of these calls is to:
-
-- Answer questions about kiosk and offer help for new users
-- Offer a channel for project feedback and learn about use cases for kiosk
-- Provide updates on new features and improvements
-- Discuss feature requests and the roadmap for kiosk
-
-☎️ [**Follow this link to join the call or to view/edit the agenda.**](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
-
 
 <br>
 
@@ -46,7 +33,6 @@ kiosk community calls are Zoom calls that are open for anyone to join. Feel free
 - [Upgrade kiosk](#upgrade-kiosk)
 - [Uninstall kiosk](#uninstall-kiosk)
 - [Extra: User Management & Authentication](#extra-user-management--authentication)
-- [Roadmap](#roadmap)
 - [Contributing](#contributing)
 
 <br>
@@ -153,15 +139,6 @@ When a Template is applied to a Space, kiosk creates a TemplateInstance to keep 
 <br>
 
 AccountQuotas are defined and managed by Cluster Admins. AccountQuotas define cluster-wide aggregated limits for Accounts. The resources of all Spaces/Namespaces that belong to an Account count towards the aggregated limits defined in the AccountQuota. Similar to Namespaces which can be limited by multiple ResourceQuotas, an Account can be limited by multiple AccountQuotas. If the same limit (e.g. total CPU per Account) is defined by multiple AccountQuotas, the Account will be limited according to the lowest value.
-
-<br>
-</details>
-
-<details>
-<summary><b>AccountQuotaSet</b></summary>
-<br>
-
-An AccountQuotaSet defines a set of AccountQuotas which are managed by the AccountQuotaSet. It is comparable to a StatefulSet which creates and manages Pods in a Kubernetes namespace. An AccountQuotaSet consists of an accountLabelSelector and a template for an AccountQuota. For each Account that is selected by the AccountQuota, the AccountQuotaSet creates a new AccountQuota for the selected Account.
 
 <br>
 </details>
@@ -1046,29 +1023,8 @@ kubectl ...
 
 <br>
 
-## Roadmap
-
-| YYYY-MM-DD       | Work Item                                                                            |
-|------------|--------------------------------------------------------------------------------------|
-| TBD        | Project: set up docs page with docusaurus                    |
-| TBD        | Project: create landing page                    |
-| TBD        | Project: add project to CNCF landscape                                               |
-| 2020-04-20 | Multi-Cluster: finalize [proposal for config resources and general workflow](https://docs.google.com/presentation/d/1ubDA2D-5EtvubiM_iPF581XJaFZeueQ5GhIbvOHo098/edit?usp=sharing)                    |
-| TBD        | Project: suggest kiosk as CNCF sandbox project                                       |
-
-
-### Open Questions
-The following questions are currently being discussed. Suggestions are highly appreciated.
-- How can we achieve that Account Users will be able to install CRDs and controllers into the cluster without having to go through the admin?
-- How can we achieve that Account Users will be able to install CRDs just for their own Account instead of for all cluster users? (virtual cluster approach, via API Server extension?)
-- How can we make it easier for an Account User or even just a Namespace User to get cluster access? (Current assumption is that all users have cluster access via preconfigured kube-config.)
-
-
-<br>
-
 ## Contributing
 There are many ways to get involved:
-- Join the next kiosk [Community Call](https://docs.google.com/document/d/1RfT7aGKe_KOk2GyrXXnEBKF-1aXudHvajcgEntz-zFI/edit?usp=sharing)
 - Open an issue for questions, to report bugs or to suggest new features
 - Open a pull request to contribute improvements to the code base or documentation
 - Email one of the maintainers ([Fabian](mailto:fk@devspace.cloud), [Lukas](mailto:lukas@devspace.sh)) to find out more about the project and how to get involved
