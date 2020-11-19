@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -79,5 +80,8 @@ func (fm *FakeManager) GetAPIReader() client.Reader {
 	return fm.Client
 }
 func (fm *FakeManager) GetWebhookServer() *webhook.Server {
+	return nil
+}
+func (fm *FakeManager) GetLogger() logr.Logger {
 	return nil
 }
