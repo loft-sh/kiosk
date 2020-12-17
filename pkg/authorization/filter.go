@@ -2,6 +2,7 @@ package authorization
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
@@ -43,7 +44,12 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersionReso
 		Continue:      options.Continue,
 	}
 
-	err = f.client.List(ctx, list, listOptions)
+	clientList, ok := list.(client.ObjectList)
+	if !ok {
+		return nil, errors.Errorf("unexpected type: %v", list)
+	}
+
+	err = f.client.List(ctx, clientList, listOptions)
 	if err != nil {
 		return nil, err
 	}

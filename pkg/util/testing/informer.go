@@ -36,6 +36,10 @@ type FakeInformer struct {
 	handlers []cache.ResourceEventHandler
 }
 
+func (f *FakeInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	return nil
+}
+
 // AddIndexers does nothing.  TODO(community): Implement this.
 func (f *FakeInformer) AddIndexers(indexers cache.Indexers) error {
 	return nil

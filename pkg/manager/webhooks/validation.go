@@ -25,7 +25,7 @@ import (
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/util/encoding"
 
-	"k8s.io/api/admission/v1beta1"
+	"k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -55,12 +55,12 @@ func (v *Validator) Handle(ctx context.Context, req admission.Request) admission
 		return admission.Allowed("")
 	}
 
-	if req.Operation == v1beta1.Create {
+	if req.Operation == v1.Create {
 		obj, err = v.StrictDecoder.Decode(req.Object.Raw)
 		if err != nil {
 			return admission.Denied(err.Error())
 		}
-	} else if req.Operation == v1beta1.Update {
+	} else if req.Operation == v1.Update {
 		obj, err = v.StrictDecoder.Decode(req.Object.Raw)
 		if err != nil {
 			return admission.Denied(err.Error())
@@ -77,19 +77,19 @@ func (v *Validator) Handle(ctx context.Context, req admission.Request) admission
 	var errs field.ErrorList
 	switch kind.Kind {
 	case "Account":
-		if req.Operation == v1beta1.Create {
+		if req.Operation == v1.Create {
 			errs = validation.ValidateAccount(obj.(*configv1alpha1.Account))
 		} else {
 			errs = validation.ValidateAccountUpdate(obj.(*configv1alpha1.Account), oldObj.(*configv1alpha1.Account))
 		}
 	case "AccountQuota":
-		if req.Operation == v1beta1.Create {
+		if req.Operation == v1.Create {
 			errs = validation.ValidateAccountQuota(obj.(*configv1alpha1.AccountQuota))
 		} else {
 			errs = validation.ValidateAccountQuotaUpdate(obj.(*configv1alpha1.AccountQuota), oldObj.(*configv1alpha1.AccountQuota))
 		}
 	case "TemplateInstance":
-		if req.Operation == v1beta1.Create {
+		if req.Operation == v1.Create {
 			errs = validation.ValidateTemplateInstance(obj.(*configv1alpha1.TemplateInstance))
 		} else {
 			errs = validation.ValidateTemplateInstanceUpdate(obj.(*configv1alpha1.TemplateInstance), oldObj.(*configv1alpha1.TemplateInstance))

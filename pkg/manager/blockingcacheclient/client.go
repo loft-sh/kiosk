@@ -13,8 +13,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
 )
+
+func NewCacheClientBuilder() manager.ClientBuilder {
+	return &CacheClientBuilder{}
+}
+
+type CacheClientBuilder struct{}
+
+// TODO: implement this
+func (c *CacheClientBuilder) WithUncached(objs ...client.Object) manager.ClientBuilder {
+	return c
+}
+
+func (c *CacheClientBuilder) Build(cache cache.Cache, config *rest.Config, options client.Options) (client.Client, error) {
+	return NewCacheClient(cache, config, options)
+}
 
 // CacheClient makes sure that the Create/Update/Patch/Delete functions block until the local cache is updated
 type CacheClient struct {
@@ -43,17 +59,13 @@ func defaultNewClient(cache cache.Cache, config *rest.Config, options client.Opt
 		return nil, err
 	}
 
-	return &client.DelegatingClient{
-		Reader: &client.DelegatingReader{
-			CacheReader:  cache,
-			ClientReader: c,
-		},
-		Writer:       c,
-		StatusClient: c,
-	}, nil
+	return client.NewDelegatingClient(client.NewDelegatingClientInput{
+		CacheReader: cache,
+		Client:      c,
+	})
 }
 
-func (c *CacheClient) poll(obj runtime.Object, condition func(newObj runtime.Object, oldAccessor metav1.Object) (bool, error)) error {
+func (c *CacheClient) poll(obj runtime.Object, condition func(newObj client.Object, oldAccessor metav1.Object) (bool, error)) error {
 	_, ok := obj.(*unstructured.Unstructured)
 	if ok {
 		return nil
@@ -75,12 +87,12 @@ func (c *CacheClient) poll(obj runtime.Object, condition func(newObj runtime.Obj
 	}
 
 	return wait.PollImmediate(time.Millisecond*10, time.Second*2, func() (bool, error) {
-		return condition(newObj, accessor)
+		return condition(newObj.(client.Object), accessor)
 	})
 }
 
-func (c *CacheClient) blockCreate(ctx context.Context, obj runtime.Object) error {
-	return c.poll(obj, func(newObj runtime.Object, oldAccessor metav1.Object) (bool, error) {
+func (c *CacheClient) blockCreate(ctx context.Context, obj client.Object) error {
+	return c.poll(obj, func(newObj client.Object, oldAccessor metav1.Object) (bool, error) {
 		err := c.Client.Get(ctx, types.NamespacedName{Namespace: oldAccessor.GetNamespace(), Name: oldAccessor.GetName()}, newObj)
 		if err != nil {
 			if runtime.IsNotRegisteredError(err) {
@@ -96,8 +108,8 @@ func (c *CacheClient) blockCreate(ctx context.Context, obj runtime.Object) error
 	})
 }
 
-func (c *CacheClient) blockUpdate(ctx context.Context, obj runtime.Object) error {
-	return c.poll(obj, func(newObj runtime.Object, oldAccessor metav1.Object) (bool, error) {
+func (c *CacheClient) blockUpdate(ctx context.Context, obj client.Object) error {
+	return c.poll(obj, func(newObj client.Object, oldAccessor metav1.Object) (bool, error) {
 		err := c.Client.Get(ctx, types.NamespacedName{Namespace: oldAccessor.GetNamespace(), Name: oldAccessor.GetName()}, newObj)
 		if err != nil {
 			if runtime.IsNotRegisteredError(err) {
@@ -119,7 +131,7 @@ func (c *CacheClient) blockUpdate(ctx context.Context, obj runtime.Object) error
 }
 
 func (c *CacheClient) blockDelete(ctx context.Context, obj runtime.Object) error {
-	return c.poll(obj, func(newObj runtime.Object, oldAccessor metav1.Object) (bool, error) {
+	return c.poll(obj, func(newObj client.Object, oldAccessor metav1.Object) (bool, error) {
 		err := c.Client.Get(ctx, types.NamespacedName{Namespace: oldAccessor.GetNamespace(), Name: oldAccessor.GetName()}, newObj)
 		if err != nil {
 			if runtime.IsNotRegisteredError(err) {
@@ -139,7 +151,7 @@ func (c *CacheClient) blockDelete(ctx context.Context, obj runtime.Object) error
 	})
 }
 
-func (c *CacheClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+func (c *CacheClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	err := c.Client.Create(ctx, obj, opts...)
 	if err != nil {
 		return err
@@ -148,7 +160,7 @@ func (c *CacheClient) Create(ctx context.Context, obj runtime.Object, opts ...cl
 	return c.blockCreate(ctx, obj)
 }
 
-func (c *CacheClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (c *CacheClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	err := c.Client.Patch(ctx, obj, patch, opts...)
 	if err != nil {
 		return err
@@ -157,7 +169,7 @@ func (c *CacheClient) Patch(ctx context.Context, obj runtime.Object, patch clien
 	return c.blockUpdate(ctx, obj)
 }
 
-func (c *CacheClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (c *CacheClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	err := c.Client.Update(ctx, obj, opts...)
 	if err != nil {
 		return err
@@ -166,7 +178,7 @@ func (c *CacheClient) Update(ctx context.Context, obj runtime.Object, opts ...cl
 	return c.blockUpdate(ctx, obj)
 }
 
-func (c *CacheClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+func (c *CacheClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	err := c.Client.Delete(ctx, obj, opts...)
 	if err != nil {
 		return err
@@ -188,7 +200,7 @@ type CacheStatusClient struct {
 	Cache *CacheClient
 }
 
-func (c *CacheStatusClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (c *CacheStatusClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	err := c.Cache.Client.Status().Update(ctx, obj, opts...)
 	if err != nil {
 		return err
@@ -197,7 +209,7 @@ func (c *CacheStatusClient) Update(ctx context.Context, obj runtime.Object, opts
 	return c.Cache.blockUpdate(ctx, obj)
 }
 
-func (c *CacheStatusClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (c *CacheStatusClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	err := c.Cache.Client.Status().Patch(ctx, obj, patch, opts...)
 	if err != nil {
 		return err

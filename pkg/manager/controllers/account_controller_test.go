@@ -90,7 +90,7 @@ func TestAccountController(t *testing.T) {
 
 		fakeClient.SetIndexValue(corev1.SchemeGroupVersion.WithKind("Namespace"), constants.IndexByAccount, test.account.Name, ownedNamespaces)
 
-		_, err := accountController.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.account.Name}})
+		_, err := accountController.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: test.account.Name}})
 		if err != nil {
 			t.Fatalf("Test %s failed: %v", testName, err)
 		}
@@ -105,8 +105,6 @@ func TestAccountController(t *testing.T) {
 		}
 	}
 }
-
-
 
 type eventHandlerTestCase struct {
 	name string
@@ -125,7 +123,7 @@ func TestEventHandler(t *testing.T) {
 		{
 			name: "Update with same accounts",
 			event: event.UpdateEvent{
-				MetaOld: &corev1.Namespace{
+				ObjectOld: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
 						Labels: map[string]string{
@@ -133,7 +131,7 @@ func TestEventHandler(t *testing.T) {
 						},
 					},
 				},
-				MetaNew: &corev1.Namespace{
+				ObjectNew: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
 						Labels: map[string]string{
@@ -146,7 +144,7 @@ func TestEventHandler(t *testing.T) {
 		{
 			name: "Update with different accounts",
 			event: event.UpdateEvent{
-				MetaOld: &corev1.Namespace{
+				ObjectOld: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
 						Labels: map[string]string{
@@ -154,7 +152,7 @@ func TestEventHandler(t *testing.T) {
 						},
 					},
 				},
-				MetaNew: &corev1.Namespace{
+				ObjectNew: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "ns1",
 						Labels: map[string]string{
@@ -179,13 +177,13 @@ func TestEventHandler(t *testing.T) {
 		{
 			name: "Delete without annotations",
 			event: event.DeleteEvent{
-				Meta: &corev1.Pod{},
+				Object: &corev1.Pod{},
 			},
 		},
 		{
 			name: "Generic with annotation",
 			event: event.GenericEvent{
-				Meta: &corev1.Namespace{
+				Object: &corev1.Namespace{
 					ObjectMeta: v1.ObjectMeta{
 						Labels: map[string]string{
 							constants.SpaceLabelAccount: "someOwner",
@@ -238,4 +236,3 @@ type fakeRateLimiter struct {
 func (f *fakeRateLimiter) Add(item interface{}) {
 	f.items = append(f.items, item)
 }
-

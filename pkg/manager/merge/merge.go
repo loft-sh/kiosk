@@ -55,7 +55,7 @@ func existingResourceConflict(resources ResourceList) error {
 		}
 
 		helper := resource.NewHelper(info.Client, info.Mapping)
-		existing, err := helper.Get(info.Namespace, info.Name, info.Export)
+		existing, err := helper.Get(info.Namespace, info.Name)
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return nil

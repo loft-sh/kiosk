@@ -8,3 +8,4 @@ default.etcd/
 .devspace/
 /main
 /profile.out
+/test

@@ -179,7 +179,7 @@ func TestTemplateInstanceController(t *testing.T) {
 			Scheme:         scheme,
 		}
 
-		_, reconcileError := controller.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.templateInstance.Name, Namespace: test.templateInstance.Namespace}})
+		_, reconcileError := controller.Reconcile(context.TODO(), reconcile.Request{NamespacedName: types.NamespacedName{Name: test.templateInstance.Name, Namespace: test.templateInstance.Namespace}})
 		if reconcileError != nil {
 			t.Fatal(reconcileError)
 		}
@@ -203,7 +203,7 @@ func TestTemplateInstanceController(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, o)
+			err = fakeClient.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, o.(client.Object))
 			if err != nil {
 				t.Fatalf("Test %s: expected no error retrieving %s/%s, but got %v", test.name, obj.Namespace, obj.Name, err)
 			}

@@ -8,7 +8,7 @@ import (
 	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
 	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -23,7 +23,7 @@ const (
 
 // EnsureValidatingWebhookConfiguration makes sure the validating webhook configuration is up and correct
 func EnsureValidatingWebhookConfiguration(ctx context.Context, client client.Client) error {
-	config := &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}
+	config := &admissionregistrationv1.ValidatingWebhookConfiguration{}
 	err := client.Get(ctx, types.NamespacedName{Name: ValidatingWebhookConfigurationName}, config)
 	if err != nil {
 		if kerrors.IsNotFound(err) == false {
@@ -47,14 +47,14 @@ func EnsureValidatingWebhookConfiguration(ctx context.Context, client client.Cli
 	return client.Update(ctx, config)
 }
 
-func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.ValidatingWebhookConfiguration) error {
+func prepareValidatingWebhookConfiguration(config *admissionregistrationv1.ValidatingWebhookConfiguration) error {
 	caBundleData, err := ioutil.ReadFile(filepath.Join(certhelper.WebhookCertFolder, "ca.crt"))
 	if err != nil {
 		return err
 	}
 
-	failPolicy := admissionregistrationv1beta1.Fail
-	namespaceScope := admissionregistrationv1beta1.NamespacedScope
+	failPolicy := admissionregistrationv1.Fail
+	namespaceScope := admissionregistrationv1.NamespacedScope
 	quotaPath := "/quota"
 	validatePath := "/validate"
 	namespace, err := clienthelper.CurrentNamespace()
@@ -62,12 +62,14 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.
 		return err
 	}
 
-	config.Webhooks = []admissionregistrationv1beta1.ValidatingWebhook{
+	sideEffects := admissionregistrationv1.SideEffectClassNone
+	config.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 		{
 			Name:          "accountquota.kiosk.sh",
 			FailurePolicy: &failPolicy,
-			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				Service: &admissionregistrationv1beta1.ServiceReference{
+			SideEffects:   &sideEffects,
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
 					Namespace: namespace,
 					Name:      certhelper.WebhookServiceName,
 					Path:      &quotaPath,
@@ -82,10 +84,10 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.
 					},
 				},
 			},
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{
+			Rules: []admissionregistrationv1.RuleWithOperations{
 				{
-					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					Rule: admissionregistrationv1beta1.Rule{
+					Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+					Rule: admissionregistrationv1.Rule{
 						APIGroups:   []string{"*"},
 						APIVersions: []string{"*"},
 						Resources:   []string{"*"},
@@ -93,28 +95,31 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1beta1.
 					},
 				},
 			},
+			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
 		},
 		{
 			Name:          "config.kiosk.sh",
 			FailurePolicy: &failPolicy,
-			ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
-				Service: &admissionregistrationv1beta1.ServiceReference{
+			SideEffects:   &sideEffects,
+			ClientConfig: admissionregistrationv1.WebhookClientConfig{
+				Service: &admissionregistrationv1.ServiceReference{
 					Namespace: namespace,
 					Name:      certhelper.WebhookServiceName,
 					Path:      &validatePath,
 				},
 				CABundle: caBundleData,
 			},
-			Rules: []admissionregistrationv1beta1.RuleWithOperations{
+			Rules: []admissionregistrationv1.RuleWithOperations{
 				{
-					Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-					Rule: admissionregistrationv1beta1.Rule{
+					Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+					Rule: admissionregistrationv1.Rule{
 						APIGroups:   []string{configv1alpha1.SchemeGroupVersion.Group},
 						APIVersions: []string{configv1alpha1.SchemeGroupVersion.Version},
 						Resources:   []string{"*"},
 					},
 				},
 			},
+			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
 		},
 	}
 

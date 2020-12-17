@@ -37,6 +37,7 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"os"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 
 	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
@@ -106,7 +107,7 @@ func main() {
 
 	// create the manager
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
-		NewClient:          blockingcacheclient.NewCacheClient,
+		ClientBuilder:      blockingcacheclient.NewCacheClientBuilder(),
 		Scheme:             scheme,
 		MetricsBindAddress: ":8080",
 		CertDir:            certhelper.WebhookCertFolder,
@@ -134,7 +135,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	stopChan := ctrl.SetupSignalHandler()
+	stopChan := make(chan struct{})
+	ctx := signals.SetupSignalHandler()
 	ctrlCtx := controllers.NewControllerContext(mgr, stopChan)
 
 	// Register generic controllers
@@ -164,14 +166,14 @@ func main() {
 	// Start the local manager
 	go func() {
 		setupLog.Info("starting manager")
-		err = mgr.Start(stopChan)
+		err = mgr.Start(ctx)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
 	// Make sure the manager is synced
-	mgr.GetCache().WaitForCacheSync(stopChan)
+	mgr.GetCache().WaitForCacheSync(ctx)
 
 	// Start the api server
 	go func() {

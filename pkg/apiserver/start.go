@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -101,7 +100,7 @@ func StartApiServerWithOptions(opts *StartOptions) error {
 
 	signalCh := genericapiserver.SetupSignalHandler()
 	// To disable providers, manually specify the list provided by getKnownProviders()
-	cmd, _ := NewCommandStartServer(opts.EtcdPath, os.Stdout, os.Stderr, opts.Apis, signalCh,
+	cmd, _ := NewCommandStartServer(opts.EtcdPath, opts.Apis, signalCh,
 		opts.Title, opts.Version, opts.TweakConfigFuncs...)
 
 	errors := []error{}
@@ -123,7 +122,7 @@ func StartApiServerWithOptions(opts *StartOptions) error {
 	return nil
 }
 
-func NewServerOptions(etcdPath, title, version string, b []*builders.APIGroupBuilder) *ServerOptions {
+func NewServerOptions(etcdPath string, b []*builders.APIGroupBuilder) *ServerOptions {
 	versions := []schema.GroupVersion{}
 	for _, b := range b {
 		versions = append(versions, b.GetLegacyCodec()...)
@@ -133,7 +132,6 @@ func NewServerOptions(etcdPath, title, version string, b []*builders.APIGroupBui
 		RecommendedOptions: genericoptions.NewRecommendedOptions(
 			etcdPath,
 			builders.Codecs.LegacyCodec(versions...),
-			genericoptions.NewProcessInfo(title, version),
 		),
 		APIBuilders:      b,
 		RunDelegatedAuth: false,
@@ -159,9 +157,9 @@ func NewServerOptions(etcdPath, title, version string, b []*builders.APIGroupBui
 }
 
 // NewCommandStartMaster provides a CLI handler for 'start master' command
-func NewCommandStartServer(etcdPath string, out, errOut io.Writer, builders []*builders.APIGroupBuilder,
+func NewCommandStartServer(etcdPath string, builders []*builders.APIGroupBuilder,
 	stopCh <-chan struct{}, title, version string, tweakConfigFuncs ...func(apiServer *apiserver.Config) error) (*cobra.Command, *ServerOptions) {
-	o := NewServerOptions(etcdPath, title, version, builders)
+	o := NewServerOptions(etcdPath, builders)
 
 	// for pluginName := range AggregatedAdmissionPlugins {
 	//	o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, pluginName)
@@ -270,13 +268,7 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 			return o.RecommendedOptions.SecureServing.ApplyTo(&cfg.SecureServing, &cfg.LoopbackClientConfig)
 		},
 		func(cfg *genericapiserver.Config) error {
-			return o.RecommendedOptions.Audit.ApplyTo(
-				&serverConfig.Config,
-				loopbackKubeConfig,
-				kubeInformerFactory,
-				o.RecommendedOptions.ProcessInfo,
-				nil,
-			)
+			return o.RecommendedOptions.Audit.ApplyTo(&serverConfig.Config)
 		},
 		o.RecommendedOptions.Features.ApplyTo,
 	)
