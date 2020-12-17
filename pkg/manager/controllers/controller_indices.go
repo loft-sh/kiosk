@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -35,7 +34,7 @@ var (
 // AddManagerIndices adds the needed manager indices for faster listing of resources
 func AddManagerIndices(indexer client.FieldIndexer) error {
 	// Index account by subjects
-	if err := indexer.IndexField(context.TODO(), &configv1alpha1.Account{}, constants.IndexBySubjects, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &configv1alpha1.Account{}, constants.IndexBySubjects, func(rawObj client.Object) []string {
 		// grab the namespace object, extract the owner...
 		account := rawObj.(*configv1alpha1.Account)
 		subjects := []string{}
@@ -52,7 +51,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index account quota by account
-	if err := indexer.IndexField(context.TODO(), &configv1alpha1.AccountQuota{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &configv1alpha1.AccountQuota{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		quota := rawObj.(*configv1alpha1.AccountQuota)
 		if quota.Spec.Account != "" {
 			return []string{quota.Spec.Account}
@@ -64,7 +63,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index namespaces by account
-	if err := indexer.IndexField(context.TODO(), &corev1.Namespace{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &corev1.Namespace{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		// grab the namespace object, extract the owner...
 		namespace := rawObj.(*corev1.Namespace)
 		if namespace.Labels != nil && namespace.Labels[constants.SpaceLabelAccount] != "" {
@@ -77,7 +76,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index clusterrole by owner account
-	if err := indexer.IndexField(context.TODO(), &rbacv1.ClusterRole{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &rbacv1.ClusterRole{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		// grab the cluster clusterrole object, extract the owner...
 		cr := rawObj.(*rbacv1.ClusterRole)
 		owner := metav1.GetControllerOf(cr)
@@ -91,7 +90,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index clusterrolebinding by owner account
-	if err := indexer.IndexField(context.TODO(), &rbacv1.ClusterRoleBinding{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &rbacv1.ClusterRoleBinding{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		// grab the cluster clusterrolebinding object, extract the owner...
 		cr := rawObj.(*rbacv1.ClusterRoleBinding)
 		owner := metav1.GetControllerOf(cr)
@@ -105,7 +104,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index role by owner account
-	if err := indexer.IndexField(context.TODO(), &rbacv1.Role{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &rbacv1.Role{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		// grab the role object, extract the owner...
 		cr := rawObj.(*rbacv1.Role)
 		owner := metav1.GetControllerOf(cr)
@@ -119,7 +118,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index rolebinding by owner account
-	if err := indexer.IndexField(context.TODO(), &rbacv1.RoleBinding{}, constants.IndexByAccount, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &rbacv1.RoleBinding{}, constants.IndexByAccount, func(rawObj client.Object) []string {
 		// grab the rolebinding object, extract the owner...
 		cr := rawObj.(*rbacv1.RoleBinding)
 		owner := metav1.GetControllerOf(cr)
@@ -133,7 +132,7 @@ func AddManagerIndices(indexer client.FieldIndexer) error {
 	}
 
 	// Index templateinstance by template
-	if err := indexer.IndexField(context.TODO(), &configv1alpha1.TemplateInstance{}, constants.IndexByTemplate, func(rawObj runtime.Object) []string {
+	if err := indexer.IndexField(context.TODO(), &configv1alpha1.TemplateInstance{}, constants.IndexByTemplate, func(rawObj client.Object) []string {
 		// grab the rolebinding object, extract the owner...
 		cr := rawObj.(*configv1alpha1.TemplateInstance)
 		return []string{cr.Spec.Template}

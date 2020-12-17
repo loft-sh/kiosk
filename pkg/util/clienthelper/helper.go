@@ -85,7 +85,7 @@ func CurrentNamespace() (string, error) {
 	return string(namespace), nil
 }
 
-func CreateWithOwner(ctx context.Context, client client.Client, object runtime.Object, owner metav1.Object, scheme *runtime.Scheme) error {
+func CreateWithOwner(ctx context.Context, kubeClient client.Client, object runtime.Object, owner metav1.Object, scheme *runtime.Scheme) error {
 	accessor, err := meta.Accessor(object)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func CreateWithOwner(ctx context.Context, client client.Client, object runtime.O
 		return err
 	}
 
-	err = client.Create(ctx, object)
+	err = kubeClient.Create(ctx, object.(client.Object))
 	if err != nil {
 		return err
 	}

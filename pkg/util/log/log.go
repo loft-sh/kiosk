@@ -53,7 +53,7 @@ func (l *log) Error(err error, msg string, keysAndValues ...interface{}) {
 // V returns an InfoLogger value for a specific verbosity level.  A higher
 // verbosity level means a log message is less important.  It's illegal to
 // pass a log level less than zero.
-func (l *log) V(level int) logr.InfoLogger {
+func (l *log) V(level int) logr.Logger {
 	if level < l.level {
 		return &silent{}
 	}
@@ -133,5 +133,9 @@ func formatKeysAndValues(keysAndValues ...interface{}) string {
 
 type silent struct{}
 
-func (s *silent) Info(msg string, keysAndValues ...interface{}) {}
-func (s *silent) Enabled() bool                                 { return false }
+func (s *silent) Info(msg string, keysAndValues ...interface{})             {}
+func (s *silent) Enabled() bool                                             { return false }
+func (s *silent) Error(err error, msg string, keysAndValues ...interface{}) {}
+func (s *silent) V(level int) logr.Logger                                   { return s }
+func (s *silent) WithValues(keysAndValues ...interface{}) logr.Logger       { return s }
+func (s *silent) WithName(name string) logr.Logger                          { return s }

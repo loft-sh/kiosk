@@ -21,16 +21,16 @@ import (
 // NewScheme creates a new scheme
 func NewScheme() *runtime.Scheme {
 	scheme := runtime.NewScheme()
-	clientgoscheme.AddToScheme(scheme)
-	configv1alpha1.AddToScheme(scheme)
-	tenancy.AddToScheme(scheme)
+	_ = clientgoscheme.AddToScheme(scheme)
+	_ = configv1alpha1.AddToScheme(scheme)
+	_ = tenancy.AddToScheme(scheme)
 	return scheme
 }
 
 // NewFakeClient creates a new fake client for the standard schema
 func NewFakeClient(scheme *runtime.Scheme, objs ...runtime.Object) *FakeIndexClient {
 	return &FakeIndexClient{
-		Client:  fake.NewFakeClientWithScheme(scheme, objs...),
+		Client:  fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build(),
 		scheme:  scheme,
 		indexes: map[schema.GroupVersionKind]map[string]map[string][]runtime.Object{},
 	}
@@ -69,49 +69,49 @@ func (fc *FakeIndexClient) SetIndexValue(gvk schema.GroupVersionKind, index stri
 	fc.indexes[gvk][index][value] = objs
 }
 
-func (fc *FakeIndexClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+func (fc *FakeIndexClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.Create(ctx, obj, opts...)
 }
 
-func (fc *FakeIndexClient) Delete(ctx context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+func (fc *FakeIndexClient) Delete(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.Delete(ctx, obj, opts...)
 }
 
-func (fc *FakeIndexClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (fc *FakeIndexClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.Update(ctx, obj, opts...)
 }
 
-func (fc *FakeIndexClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (fc *FakeIndexClient) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.Patch(ctx, obj, patch, opts...)
 }
 
-func (fc *FakeIndexClient) DeleteAllOf(ctx context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
+func (fc *FakeIndexClient) DeleteAllOf(ctx context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.DeleteAllOf(ctx, obj, opts...)
 }
 
-func (fc *FakeIndexClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+func (fc *FakeIndexClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 
 	return fc.Client.Get(ctx, key, obj)
 }
 
-func (fc *FakeIndexClient) List(ctx context.Context, list runtime.Object, opts ...client.ListOption) error {
+func (fc *FakeIndexClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	fc.clientLock.Lock()
 	defer fc.clientLock.Unlock()
 

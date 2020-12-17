@@ -24,7 +24,7 @@ type addManagerIndicesTestCase struct {
 	name string
 
 	key string
-	in  runtime.Object
+	in  client.Object
 
 	expected []string
 }
@@ -126,7 +126,7 @@ type fakeIndexer struct {
 	indices map[schema.GroupVersionKind]map[string]client.IndexerFunc
 }
 
-func (fi *fakeIndexer) GetIndexValues(obj runtime.Object, field string) ([]string, error) {
+func (fi *fakeIndexer) GetIndexValues(obj client.Object, field string) ([]string, error) {
 	gvk, err := apiutil.GVKForObject(obj, fi.scheme)
 	if err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (fi *fakeIndexer) GetIndexValues(obj runtime.Object, field string) ([]strin
 	return fi.indices[gvk][field](obj), nil
 }
 
-func (fi *fakeIndexer) IndexField(ctx context.Context, obj runtime.Object, field string, extractValue client.IndexerFunc) error {
+func (fi *fakeIndexer) IndexField(ctx context.Context, obj client.Object, field string, extractValue client.IndexerFunc) error {
 	gvk, err := apiutil.GVKForObject(obj, fi.scheme)
 	if err != nil {
 		return err

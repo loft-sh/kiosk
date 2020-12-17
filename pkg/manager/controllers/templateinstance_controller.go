@@ -58,9 +58,8 @@ type TemplateInstanceReconciler struct {
 }
 
 // Reconcile reads that state of the cluster for an Account object and makes changes based on the state read
-func (r *TemplateInstanceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
-	log := loghelper.NewFromExisting(r.Log, req.Namespace + "/" + req.Name)
+func (r *TemplateInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := loghelper.NewFromExisting(r.Log, req.Namespace+"/"+req.Name)
 	log.Debugf("reconcile started")
 
 	// Retrieve account
@@ -115,7 +114,7 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 
 	// Gather objects from helm
 	if template.Resources.Helm != nil {
-		objs, err := r.helm.Template(r, template.Name, templateInstance.Namespace, template.Resources.Helm)
+		objs, err := r.helm.Template(r.Client, template.Name, templateInstance.Namespace, template.Resources.Helm)
 		if err != nil {
 			return r.setFailed(ctx, templateInstance, "ErrorHelm", fmt.Sprintf("Error during helm template: %v", err))
 		}
@@ -231,17 +230,11 @@ func (r *TemplateInstanceReconciler) setFailed(ctx context.Context, templateInst
 	return ctrl.Result{Requeue: true, RequeueAfter: 5 * time.Minute}, r.Status().Update(ctx, templateInstance)
 }
 
-type templateMapper struct {
-	client client.Client
-
-	Log logr.Logger
-}
-
-func (t *templateMapper) Map(obj handler.MapObject) []reconcile.Request {
+func mapTemplateInstances(kubeClient client.Client, obj client.Object, log logr.Logger) []reconcile.Request {
 	templateInstanceList := &configv1alpha1.TemplateInstanceList{}
-	err := t.client.List(context.TODO(), templateInstanceList, client.MatchingFields{constants.IndexByTemplate: obj.Meta.GetName()})
+	err := kubeClient.List(context.TODO(), templateInstanceList, client.MatchingFields{constants.IndexByTemplate: obj.GetName()})
 	if err != nil {
-		t.Log.Info("template instance list failed: " + err.Error())
+		log.Info("template instance list failed: " + err.Error())
 	}
 
 	requests := []reconcile.Request{}
@@ -271,7 +264,9 @@ func (r *TemplateInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.restMapper = mgr.GetRESTMapper()
 
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: &templateMapper{client: r, Log: r.Log}}).
+		Watches(&source.Kind{Type: &configv1alpha1.Template{}}, handler.EnqueueRequestsFromMapFunc(func(object client.Object) []reconcile.Request {
+			return mapTemplateInstances(r.Client, object, r.Log)
+		})).
 		For(&configv1alpha1.TemplateInstance{}).
 		Complete(r)
 }

@@ -1,6 +1,7 @@
 package testing
 
 import (
+	"context"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,7 +53,7 @@ func (fm *FakeManager) AddHealthzCheck(name string, check healthz.Checker) error
 func (fm *FakeManager) AddReadyzCheck(name string, check healthz.Checker) error {
 	return nil
 }
-func (fm *FakeManager) Start(<-chan struct{}) error {
+func (fm *FakeManager) Start(ctx context.Context) error {
 	return nil
 }
 func (fm *FakeManager) GetConfig() *rest.Config {

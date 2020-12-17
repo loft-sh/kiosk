@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/kiosk-sh/kiosk/pkg/util/convert"
-	"k8s.io/api/admission/v1beta1"
+	"k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -43,7 +43,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 		}
 	)
 
-	if req.Operation == v1beta1.Create {
+	if req.Operation == v1.Create {
 		obj, err = newRuntimeObject(kind, scheme)
 		if err != nil {
 			return nil, err
@@ -53,7 +53,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 		if err != nil {
 			return nil, err
 		}
-	} else if req.Operation == v1beta1.Update {
+	} else if req.Operation == v1.Update {
 		obj, err = newRuntimeObject(kind, scheme)
 		if err != nil {
 			return nil, err
@@ -70,7 +70,7 @@ func NewAttributeFromRequest(req admission.Request, d *admission.Decoder, scheme
 		if err != nil {
 			return nil, err
 		}
-	} else if req.Operation == v1beta1.Delete {
+	} else if req.Operation == v1.Delete {
 		if len(req.OldObject.Raw) > 0 {
 			oldObj, err = newRuntimeObject(kind, scheme)
 			if err != nil {

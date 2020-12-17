@@ -51,8 +51,7 @@ type AccountReconciler struct {
 }
 
 // Reconcile reads that state of the cluster for an Account object and makes changes based on the state read
-func (r *AccountReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := loghelper.NewFromExisting(r.Log, req.Name)
 	log.Debugf("reconcile started")
 
@@ -243,30 +242,30 @@ type NamespaceEventHandler struct {
 
 // Create implements EventHandler
 func (e *NamespaceEventHandler) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
-	e.handleEvent(evt.Meta, q)
+	e.handleEvent(evt.Object, q)
 }
 
 // Update implements EventHandler
 func (e *NamespaceEventHandler) Update(evt event.UpdateEvent, q workqueue.RateLimitingInterface) {
-	if util.GetAccountFromNamespace(evt.MetaOld) == util.GetAccountFromNamespace(evt.MetaNew) {
+	if util.GetAccountFromNamespace(evt.ObjectOld) == util.GetAccountFromNamespace(evt.ObjectNew) {
 		return
 	}
 
-	e.handleEvent(evt.MetaOld, q)
-	e.handleEvent(evt.MetaNew, q)
+	e.handleEvent(evt.ObjectOld, q)
+	e.handleEvent(evt.ObjectNew, q)
 }
 
 // Delete implements EventHandler
 func (e *NamespaceEventHandler) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
-	e.handleEvent(evt.Meta, q)
+	e.handleEvent(evt.Object, q)
 }
 
 // Generic implements EventHandler
 func (e *NamespaceEventHandler) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
-	e.handleEvent(evt.Meta, q)
+	e.handleEvent(evt.Object, q)
 }
 
-func (e *NamespaceEventHandler) handleEvent(meta metav1.Object, q workqueue.RateLimitingInterface) {
+func (e *NamespaceEventHandler) handleEvent(meta client.Object, q workqueue.RateLimitingInterface) {
 	if meta == nil {
 		return
 	}

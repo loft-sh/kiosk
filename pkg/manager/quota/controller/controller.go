@@ -249,7 +249,7 @@ func (rq *AccountQuotaController) enqueueNamespace(obj interface{}) {
 
 	// List quotas by account
 	quotaList := &configv1alpha1.AccountQuotaList{}
-	err := rq.client.List(context.Background(), quotaList, client.MatchingField(constants.IndexByAccount, account))
+	err := rq.client.List(context.Background(), quotaList, client.MatchingFields{constants.IndexByAccount: account})
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("unable to list account quotas: %v", err))
 		return
@@ -381,7 +381,7 @@ func (rq *AccountQuotaController) syncAccountQuota(accountQuota *configv1alpha1.
 
 	// iterate over all quota namespaces and calculate usages
 	namespaceList := &v1.NamespaceList{}
-	err = rq.client.List(context.Background(), namespaceList, client.MatchingField(constants.IndexByAccount, accountQuota.Spec.Account))
+	err = rq.client.List(context.Background(), namespaceList, client.MatchingFields{constants.IndexByAccount: accountQuota.Spec.Account})
 	if err != nil {
 		return err
 	}
@@ -467,7 +467,7 @@ func (rq *AccountQuotaController) replenishQuota(groupResource schema.GroupResou
 
 	// check if this namespace even has a quota...
 	accountQuotaList := &configv1alpha1.AccountQuotaList{}
-	err = rq.client.List(context.Background(), accountQuotaList, client.MatchingField(constants.IndexByAccount, account))
+	err = rq.client.List(context.Background(), accountQuotaList, client.MatchingFields{constants.IndexByAccount: account})
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("error checking to see if namespace %s has any AccountQuota associated with it: %v", namespace, err))
 		return
