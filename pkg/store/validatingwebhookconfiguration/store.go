@@ -95,7 +95,7 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1.Valid
 					},
 				},
 			},
-			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, "v1beta1"},
 		},
 		{
 			Name:          "config.kiosk.sh",
@@ -119,7 +119,7 @@ func prepareValidatingWebhookConfiguration(config *admissionregistrationv1.Valid
 					},
 				},
 			},
-			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+			AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version, "v1beta1"},
 		},
 	}
 
