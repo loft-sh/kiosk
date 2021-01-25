@@ -4,9 +4,9 @@ import (
 	"context"
 	"io/ioutil"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
-	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util/certhelper"
+	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"

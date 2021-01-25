@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	testingutil "github.com/loft-sh/kiosk/pkg/util/testing"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

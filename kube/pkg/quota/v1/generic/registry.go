@@ -16,7 +16,7 @@ package generic
 import (
 	"sync"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

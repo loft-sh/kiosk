@@ -1,7 +1,7 @@
 package validation
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 

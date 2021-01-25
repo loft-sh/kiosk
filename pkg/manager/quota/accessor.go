@@ -22,9 +22,9 @@ import (
 
 	lru "github.com/hashicorp/golang-lru"
 
-	utilquota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	utilquota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/constants"
 
 	corev1 "k8s.io/api/core/v1"
 	kapierrors "k8s.io/apimachinery/pkg/api/errors"

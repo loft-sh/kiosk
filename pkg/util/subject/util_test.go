@@ -1,7 +1,7 @@
 package subject
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/constants"
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"

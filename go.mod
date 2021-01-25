@@ -1,4 +1,4 @@
-module github.com/kiosk-sh/kiosk
+module github.com/loft-sh/kiosk
 
 require (
 	github.com/Azure/go-autorest v13.0.0+incompatible // indirect

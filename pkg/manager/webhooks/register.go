@@ -17,9 +17,9 @@ limitations under the License.
 package webhooks
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
-	"github.com/kiosk-sh/kiosk/pkg/manager/quota"
-	"github.com/kiosk-sh/kiosk/pkg/util/encoding"
+	"github.com/loft-sh/kiosk/pkg/manager/controllers"
+	"github.com/loft-sh/kiosk/pkg/manager/quota"
+	"github.com/loft-sh/kiosk/pkg/util/encoding"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )

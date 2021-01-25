@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/constants"
 	"testing"
 
 	"gotest.tools/assert"

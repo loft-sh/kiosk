@@ -20,13 +20,12 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/kiosk-sh/kiosk/gen/cmd/apis/template"
+	"github.com/loft-sh/kiosk/gen/cmd/apis/template"
 	"k8s.io/gengo/args"
 	"k8s.io/klog"
 )
 
 func main() {
-
 	if len(os.Getenv("GOMAXPROCS")) == 0 {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 	}

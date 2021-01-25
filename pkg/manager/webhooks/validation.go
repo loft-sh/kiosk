@@ -19,11 +19,11 @@ package webhooks
 import (
 	"context"
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/apis/config/validation"
+	"github.com/loft-sh/kiosk/pkg/apis/config/validation"
 
 	"github.com/go-logr/logr"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util/encoding"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util/encoding"
 
 	"k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"

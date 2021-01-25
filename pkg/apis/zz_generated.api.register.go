@@ -19,9 +19,9 @@ limitations under the License.
 package apis
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	_ "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/install" // Install the tenancy group
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	_ "github.com/loft-sh/kiosk/pkg/apis/tenancy/install" // Install the tenancy group
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/apiserver-builder-alpha/pkg/builders"
 )
@@ -43,7 +43,7 @@ func GetAllApiBuilders() []*builders.APIGroupBuilder {
 
 var tenancyApiGroup = builders.NewApiGroupBuilder(
 	"tenancy.kiosk.sh",
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy").
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy").
 	WithUnVersionedApi(tenancy.ApiVersion).
 	WithVersionedApis(
 		tenancyv1alpha1.ApiVersion,

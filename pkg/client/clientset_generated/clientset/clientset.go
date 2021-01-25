@@ -21,8 +21,8 @@ package clientset
 import (
 	"fmt"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

@@ -19,7 +19,7 @@ package validation
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	resourcequotaapi "github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
+	resourcequotaapi "github.com/loft-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
 )
 
 // ValidateConfiguration validates the configuration.

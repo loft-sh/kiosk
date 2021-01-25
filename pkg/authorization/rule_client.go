@@ -2,7 +2,7 @@ package authorization
 
 import (
 	"context"
-	rbacregistryvalidation "github.com/kiosk-sh/kiosk/kube/pkg/registry/rbac/validation"
+	rbacregistryvalidation "github.com/loft-sh/kiosk/kube/pkg/registry/rbac/validation"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"

@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
+	"github.com/loft-sh/kiosk/kube/pkg/controller"
 	"math/rand"
 	"time"
 

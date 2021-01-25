@@ -20,10 +20,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
-	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
-	quotacontroller "github.com/kiosk-sh/kiosk/pkg/manager/quota/controller"
+	"github.com/loft-sh/kiosk/pkg/manager/controllers"
+	quotacontroller "github.com/loft-sh/kiosk/pkg/manager/quota/controller"
 
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
 	kubectrlmgrconfigv1alpha1 "k8s.io/kube-controller-manager/config/v1alpha1"
 )
 

@@ -1,4 +1,3 @@
-
 /*
 Copyright 2016 The Kubernetes Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +14,9 @@ limitations under the License.
 package install
 
 import (
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	core "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
-	generic "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	core "github.com/loft-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
+	generic "github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 

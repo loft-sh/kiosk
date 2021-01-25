@@ -2,15 +2,15 @@ package account
 
 import (
 	"context"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
+	testingutil "github.com/loft-sh/kiosk/pkg/util/testing"
 
 	"testing"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

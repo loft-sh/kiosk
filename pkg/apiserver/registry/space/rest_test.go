@@ -1,17 +1,17 @@
 package space
 
 import (
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"testing"
 
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	"github.com/loft-sh/kiosk/pkg/constants"
+	testingutil "github.com/loft-sh/kiosk/pkg/util/testing"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +24,7 @@ import (
 
 var clusterAdminBinding = &rbacv1.ClusterRoleBinding{
 	ObjectMeta: metav1.ObjectMeta{
-		Name:            "test",
+		Name: "test",
 	},
 	Subjects: []rbacv1.Subject{
 		{
@@ -43,7 +43,7 @@ var clusterAdminBinding = &rbacv1.ClusterRoleBinding{
 func clientWithDefaultRoles(scheme *runtime.Scheme, objs ...runtime.Object) *testingutil.FakeIndexClient {
 	objs = append(objs, &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "test",
+			Name: "test",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -151,7 +151,7 @@ func TestListSpaces(t *testing.T) {
 	// create role for 2 spaces
 	err = fakeClient.Create(context.TODO(), &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "test",
+			Name: "test",
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
@@ -344,7 +344,7 @@ func TestSpaceUpdate(t *testing.T) {
 
 	_, updated, err = spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:            "test",
+			Name: "test",
 			Labels: map[string]string{
 				"Updated": "true",
 			},

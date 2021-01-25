@@ -19,17 +19,17 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strings"
 	"time"
 
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	"github.com/kiosk-sh/kiosk/pkg/manager/helm"
-	"github.com/kiosk-sh/kiosk/pkg/manager/merge"
-	"github.com/kiosk-sh/kiosk/pkg/util"
-	"github.com/kiosk-sh/kiosk/pkg/util/convert"
+	"github.com/loft-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/manager/helm"
+	"github.com/loft-sh/kiosk/pkg/manager/merge"
+	"github.com/loft-sh/kiosk/pkg/util"
+	"github.com/loft-sh/kiosk/pkg/util/convert"
 
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 

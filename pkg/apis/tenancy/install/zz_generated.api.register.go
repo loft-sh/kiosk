@@ -19,8 +19,8 @@ limitations under the License.
 package install
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/apiserver-builder-alpha/pkg/builders"

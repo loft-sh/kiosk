@@ -1,5 +1,5 @@
 domain: kiosk.sh
-repo: github.com/kiosk-sh/kiosk
+repo: github.com/loft-sh/kiosk
 resources:
 - group: config
   kind: Account

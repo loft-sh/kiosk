@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 	"github.com/ghodss/yaml"
-	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	"gotest.tools/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/workqueue"
@@ -11,9 +11,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"testing"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	testingutil "github.com/kiosk-sh/kiosk/pkg/util/testing"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/constants"
+	testingutil "github.com/loft-sh/kiosk/pkg/util/testing"
 
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"

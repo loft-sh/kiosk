@@ -9,7 +9,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
+	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
 	"io/ioutil"
 	"math/big"
 	"os"

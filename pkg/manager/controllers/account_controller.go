@@ -18,11 +18,11 @@ package controllers
 
 import (
 	"context"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util"
-	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
-	"github.com/kiosk-sh/kiosk/pkg/util/clusterrole"
-	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util"
+	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
+	"github.com/loft-sh/kiosk/pkg/util/clusterrole"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -30,8 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/go-logr/logr"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/constants"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
