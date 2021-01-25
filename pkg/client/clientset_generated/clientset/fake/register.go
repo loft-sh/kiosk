@@ -19,8 +19,8 @@ limitations under the License.
 package fake
 
 import (
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

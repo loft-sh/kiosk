@@ -1,10 +1,10 @@
 apiVersion: v2
 name: kiosk
 description: Multi-Tenancy Extension For Kubernetes
-home: https://github.com/kiosk-sh/kiosk
+home: https://github.com/loft-sh/kiosk
 icon: https://static.devspace.cloud/kiosk/logo-compact/kiosk-logo-compact.svg
 sources:
-- https://github.com/kiosk-sh/kiosk
+- https://github.com/loft-sh/kiosk
 keywords:
 - multi-tenancy
 - tenancy

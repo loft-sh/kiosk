@@ -16,8 +16,8 @@ package core
 import (
 	"fmt"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"

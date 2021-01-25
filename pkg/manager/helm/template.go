@@ -10,9 +10,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util"
-	"github.com/kiosk-sh/kiosk/pkg/util/convert"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util"
+	"github.com/loft-sh/kiosk/pkg/util/convert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

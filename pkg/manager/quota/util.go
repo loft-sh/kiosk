@@ -19,7 +19,7 @@ package quota
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 )
 
 func GetResourceQuotasStatusByNamespace(namespaceStatuses configv1alpha1.AccountQuotasStatusByNamespace, namespace string) (corev1.ResourceQuotaStatus, bool) {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"io/ioutil"
 
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
-	"github.com/kiosk-sh/kiosk/pkg/util/clienthelper"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util/certhelper"
+	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

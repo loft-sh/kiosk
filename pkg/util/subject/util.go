@@ -17,7 +17,7 @@ limitations under the License.
 package subject
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/constants"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiserver/pkg/authentication/serviceaccount"
 )

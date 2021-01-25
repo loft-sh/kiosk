@@ -21,7 +21,7 @@ import (
 
 	"k8s.io/klog"
 
-	rbacv1helpers "github.com/kiosk-sh/kiosk/kube/pkg/apis/rbac/v1"
+	rbacv1helpers "github.com/loft-sh/kiosk/kube/pkg/apis/rbac/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/sets"

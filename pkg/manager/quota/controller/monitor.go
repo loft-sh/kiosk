@@ -18,10 +18,10 @@ package controller
 
 import (
 	"fmt"
-	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
-	v12 "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	"github.com/loft-sh/kiosk/kube/pkg/controller"
+	v12 "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
 	"sync"
 	"time"
 

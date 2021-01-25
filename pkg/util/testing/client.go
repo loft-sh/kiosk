@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"

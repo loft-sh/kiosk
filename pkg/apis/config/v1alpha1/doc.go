@@ -25,4 +25,4 @@ limitations under the License.
 // +k8s:openapi-gen=true
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=config.kiosk.sh
-package v1alpha1 // import "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+package v1alpha1 // import "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"

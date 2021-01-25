@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/util/certhelper"
+	"github.com/loft-sh/kiosk/pkg/util/certhelper"
 	"net/http"
 	"os"
 	"path/filepath"

@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/labels"

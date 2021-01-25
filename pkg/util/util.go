@@ -18,7 +18,7 @@ package util
 
 import (
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/constants"
 	"os/exec"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

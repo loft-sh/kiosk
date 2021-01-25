@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"time"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
-	resourcequotaapi "github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
+	resourcequotaapi "github.com/loft-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apiserver/pkg/admission"
 	genericadmissioninitializer "k8s.io/apiserver/pkg/admission/initializer"

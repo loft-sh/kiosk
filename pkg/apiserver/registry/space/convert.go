@@ -17,10 +17,10 @@ limitations under the License.
 package space
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	"github.com/kiosk-sh/kiosk/pkg/util/metahelper"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/util/metahelper"
 
 	corev1 "k8s.io/api/core/v1"
 )

@@ -25,8 +25,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/selection"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -441,7 +441,6 @@ func GetPodQOS(pod *corev1.Pod) corev1.PodQOSClass {
 	}
 	return corev1.PodQOSBurstable
 }
-
 
 func isTerminating(pod *corev1.Pod) bool {
 	if pod.Spec.ActiveDeadlineSeconds != nil && *pod.Spec.ActiveDeadlineSeconds >= int64(0) {

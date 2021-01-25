@@ -17,10 +17,10 @@ limitations under the License.
 package quota
 
 import (
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/install"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/evaluator/core"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/install"
 )
 
 // NewQuotaConfiguration creates a new quota configuration that can be used to create quota registry

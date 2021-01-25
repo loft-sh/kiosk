@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/kiosk-sh/kiosk/pkg/util/loghelper"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )

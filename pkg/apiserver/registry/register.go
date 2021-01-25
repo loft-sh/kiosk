@@ -1,9 +1,9 @@
 package registry
 
 import (
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	"github.com/kiosk-sh/kiosk/pkg/apiserver/registry/account"
-	"github.com/kiosk-sh/kiosk/pkg/apiserver/registry/space"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	"github.com/loft-sh/kiosk/pkg/apiserver/registry/account"
+	"github.com/loft-sh/kiosk/pkg/apiserver/registry/space"
 )
 
 func init() {

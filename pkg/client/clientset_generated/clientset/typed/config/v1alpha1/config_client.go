@@ -19,8 +19,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/scheme"
+	v1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

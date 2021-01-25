@@ -18,12 +18,12 @@ package account
 
 import (
 	"encoding/json"
-	"github.com/kiosk-sh/kiosk/pkg/util/metahelper"
+	"github.com/loft-sh/kiosk/pkg/util/metahelper"
 	"github.com/pkg/errors"
 
-	config "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/apis/tenancy"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	config "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

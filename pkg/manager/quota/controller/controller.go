@@ -19,8 +19,8 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/kiosk-sh/kiosk/kube/pkg/controller"
-	v12 "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/controller"
+	v12 "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
 	"reflect"
 	"sync"
 	"time"
@@ -44,9 +44,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/constants"
-	"github.com/kiosk-sh/kiosk/pkg/util"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/util"
 )
 
 // StaticResyncPeriodFunc returns the resync period specified

@@ -19,11 +19,11 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1"
-	fakeconfigv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1/fake"
-	tenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1"
-	faketenancyv1alpha1 "github.com/kiosk-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1/fake"
+	clientset "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1"
+	fakeconfigv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/config/v1alpha1/fake"
+	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1"
+	faketenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/client/clientset_generated/clientset/typed/tenancy/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

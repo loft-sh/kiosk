@@ -3,14 +3,14 @@ package validation
 import (
 	"reflect"
 
-	"github.com/kiosk-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/constants"
 
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
-	"github.com/kiosk-sh/kiosk/pkg/util/convert"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/util/convert"
 )
 
 func verifySubjects(account *configv1alpha1.Account) field.ErrorList {

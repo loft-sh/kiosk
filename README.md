@@ -56,7 +56,7 @@ Kubernetes is designed as a single-tenant platform, which makes it hard for clus
 
 While there are hundreds of ways of setting up multi-tenant Kubernetes clusters and many Kubernetes distributions provide their own tenancy logic, there is no lightweight, pluggable and customizable solution that allows admins to easily add multi-tenancy capabilities to any standard Kubernetes cluster. 
 
-### The Missing Multi-Tenancy Extension for Kubernetes [![> Tweet <](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fkiosk-sh%2Fkiosk)](https://twitter.com/intent/tweet?text=The%20Missing%20Multi-Tenancy%20Extension%20for%20%23Kubernetes%3A%20%23kiosk%20-%20https%3A//github.com/kiosk-sh/kiosk%20%23cncf)
+### The Missing Multi-Tenancy Extension for Kubernetes [![> Tweet <](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Fgithub.com%2Fkiosk-sh%2Fkiosk)](https://twitter.com/intent/tweet?text=The%20Missing%20Multi-Tenancy%20Extension%20for%20%23Kubernetes%3A%20%23kiosk%20-%20https%3A//github.com/loft-sh/kiosk%20%23cncf)
 kiosk is designed to be:
 - **100% Open-Source**: CNCF compatible Apache 2.0 license
 - **Pluggable**: easy to install into any existing cluster and suitable for different use cases
@@ -969,7 +969,7 @@ spec:
 ```bash
 helm upgrade kiosk --repo https://charts.devspace.sh/ kiosk -n kiosk --atomic --reuse-values
 ```
-Check the [release notes](https://github.com/kiosk-sh/kiosk/releases) for details on how to upgrade to a specific release.  
+Check the [release notes](https://github.com/loft-sh/kiosk/releases) for details on how to upgrade to a specific release.  
 **Do not skip releases with release notes containing upgrade instructions!**
 
 <br>

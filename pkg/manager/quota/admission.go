@@ -23,19 +23,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kiosk-sh/kiosk/pkg/manager/controllers"
-	"github.com/kiosk-sh/kiosk/pkg/util"
+	"github.com/loft-sh/kiosk/pkg/manager/controllers"
+	"github.com/loft-sh/kiosk/pkg/util"
 
 	corev1 "k8s.io/api/core/v1"
 	utilwait "k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/admission"
 
-	quota "github.com/kiosk-sh/kiosk/kube/pkg/quota/v1"
-	"github.com/kiosk-sh/kiosk/kube/pkg/quota/v1/generic"
-	configv1alpha1 "github.com/kiosk-sh/kiosk/pkg/apis/config/v1alpha1"
+	quota "github.com/loft-sh/kiosk/kube/pkg/quota/v1"
+	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
+	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 
-	"github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota"
-	resourcequotaapi "github.com/kiosk-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
+	"github.com/loft-sh/kiosk/kube/plugin/pkg/admission/resourcequota"
+	resourcequotaapi "github.com/loft-sh/kiosk/kube/plugin/pkg/admission/resourcequota/apis/resourcequota"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
