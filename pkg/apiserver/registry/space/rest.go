@@ -41,7 +41,6 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -320,9 +319,7 @@ func (r *spaceStorage) waitForAccess(ctx context.Context, user user.Info, namesp
 	}
 
 	// here we wait until the authorizer tells us that the account can get the space
-	backoff := retry.DefaultBackoff
-	backoff.Steps = 8
-	return wait.ExponentialBackoff(backoff, func() (bool, error) {
+	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		decision, _, err := r.authorizer.Authorize(ctx, a)
 		if err != nil {
 			return false, err
@@ -359,9 +356,7 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	}
 
 	// Wait for template instances to be deployed
-	backoff := retry.DefaultBackoff
-	backoff.Steps = 8
-	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
+	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		// Get the template instances
 		instanceList := &configv1alpha1.TemplateInstanceList{}
 		err := r.client.List(ctx, instanceList, client.InNamespace(namespace.Name))
