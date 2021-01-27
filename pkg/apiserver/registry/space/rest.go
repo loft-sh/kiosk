@@ -27,6 +27,7 @@ import (
 	"github.com/loft-sh/kiosk/pkg/apiserver/registry/util"
 	"github.com/loft-sh/kiosk/pkg/authorization"
 	"github.com/loft-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -40,7 +41,6 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/client-go/util/retry"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
@@ -279,7 +279,13 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		// Create the default space templates and role binding
 		err = r.initializeSpace(ctx, namespace, account)
 		if err != nil {
-			_ = r.client.Delete(ctx, namespace)
+			// we have to use a background context here, because it might
+			// be possible that the user is cancelling the request
+			spaceErr := r.client.Delete(context.Background(), namespace)
+			if spaceErr != nil {
+				loghelper.Infof("error deleting namespace %s after creation: %v", namespace.Name, spaceErr)
+			}
+
 			return nil, err
 		}
 	} else {
@@ -313,9 +319,7 @@ func (r *spaceStorage) waitForAccess(ctx context.Context, user user.Info, namesp
 	}
 
 	// here we wait until the authorizer tells us that the account can get the space
-	backoff := retry.DefaultBackoff
-	backoff.Steps = 8
-	return wait.ExponentialBackoff(backoff, func() (bool, error) {
+	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		decision, _, err := r.authorizer.Authorize(ctx, a)
 		if err != nil {
 			return false, err
@@ -352,9 +356,7 @@ func (r *spaceStorage) initializeSpace(ctx context.Context, namespace *corev1.Na
 	}
 
 	// Wait for template instances to be deployed
-	backoff := retry.DefaultBackoff
-	backoff.Steps = 8
-	err := wait.ExponentialBackoff(backoff, func() (bool, error) {
+	err := wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
 		// Get the template instances
 		instanceList := &configv1alpha1.TemplateInstanceList{}
 		err := r.client.List(ctx, instanceList, client.InNamespace(namespace.Name))
@@ -463,7 +465,10 @@ func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation
 		return nil, false, err
 	}
 
-	err = r.client.Delete(ctx, namespace, &client.DeleteOptions{
+	// we have to use a background context here, because it might
+	// be possible that the user is cancelling the request and we want
+	// to fully delete the namespace or otherwise there might be left overs
+	err = r.client.Delete(context.Background(), namespace, &client.DeleteOptions{
 		Raw: options,
 	})
 	if err != nil {
