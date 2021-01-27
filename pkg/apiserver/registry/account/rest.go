@@ -213,7 +213,10 @@ func (r *accountREST) Delete(ctx context.Context, name string, deleteValidation 
 		return nil, false, err
 	}
 
-	err = r.client.Delete(ctx, configAccount, &client.DeleteOptions{
+	// we have to use a background context here, because it might
+	// be possible that the user is cancelling the request and we want
+	// to fully delete the account and its children
+	err = r.client.Delete(context.Background(), configAccount, &client.DeleteOptions{
 		Raw: options,
 	})
 	if err != nil {

@@ -27,6 +27,7 @@ import (
 	"github.com/loft-sh/kiosk/pkg/apiserver/registry/util"
 	"github.com/loft-sh/kiosk/pkg/authorization"
 	"github.com/loft-sh/kiosk/pkg/constants"
+	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -279,7 +280,13 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		// Create the default space templates and role binding
 		err = r.initializeSpace(ctx, namespace, account)
 		if err != nil {
-			_ = r.client.Delete(ctx, namespace)
+			// we have to use a background context here, because it might
+			// be possible that the user is cancelling the request
+			spaceErr := r.client.Delete(context.Background(), namespace)
+			if spaceErr != nil {
+				loghelper.Infof("error deleting namespace %s after creation: %v", namespace.Name, spaceErr)
+			}
+
 			return nil, err
 		}
 	} else {
@@ -463,7 +470,10 @@ func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation
 		return nil, false, err
 	}
 
-	err = r.client.Delete(ctx, namespace, &client.DeleteOptions{
+	// we have to use a background context here, because it might
+	// be possible that the user is cancelling the request and we want
+	// to fully delete the namespace or otherwise there might be left overs
+	err = r.client.Delete(context.Background(), namespace, &client.DeleteOptions{
 		Raw: options,
 	})
 	if err != nil {
