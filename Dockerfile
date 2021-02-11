@@ -1,10 +1,10 @@
 # Build the manager binary
-FROM golang:1.13 as builder
+FROM golang:1.15 as builder
 
 WORKDIR /workspace
 
 # Install Helm 3
-RUN bash -c "curl -s https://get.helm.sh/helm-v3.3.1-linux-amd64.tar.gz > helm3.tar.gz" && tar -zxvf helm3.tar.gz linux-amd64/helm && chmod +x linux-amd64/helm && mv linux-amd64/helm /workspace/helm && rm helm3.tar.gz && rm -R linux-amd64
+RUN bash -c "curl -s https://get.helm.sh/helm-v3.5.2-linux-amd64.tar.gz > helm3.tar.gz" && tar -zxvf helm3.tar.gz linux-amd64/helm && chmod +x linux-amd64/helm && mv linux-amd64/helm /workspace/helm && rm helm3.tar.gz && rm -R linux-amd64
 
 # Copy the Go Modules manifests
 COPY go.mod go.mod
