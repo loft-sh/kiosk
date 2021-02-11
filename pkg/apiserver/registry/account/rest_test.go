@@ -4,6 +4,7 @@ import (
 	"context"
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	testingutil "github.com/loft-sh/kiosk/pkg/util/testing"
 
@@ -215,9 +216,17 @@ func TestAccountUpdate(t *testing.T) {
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
 	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
 
+	// Get old account
+	oldAccount := &configv1alpha1.Account{}
+	err := fakeClient.Get(ctx, client.ObjectKey{Name: "test"}, oldAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	newObj, updated, err := accountStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Account{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test",
+			ResourceVersion: oldAccount.ResourceVersion,
 			Labels: map[string]string{
 				"Updated": "true",
 			},

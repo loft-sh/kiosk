@@ -288,6 +288,13 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 
 			return nil, err
 		}
+
+		// wait until we get access
+		err = r.waitForAccess(ctx, a.GetUser(), namespace)
+		if err != nil {
+			// if this happens it is kind of weird, but its not a reason to return an error and abort the request
+			klog.Infof("error waiting for access to namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
+		}
 	} else {
 		err := r.client.Create(ctx, namespace, &client.CreateOptions{
 			Raw: options,
@@ -295,12 +302,6 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		if err != nil {
 			return nil, err
 		}
-	}
-
-	err = r.waitForAccess(ctx, a.GetUser(), namespace)
-	if err != nil {
-		// if this happens it is kind of weird, but its not a reason to return an error and abort the request
-		klog.Infof("error waiting for access to namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
 	}
 
 	return ConvertNamespace(namespace), nil

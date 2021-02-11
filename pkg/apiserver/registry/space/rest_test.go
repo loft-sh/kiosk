@@ -3,6 +3,7 @@ package space
 import (
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
@@ -243,11 +244,17 @@ func TestCreateSpace(t *testing.T) {
 		t.Fatal("Expected error but got nil")
 	}
 
+	// Get old account
+	oldAccount := &configv1alpha1.Account{}
+	err = fakeClient.Get(ctx, client.ObjectKey{Name: "test"}, oldAccount)
+	if err != nil {
+		t.Fatal(err)
+	}
+	
 	// Set index value
+	test := "test"
 	newAccount := &configv1alpha1.Account{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test",
-		},
+		ObjectMeta: oldAccount.ObjectMeta,
 		Spec: configv1alpha1.AccountSpec{
 			Subjects: []rbacv1.Subject{
 				{
@@ -258,6 +265,7 @@ func TestCreateSpace(t *testing.T) {
 			},
 			Space: configv1alpha1.AccountSpace{
 				Limit: &spaceLimit,
+				ClusterRole: &test,
 				SpaceTemplate: configv1alpha1.AccountSpaceTemplate{
 					ObjectMeta: metav1.ObjectMeta{
 						Annotations: map[string]string{
