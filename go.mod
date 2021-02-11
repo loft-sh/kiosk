@@ -1,7 +1,6 @@
 module github.com/loft-sh/kiosk
 
 require (
-	github.com/Azure/go-autorest v13.0.0+incompatible // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/evanphx/json-patch v4.9.0+incompatible
@@ -17,25 +16,26 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rancher/kine v0.3.2 // indirect
 	github.com/sirupsen/logrus v1.6.0
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
+	github.com/ugorji/go v1.1.4 // indirect
 	gomodules.xyz/jsonpatch v2.0.0+incompatible // indirect
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.19.3
-	k8s.io/apiextensions-apiserver v0.19.3
-	k8s.io/apimachinery v0.19.3
-	k8s.io/apiserver v0.19.3
-	k8s.io/cli-runtime v0.19.3
-	k8s.io/client-go v0.19.3
-	k8s.io/component-base v0.19.3
-	k8s.io/gengo v0.0.0-20200428234225-8167cfdcfc14
+	k8s.io/api v0.20.2
+	k8s.io/apiextensions-apiserver v0.20.2
+	k8s.io/apimachinery v0.20.2
+	k8s.io/apiserver v0.20.2
+	k8s.io/cli-runtime v0.20.2
+	k8s.io/client-go v0.20.2
+	k8s.io/component-base v0.20.2
+	k8s.io/gengo v0.0.0-20201113003025-83324d819ded
 	k8s.io/klog v1.0.0
-	k8s.io/kube-aggregator v0.19.3
-	k8s.io/kube-controller-manager v0.19.3
-	k8s.io/kube-openapi v0.0.0-20200805222855-6aeccd4b50c6
-	k8s.io/kubectl v0.19.3
+	k8s.io/kube-aggregator v0.20.2
+	k8s.io/kube-controller-manager v0.20.2
+	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
+	k8s.io/kubectl v0.20.2
 	sigs.k8s.io/apiserver-builder-alpha v1.18.0
-	sigs.k8s.io/controller-runtime v0.7.0
+	sigs.k8s.io/controller-runtime v0.8.2
 )
 
 go 1.13

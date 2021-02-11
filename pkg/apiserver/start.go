@@ -378,8 +378,9 @@ func (o *ServerOptions) RunServer(stopCh <-chan struct{}, title, version string,
 		handler = genericfilters.WithCORS(handler, genericConfig.CorsAllowedOriginList, nil, nil, nil, "true")
 		handler = genericfilters.WithTimeoutForNonLongRunningRequests(handler, genericConfig.LongRunningFunc, genericConfig.RequestTimeout)
 		handler = genericfilters.WithMaxInFlightLimit(handler, genericConfig.MaxRequestsInFlight, genericConfig.MaxMutatingRequestsInFlight, genericConfig.LongRunningFunc)
-		handler = genericapifilters.WithRequestInfo(handler, server.NewRequestInfoResolver(genericConfig))
-		handler = genericfilters.WithPanicRecovery(handler)
+		infoResolver := server.NewRequestInfoResolver(genericConfig)
+		handler = genericapifilters.WithRequestInfo(handler, infoResolver)
+		handler = genericfilters.WithPanicRecovery(handler, infoResolver)
 		if err := aggregatedAPIServerConfig.InsecureServingInfo.Serve(handler, genericConfig.RequestTimeout, stopCh); err != nil {
 			return err
 		}
