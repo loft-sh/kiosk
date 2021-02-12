@@ -22,11 +22,16 @@ import (
 	"github.com/loft-sh/kiosk/pkg/util/encoding"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // Register registers the webhooks to the manager
 func Register(ctrlCtx *controllers.Context) error {
 	hookServer := ctrlCtx.Manager.GetWebhookServer()
+	admissionDecoder, err := admission.NewDecoder(ctrlCtx.Manager.GetScheme())
+	if err != nil {
+		return err
+	}
 
 	// Create the admission controller
 	admissionController := quota.NewAccountResourceQuota(ctrlCtx)
@@ -34,6 +39,7 @@ func Register(ctrlCtx *controllers.Context) error {
 		Log:                 ctrl.Log.WithName("webhooks").WithName("Quota"),
 		Scheme:              ctrlCtx.Manager.GetScheme(),
 		AdmissionController: admissionController,
+		Decoder:             admissionDecoder,
 	}})
 
 	hookServer.Register("/validate", &webhook.Admission{Handler: &Validator{
