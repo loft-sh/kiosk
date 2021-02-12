@@ -33,8 +33,7 @@ type QuotaValidator struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
-	decoder *admission.Decoder
-
+	Decoder             *admission.Decoder
 	AdmissionController apiadmission.ValidationInterface
 }
 
@@ -48,7 +47,7 @@ func (v *QuotaValidator) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	// Convert request
-	attributes, err := NewAttributeFromRequest(req, v.decoder, v.Scheme)
+	attributes, err := NewAttributeFromRequest(req, v.Decoder, v.Scheme)
 	if err != nil {
 		return admission.Errored(1, err)
 	}
@@ -60,10 +59,4 @@ func (v *QuotaValidator) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	return admission.Allowed("")
-}
-
-// InjectDecoder injects the decoder.
-func (v *QuotaValidator) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
-	return nil
 }
