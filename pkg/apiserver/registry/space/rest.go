@@ -41,7 +41,6 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/filters"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
@@ -265,18 +264,23 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		}
 	}
 
+	// print some log information
+	loghelper.Infof("create space %s for user %s: %v", space.Name, a.GetUser().GetName(), err)
+
 	// Create the target namespace
 	namespace := ConvertSpace(space)
-	if len(options.DryRun) == 0 && account != nil {
+	if account != nil {
 		namespace.Annotations[constants.SpaceAnnotationInitializing] = "true"
 		err := r.client.Create(ctx, namespace, &client.CreateOptions{
 			Raw: options,
 		})
 		if err != nil {
+			loghelper.Infof("error creating namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
 			return nil, err
 		}
 
 		// Create the default space templates and role binding
+		loghelper.Infof("initialize space %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
 		err = r.initializeSpace(ctx, namespace, account)
 		if err != nil {
 			// we have to use a background context here, because it might
@@ -286,6 +290,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 				loghelper.Infof("error deleting namespace %s after creation: %v", namespace.Name, spaceErr)
 			}
 
+			loghelper.Infof("error initializing space %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
 			return nil, err
 		}
 
@@ -293,7 +298,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		err = r.waitForAccess(ctx, a.GetUser(), namespace)
 		if err != nil {
 			// if this happens it is kind of weird, but its not a reason to return an error and abort the request
-			klog.Infof("error waiting for access to namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
+			loghelper.Infof("error waiting for access to namespace %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
 		}
 	} else {
 		err := r.client.Create(ctx, namespace, &client.CreateOptions{
@@ -304,6 +309,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		}
 	}
 
+	loghelper.Infof("successfully created space %s for user %s", namespace.Name, a.GetUser().GetName())
 	return ConvertNamespace(namespace), nil
 }
 
@@ -320,7 +326,7 @@ func (r *spaceStorage) waitForAccess(ctx context.Context, user user.Info, namesp
 	}
 
 	// here we wait until the authorizer tells us that the account can get the space
-	return wait.PollImmediate(time.Second, time.Minute, func() (bool, error) {
+	return wait.PollImmediate(time.Second, time.Second*5, func() (bool, error) {
 		decision, _, err := r.authorizer.Authorize(ctx, a)
 		if err != nil {
 			return false, err
