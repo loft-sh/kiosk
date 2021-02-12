@@ -265,7 +265,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 	}
 
 	// print some log information
-	loghelper.Infof("create space %s for user %s: %v", space.Name, a.GetUser().GetName(), err)
+	loghelper.Infof("create space %s for user %s", space.Name, a.GetUser().GetName())
 
 	// Create the target namespace
 	namespace := ConvertSpace(space)
@@ -280,7 +280,7 @@ func (r *spaceStorage) Create(ctx context.Context, obj runtime.Object, createVal
 		}
 
 		// Create the default space templates and role binding
-		loghelper.Infof("initialize space %s for user %s: %v", namespace.Name, a.GetUser().GetName(), err)
+		loghelper.Infof("initialize space %s for user %s", namespace.Name, a.GetUser().GetName())
 		err = r.initializeSpace(ctx, namespace, account)
 		if err != nil {
 			// we have to use a background context here, because it might
