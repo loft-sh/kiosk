@@ -83,6 +83,8 @@ func (f *filter) List(ctx context.Context, list runtime.Object, groupVersionReso
 			attributes.Name = m.GetName()
 			if nameAsNamespace {
 				attributes.Namespace = attributes.Name
+			} else if m.GetNamespace() != "" {
+				attributes.Namespace = m.GetNamespace()
 			}
 			// TODO: change because group version is different?
 			attributes.Path = a.GetPath() + "/" + m.GetName()
