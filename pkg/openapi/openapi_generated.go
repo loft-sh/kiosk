@@ -54,9 +54,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.Template":                        schema_pkg_apis_config_v1alpha1_Template(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstance":                schema_pkg_apis_config_v1alpha1_TemplateInstance(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceList":            schema_pkg_apis_config_v1alpha1_TemplateInstanceList(ref),
+		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceParameter":       schema_pkg_apis_config_v1alpha1_TemplateInstanceParameter(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceSpec":            schema_pkg_apis_config_v1alpha1_TemplateInstanceSpec(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceStatus":          schema_pkg_apis_config_v1alpha1_TemplateInstanceStatus(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateList":                    schema_pkg_apis_config_v1alpha1_TemplateList(ref),
+		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateParameter":               schema_pkg_apis_config_v1alpha1_TemplateParameter(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateResources":               schema_pkg_apis_config_v1alpha1_TemplateResources(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1.Account":                        schema_pkg_apis_tenancy_v1alpha1_Account(ref),
 		"github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1.AccountList":                    schema_pkg_apis_tenancy_v1alpha1_AccountList(ref),
@@ -1212,7 +1214,7 @@ func schema_pkg_apis_config_v1alpha1_AccountTemplateInstanceTemplate(ref common.
 				Properties: map[string]spec.Schema{
 					"metadata": {
 						SchemaProps: spec.SchemaProps{
-							Description: "The metadata of the template instace to create",
+							Description: "The metadata of the template instance to create",
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
@@ -1457,11 +1459,24 @@ func schema_pkg_apis_config_v1alpha1_Template(ref common.ReferenceCallback) comm
 							Ref: ref("github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateResources"),
 						},
 					},
+					"parameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parameters can be used to replace certain parts of the template. A parameter is referenced by this format: ${NAME}, to parse the value as an expression write ${{NAME}} instead. Besides the parameters defined here, the following predefined parameters can be used: - ${NAMESPACE}: the namespace where the template instance was created - ${ACCOUNT}: the account name of the account that owns the space (if any)",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateParameter"),
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateResources", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateParameter", "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateResources", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1556,6 +1571,32 @@ func schema_pkg_apis_config_v1alpha1_TemplateInstanceList(ref common.ReferenceCa
 	}
 }
 
+func schema_pkg_apis_config_v1alpha1_TemplateInstanceParameter(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the parameter to set",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the value of the parameter to set",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_pkg_apis_config_v1alpha1_TemplateInstanceSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1577,10 +1618,25 @@ func schema_pkg_apis_config_v1alpha1_TemplateInstanceSpec(ref common.ReferenceCa
 							Format:      "",
 						},
 					},
+					"parameters": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Parameters hold the values of the defined parameters in the template",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceParameter"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"template"},
 			},
 		},
+		Dependencies: []string{
+			"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.TemplateInstanceParameter"},
 	}
 }
 
@@ -1685,6 +1741,46 @@ func schema_pkg_apis_config_v1alpha1_TemplateList(ref common.ReferenceCallback) 
 		},
 		Dependencies: []string{
 			"github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1.Template", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_config_v1alpha1_TemplateParameter(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the name of the parameter",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Value is the default value of the parameter",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"required": {
+						SchemaProps: spec.SchemaProps{
+							Description: "If required is true, the template instance must define this parameter, otherwise the deployment will fail.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+					"validation": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Validation takes a regular expression as value to verify the provided value does match expected values.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

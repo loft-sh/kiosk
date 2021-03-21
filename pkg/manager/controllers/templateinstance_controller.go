@@ -19,9 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/loft-sh/kiosk/pkg/util/loghelper"
+	"github.com/loft-sh/kiosk/pkg/util/parameters"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"regexp"
 	"strings"
 	"time"
 
@@ -100,6 +105,12 @@ func (r *TemplateInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Req
 func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance) (ctrl.Result, error) {
 	objects := []*unstructured.Unstructured{}
 
+	// check if parameters were filled correctly
+	err := validateParameters(template, templateInstance)
+	if err != nil {
+		return r.setFailed(ctx, templateInstance, "ErrorValidatingParameters", err.Error())
+	}
+
 	// Gather objects from manifest
 	if len(template.Resources.Manifests) > 0 {
 		for _, manifest := range template.Resources.Manifests {
@@ -108,13 +119,30 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 				return r.setFailed(ctx, templateInstance, "ErrorConvertingManifest", fmt.Sprintf("Error converting manifest %s: %v", string(manifest.Raw), err))
 			}
 
+			// replace parameters
+			for _, obj := range objs {
+				err = r.replaceUnstructuredParameters(ctx, template, templateInstance, obj)
+				if err != nil {
+					return r.setFailed(ctx, templateInstance, "ErrorReplaceParameters", fmt.Sprintf("Error replacing parameters in manifest: %v", err))
+				}
+			}
+
 			objects = append(objects, objs...)
 		}
 	}
 
 	// Gather objects from helm
 	if template.Resources.Helm != nil {
-		objs, err := r.helm.Template(r.Client, template.Name, templateInstance.Namespace, template.Resources.Helm)
+		helmOptions := template.Resources.Helm.DeepCopy()
+
+		// replace values if there are any
+		helmOptions.Values, err = r.replaceHelmValuesParameters(ctx, template, templateInstance, helmOptions.Values)
+		if err != nil {
+			return r.setFailed(ctx, templateInstance, "ErrorReplaceParameters", fmt.Sprintf("Error replacing parameters in helm values: %v", err))
+		}
+
+		// template the chart
+		objs, err := r.helm.Template(r.Client, template.Name, templateInstance.Namespace, helmOptions)
 		if err != nil {
 			return r.setFailed(ctx, templateInstance, "ErrorHelm", fmt.Sprintf("Error during helm template: %v", err))
 		}
@@ -123,6 +151,132 @@ func (r *TemplateInstanceReconciler) deploy(ctx context.Context, template *confi
 	}
 
 	return r.deployObjects(ctx, template, templateInstance, objects)
+}
+
+func (r *TemplateInstanceReconciler) replaceUnstructuredParameters(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, obj *unstructured.Unstructured) error {
+	if obj == nil {
+		return nil
+	}
+
+	err := parameters.WalkStringMap(obj.Object, func(value string) (interface{}, error) {
+		return r.replaceVariable(ctx, template, templateInstance, value)
+	})
+	if err != nil {
+		return errors.Wrap(err, "replace parameters")
+	}
+
+	return nil
+}
+
+func (r *TemplateInstanceReconciler) replaceHelmValuesParameters(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, values string) (string, error) {
+	if values == "" {
+		return values, nil
+	}
+
+	valuesObj := map[string]interface{}{}
+	err := yaml.Unmarshal([]byte(values), &valuesObj)
+	if err != nil {
+		return "", errors.Wrap(err, "unmarshal helm values")
+	}
+
+	err = parameters.WalkStringMap(valuesObj, func(value string) (interface{}, error) {
+		return r.replaceVariable(ctx, template, templateInstance, value)
+	})
+	if err != nil {
+		return "", errors.Wrap(err, "replace parameters")
+	}
+
+	// marshal the values back in to a string
+	retValues, err := yaml.Marshal(valuesObj)
+	if err != nil {
+		return "", errors.Wrap(err, "marshal replace helm values")
+	}
+
+	return string(retValues), nil
+}
+
+func (r *TemplateInstanceReconciler) replaceVariable(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, value string) (interface{}, error) {
+	return parameters.ParseString(value, func(value string) (string, error) {
+		if value == "NAMESPACE" {
+			return templateInstance.Namespace, nil
+		} else if value == "ACCOUNT" {
+			namespace := &corev1.Namespace{}
+			err := r.Client.Get(ctx, types.NamespacedName{Name: templateInstance.Namespace}, namespace)
+			if err != nil {
+				return "", errors.Wrap(err, "get template instance namespace")
+			} else if namespace.Labels == nil || namespace.Labels[constants.SpaceLabelAccount] == "" {
+				return "", errors.Errorf("space is not owned by an account, however ${ACCOUNT} parameter is used")
+			}
+
+			return namespace.Labels[constants.SpaceLabelAccount], nil
+		}
+
+		// check if value is in template instance
+		for _, v := range templateInstance.Spec.Parameters {
+			if v.Name == value {
+				return v.Value, nil
+			}
+		}
+
+		// check if value is in template
+		for _, v := range template.Parameters {
+			if v.Name == value {
+				return v.Value, nil
+			}
+		}
+
+		return "${" + value + "}", nil
+	})
+}
+
+func validateParameters(template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance) error {
+	if len(template.Parameters) > 0 {
+		for _, parameter := range template.Parameters {
+			if parameter.Name == "" {
+				continue
+			} else if parameter.Required == false && parameter.Validation == "" {
+				continue
+			}
+
+			// make sure the template instance filled the value correctly
+			found := false
+			for _, instanceParameter := range templateInstance.Spec.Parameters {
+				if instanceParameter.Name == parameter.Name {
+					found = true
+					if parameter.Validation != "" {
+						matched, err := regexp.MatchString(parameter.Validation, instanceParameter.Value)
+						if err != nil {
+							return errors.Wrap(err, "match string")
+						} else if matched == false {
+							return errors.Errorf("parameter %s value %s does not match validation pattern %s", parameter.Name, instanceParameter.Value, parameter.Validation)
+						}
+					}
+				}
+			}
+			if !found && parameter.Required {
+				return errors.Errorf("parameter %s is required but was not found in template instance", parameter.Name)
+			}
+		}
+	}
+
+	for _, instanceParameter := range templateInstance.Spec.Parameters {
+		if instanceParameter.Name == "" {
+			continue
+		}
+
+		found := false
+		for _, parameter := range template.Parameters {
+			if parameter.Name == instanceParameter.Name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return errors.Errorf("parameter %s does not exist in template %s", instanceParameter.Name, template.Name)
+		}
+	}
+
+	return nil
 }
 
 func (r *TemplateInstanceReconciler) deployObjects(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, objects []*unstructured.Unstructured) (ctrl.Result, error) {
