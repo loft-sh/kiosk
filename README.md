@@ -660,9 +660,10 @@ If there are multiple AccountQuotas referencing the same Account via `spec.accou
 <br>
 
 ### 5. Working with Templates
-Templates in kiosk are used to initialize Namespaces. When creating a Space, kiosk will use these Templates to populate the newly created Namespace for this Space. Templates:
+Templates in kiosk are used to initialize Namespaces and share common resources across namespaces (e.g. secrets). When creating a Space, kiosk will use these Templates to populate the newly created Namespace for this Space. Templates:
 - can either contain one or more [Kubernetes manifests](#51-manifest-templates) or [alternatively a Helm chart](#52-helm-chart-templates)
 - are being tracked by [TemplateInstances](#55-templateinstances) in each Namespace they are applied to
+- can contain parameters such as `${NAMESPACE}` or `${MY_PARAMETER}` that can be specified within an TemplateInstance
 
 ---
 
@@ -684,6 +685,19 @@ apiVersion: config.kiosk.sh/v1alpha1
 kind: Template
 metadata:
   name: space-restrictions
+# This section defines parameters that can be used for this template
+# Can be used in resources.manifests and resources.helm.values
+parameters:
+# Name of the parameter
+- name: DEFAULT_CPU_LIMIT
+  # The default value of the parameter
+  value: "1"
+- name: DEFAULT_CPU_REQUESTS
+  value: "0.5"
+  # If a parameter is required the template instance will need to set it
+  # required: true
+  # Make sure only values are entered for this parameter
+  validation: "^[0-9]*\\.?[0-9]+$"
 resources:
   manifests:
   - kind: NetworkPolicy
@@ -703,9 +717,11 @@ resources:
     spec:
       limits:
       - default:
-          cpu: 1
+          # Use the DEFAULT_CPU_LIMIT parameter here and
+          # parse it as json, which renders the "1" as 1. 
+          cpu: "${{DEFAULT_CPU_LIMIT}}"
         defaultRequest:
-          cpu: 0.5
+          cpu: "${{DEFAULT_CPU_REQUESTS}}"
         type: Container
 ```
 
@@ -738,7 +754,9 @@ resources:
         name: redis
         repoUrl: https://kubernetes-charts.storage.googleapis.com
     values: |
-      redisPort: 6379
+      redisPort: 6379      
+      # Use a predefined parameter here
+      myOtherValue: ${NAMESPACE}
 ```
 <br>
 </details>
@@ -852,6 +870,10 @@ metadata:
   name: redis-instance
 spec:
   template: redis
+  # You can also specify a parameter value here
+  # parameters:
+  # - name: DEFAULT_CPU_REQUESTS
+  #   value: "1"
 ```
 <br>
 </details>
@@ -883,6 +905,10 @@ spec:
     templateInstances:
     - spec:
         template: space-restrictions
+        # Specifying parameter values here is also possible
+        parameters:
+          - name: DEFAULT_CPU_REQUESTS
+            value: "2"
   subjects:
   - kind: User
     name: john
@@ -959,6 +985,10 @@ metadata:
 spec:
   template: redis
   sync: true
+  # You can specify parameters here as well
+  # parameters:
+  # - name: DEFAULT_CPU_REQUESTS
+  #   value: "1"
 ```
 <br>
 </details>
