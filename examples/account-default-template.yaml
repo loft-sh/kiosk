@@ -8,6 +8,10 @@ spec:
     templateInstances:
     - spec:
         template: space-restrictions
+        # You can also use parameters here
+        # parameters:
+        # - name: DEFAULT_CPU_REQUESTS
+        #   value: "1"
   subjects:
   - kind: User
     name: john

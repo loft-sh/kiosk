@@ -11,3 +11,5 @@ resources:
         repoUrl: https://charts.bitnami.com/bitnami
     values: |
       redisPort: 6379
+      # Use a predefined parameter here
+      myOtherValue: ${NAMESPACE}

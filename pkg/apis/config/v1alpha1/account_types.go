@@ -65,7 +65,7 @@ type AccountSpaceTemplate struct {
 
 // AccountTemplateInstanceTemplate defines a template instance template
 type AccountTemplateInstanceTemplate struct {
-	// The metadata of the template instace to create
+	// The metadata of the template instance to create
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 

@@ -1,7 +1,10 @@
 apiVersion: config.kiosk.sh/v1alpha1
 kind: TemplateInstance
 metadata:
-  name: redis-instance-sync
+  name: space-restrictions-instance-sync
 spec:
-  template: redis
+  template: space-restrictions
   sync: true
+  parameters:
+  - name: DEFAULT_CPU_REQUESTS
+    value: "1"

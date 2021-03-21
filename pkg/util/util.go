@@ -28,7 +28,7 @@ import (
 func Run(command string, args ...string) error {
 	output, err := exec.Command(command, args...).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("Error in command: %v => %s", err, string(output))
+		return fmt.Errorf("error in command: %v => %s", err, string(output))
 	}
 
 	return nil
@@ -38,7 +38,7 @@ func Run(command string, args ...string) error {
 func Output(command string, args ...string) (string, error) {
 	output, err := exec.Command(command, args...).CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("Error in command: %v => %s", err, string(output))
+		return "", fmt.Errorf("error in command: %v => %s", err, string(output))
 	}
 
 	return string(output), nil

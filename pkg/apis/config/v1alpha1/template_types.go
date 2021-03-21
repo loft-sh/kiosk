@@ -32,6 +32,25 @@ type TemplateResources struct {
 	Helm *HelmConfiguration `json:"helm,omitempty"`
 }
 
+type TemplateParameter struct {
+	// Name is the name of the parameter
+	Name string `json:"name,omitempty"`
+
+	// Value is the default value of the parameter
+	// +optional
+	Value string `json:"value,omitempty"`
+
+	// If required is true, the template instance must
+	// define this parameter, otherwise the deployment will fail.
+	// +optional
+	Required bool `json:"required,omitempty"`
+
+	// Validation takes a regular expression as value to
+	// verify the provided value does match expected values.
+	// +optional
+	Validation string `json:"validation,omitempty"`
+}
+
 // EmbeddedResource holds a kubernetes resource
 // +kubebuilder:validation:XPreserveUnknownFields
 // +kubebuilder:validation:XEmbeddedResource
@@ -119,6 +138,14 @@ type Template struct {
 
 	// +optional
 	Resources TemplateResources `json:"resources,omitempty"`
+
+	// Parameters can be used to replace certain parts of the template. A parameter is referenced
+	// by this format: ${NAME}, to parse the value as an expression write ${{NAME}} instead. Besides the
+	// parameters defined here, the following predefined parameters can be used:
+	// - ${NAMESPACE}: the namespace where the template instance was created
+	// - ${ACCOUNT}: the account name of the account that owns the space (if any)
+	// +optional
+	Parameters []TemplateParameter `json:"parameters,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -27,9 +27,22 @@ const TemplateInstanceNoOwnerAnnotation = "templateinstance.config.kiosk.sh/no-o
 type TemplateInstanceSpec struct {
 	// The template to instantiate. This is an immutable field
 	Template string `json:"template"`
+
 	// If true the template instance will keep the deployed resources in sync with the template.
 	// +optional
 	Sync bool `json:"sync,omitempty"`
+
+	// Parameters hold the values of the defined parameters in the template
+	// +optional
+	Parameters []TemplateInstanceParameter `json:"parameters,omitempty"`
+}
+
+type TemplateInstanceParameter struct {
+	// Name is the name of the parameter to set
+	Name string `json:"name,omitempty"`
+
+	// Value is the value of the parameter to set
+	Value string `json:"value,omitempty"`
 }
 
 // TemplateInstanceStatus describes the current status of the template instance in the cluster
