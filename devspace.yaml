@@ -44,8 +44,8 @@ profiles:
         path: deployments[0].helm.values.kiosk.resources
         value:
           limits:
-            memory: 100Gi
-            cpu: "1000"
+            memory: 16Gi
+            cpu: "2"
     replace:
       dev:
         interactive:
