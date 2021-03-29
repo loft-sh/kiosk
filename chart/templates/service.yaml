@@ -11,10 +11,10 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: webhook
+      port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
-      name: http
   selector:
     app: {{ template "kiosk.fullname" . }}
     release: {{ .Release.Name }}

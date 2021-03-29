@@ -23,7 +23,14 @@ spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ template "kiosk.serviceAccountName" . }}
       containers:
-      - command:
+      - ports:
+        - name: webhook
+          containerPort: 9443
+          protocol: TCP
+        - name: apiservice
+          containerPort: 8443
+          protocol: TCP
+        command:
         {{- range $f := .Values.kiosk.command }}
         - {{ $f | quote }}
         {{- end }}
