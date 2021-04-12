@@ -33,16 +33,16 @@ type QuotaValidator struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 
-	Decoder             *admission.Decoder
-	AdmissionController apiadmission.ValidationInterface
+	Decoder   *admission.Decoder
+	Validator apiadmission.ValidationInterface
 }
 
 // Handle handles the admission request
 func (v *QuotaValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	if v.AdmissionController == nil {
+	if v.Validator == nil {
 		return admission.Denied("Admission controller is not ready")
 	} // We allow admissions we don't handle
-	if v.AdmissionController.Handles(apiadmission.Operation(req.Operation)) == false {
+	if v.Validator.Handles(apiadmission.Operation(req.Operation)) == false {
 		return admission.Allowed("")
 	}
 
@@ -53,7 +53,7 @@ func (v *QuotaValidator) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	// Check if the admission controller allows it
-	err = v.AdmissionController.Validate(ctx, attributes, nil)
+	err = v.Validator.Validate(ctx, attributes, nil)
 	if err != nil {
 		return admission.Denied(err.Error())
 	}

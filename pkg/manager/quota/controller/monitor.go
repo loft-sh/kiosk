@@ -101,18 +101,6 @@ type QuotaMonitor struct {
 	registry v12.Registry
 }
 
-func NewQuotaMonitor(informersStarted <-chan struct{}, informerFactory controller.InformerFactory, ignoredResources map[schema.GroupResource]struct{}, resyncPeriod ResyncPeriodFunc, replenishmentFunc ReplenishmentFunc, registry v12.Registry) *QuotaMonitor {
-	return &QuotaMonitor{
-		informersStarted:  informersStarted,
-		informerFactory:   informerFactory,
-		ignoredResources:  ignoredResources,
-		resourceChanges:   workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "resource_quota_controller_resource_changes"),
-		resyncPeriod:      resyncPeriod,
-		replenishmentFunc: replenishmentFunc,
-		registry:          registry,
-	}
-}
-
 // monitor runs a Controller with a local stop channel.
 type monitor struct {
 	controller cache.Controller

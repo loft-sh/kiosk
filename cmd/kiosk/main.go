@@ -23,7 +23,9 @@ import (
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/apiserver"
 	_ "github.com/loft-sh/kiosk/pkg/apiserver/registry"
+	"github.com/loft-sh/kiosk/pkg/leaderelection"
 	"github.com/loft-sh/kiosk/pkg/manager/blockingcacheclient"
+	"github.com/loft-sh/kiosk/pkg/manager/quota/controller"
 	"github.com/loft-sh/kiosk/pkg/openapi"
 	"github.com/loft-sh/kiosk/pkg/store/apiservice"
 	"github.com/loft-sh/kiosk/pkg/store/crd"
@@ -31,6 +33,7 @@ import (
 	"github.com/loft-sh/kiosk/pkg/util/certhelper"
 	"github.com/loft-sh/kiosk/pkg/util/log"
 	"github.com/loft-sh/kiosk/pkg/util/secret"
+	"github.com/pkg/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/klog"
@@ -43,7 +46,6 @@ import (
 
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/manager/controllers"
-	"github.com/loft-sh/kiosk/pkg/manager/quota"
 	"github.com/loft-sh/kiosk/pkg/manager/webhooks"
 	"k8s.io/apimachinery/pkg/runtime"
 	genericfeatures "k8s.io/apiserver/pkg/features"
@@ -144,20 +146,6 @@ func main() {
 	ctx := signals.SetupSignalHandler()
 	ctrlCtx := controllers.NewControllerContext(mgr, stopChan)
 
-	// Register generic controllers
-	err = controllers.Register(mgr)
-	if err != nil {
-		setupLog.Error(err, "unable to register controller")
-		os.Exit(1)
-	}
-
-	// Register quota controller
-	err = quota.Register(ctrlCtx)
-	if err != nil {
-		setupLog.Error(err, "unable to register quota controller")
-		os.Exit(1)
-	}
-
 	// Register webhooks
 	err = webhooks.Register(ctrlCtx)
 	if err != nil {
@@ -201,7 +189,7 @@ func main() {
 		}
 	}()
 
-	// setup validatingwebhookconfiguration
+	// setup ValidatingWebhookConfiguration
 	if os.Getenv("UPDATE_WEBHOOK") != "false" {
 		err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
 		if err != nil {
@@ -210,7 +198,7 @@ func main() {
 		}
 	}
 
-	// setup apiservice
+	// setup APIService
 	if os.Getenv("UPDATE_APISERVICE") != "false" {
 		err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
 		if err != nil {
@@ -218,6 +206,28 @@ func main() {
 			os.Exit(1)
 		}
 	}
+
+	// start leader election for controllers
+	go func() {
+		err = leaderelection.StartLeaderElection(ctx, scheme, config, func() error {
+			// Register generic controllers
+			err = controllers.Register(mgr)
+			if err != nil {
+				return errors.Wrap(err, "unable to register controller")
+			}
+
+			// Register quota controller
+			err = controller.Register(ctrlCtx)
+			if err != nil {
+				return errors.Wrap(err, "unable to register quota controller")
+			}
+			
+			return nil
+		})
+		if err != nil {
+			klog.Fatalf("Error starting leader election: %v", err)
+		}
+	}()
 
 	// Wait till stopChan is closed
 	<-stopChan

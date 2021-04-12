@@ -31,7 +31,7 @@ func Register(mgr manager.Manager) error {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	if err != nil {
-		return fmt.Errorf("Unable to create account controller: %v", err)
+		return fmt.Errorf("unable to create account controller: %v", err)
 	}
 
 	err = (&TemplateInstanceReconciler{
@@ -40,7 +40,7 @@ func Register(mgr manager.Manager) error {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr)
 	if err != nil {
-		return fmt.Errorf("Unable to create template instance controller: %v", err)
+		return fmt.Errorf("unable to create template instance controller: %v", err)
 	}
 
 	return nil
