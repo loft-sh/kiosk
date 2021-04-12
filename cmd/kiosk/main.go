@@ -30,14 +30,16 @@ import (
 	"github.com/loft-sh/kiosk/pkg/store/validatingwebhookconfiguration"
 	"github.com/loft-sh/kiosk/pkg/util/certhelper"
 	"github.com/loft-sh/kiosk/pkg/util/log"
+	"github.com/loft-sh/kiosk/pkg/util/secret"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"math/rand"
 	"os"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"time"
 
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/manager/controllers"
@@ -77,18 +79,13 @@ func init() {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	// set global logger
 	if os.Getenv("DEBUG") == "true" {
 		ctrl.SetLogger(log.NewLog(0))
 	} else {
 		ctrl.SetLogger(log.NewLog(2))
-	}
-
-	// Make sure the certificates are there
-	err := certhelper.WriteCertificates()
-	if err != nil {
-		setupLog.Error(err, "unable to generate certificates")
-		os.Exit(1)
 	}
 
 	// retrieve in cluster config
@@ -99,8 +96,22 @@ func main() {
 	config.Burst = 100
 	config.Timeout = 0
 
+	// create a new temporary client
+	uncachedClient, err := client2.New(config, client2.Options{Scheme: scheme})
+	if err != nil {
+		setupLog.Error(err, "unable to create client")
+		os.Exit(1)
+	}
+
+	// Make sure the certificates are there
+	err = secret.EnsureCertSecrets(context.Background(), uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to generate certificates")
+		os.Exit(1)
+	}
+
 	// Make sure the needed crds are installed in the cluster
-	err = initialize(config)
+	err = installCRDS(uncachedClient)
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -118,12 +129,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
-	// create an uncached client for api routes
-	uncachedClient, err := client2.New(mgr.GetConfig(), client2.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
 
 	// Inject the cached, uncached client and scheme
 	injectClient(mgr.GetClient(), uncachedClient, scheme)
@@ -218,19 +223,11 @@ func main() {
 	<-stopChan
 }
 
-func initialize(config *rest.Config) error {
-	klog.Info("Initialize...")
-	defer klog.Info("Done initializing...")
-
-	client, err := client2.New(config, client2.Options{Scheme: scheme})
-	if err != nil {
-		return err
-	}
-
+func installCRDS(uncachedClient client2.Client) error {
 	klog.Info("Installing crds...")
 
-	builder := crd.NewBuilder(client)
-	_, err = builder.CreateCRDs(context.Background(), apis.TypeDefinitions...)
+	builder := crd.NewBuilder(uncachedClient)
+	_, err := builder.CreateCRDs(context.Background(), apis.TypeDefinitions...)
 	return err
 }
 
