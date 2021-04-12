@@ -188,28 +188,28 @@ func main() {
 			panic(err)
 		}
 	}()
-
-	// setup ValidatingWebhookConfiguration
-	if os.Getenv("UPDATE_WEBHOOK") != "false" {
-		err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
-		if err != nil {
-			setupLog.Error(err, "unable to set up validating webhook configuration")
-			os.Exit(1)
-		}
-	}
-
-	// setup APIService
-	if os.Getenv("UPDATE_APISERVICE") != "false" {
-		err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
-		if err != nil {
-			setupLog.Error(err, "unable to set up apiservice")
-			os.Exit(1)
-		}
-	}
-
+	
 	// start leader election for controllers
 	go func() {
 		err = leaderelection.StartLeaderElection(ctx, scheme, config, func() error {
+			// setup ValidatingWebhookConfiguration
+			if os.Getenv("UPDATE_WEBHOOK") != "false" {
+				err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
+				if err != nil {
+					setupLog.Error(err, "unable to set up validating webhook configuration")
+					os.Exit(1)
+				}
+			}
+
+			// setup APIService
+			if os.Getenv("UPDATE_APISERVICE") != "false" {
+				err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
+				if err != nil {
+					setupLog.Error(err, "unable to set up apiservice")
+					os.Exit(1)
+				}
+			}
+			
 			// Register generic controllers
 			err = controllers.Register(mgr)
 			if err != nil {
