@@ -32,18 +32,6 @@ func GetResourceQuotasStatusByNamespace(namespaceStatuses configv1alpha1.Account
 	return corev1.ResourceQuotaStatus{}, false
 }
 
-func RemoveResourceQuotasStatusByNamespace(namespaceStatuses *configv1alpha1.AccountQuotasStatusByNamespace, namespace string) {
-	newNamespaceStatuses := configv1alpha1.AccountQuotasStatusByNamespace{}
-	for i := range *namespaceStatuses {
-		curr := (*namespaceStatuses)[i]
-		if curr.Namespace == namespace {
-			continue
-		}
-		newNamespaceStatuses = append(newNamespaceStatuses, curr)
-	}
-	*namespaceStatuses = newNamespaceStatuses
-}
-
 func InsertResourceQuotasStatus(namespaceStatuses *configv1alpha1.AccountQuotasStatusByNamespace, newStatus configv1alpha1.AccountQuotaStatusByNamespace) {
 	newNamespaceStatuses := configv1alpha1.AccountQuotasStatusByNamespace{}
 	found := false

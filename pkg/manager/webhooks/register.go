@@ -33,13 +33,13 @@ func Register(ctrlCtx *controllers.Context) error {
 		return err
 	}
 
-	// Create the admission controller
-	admissionController := quota.NewAccountResourceQuota(ctrlCtx)
+	// Create the quota validator
+	validator := quota.NewAccountResourceQuota(ctrlCtx)
 	hookServer.Register("/quota", &webhook.Admission{Handler: &QuotaValidator{
-		Log:                 ctrl.Log.WithName("webhooks").WithName("Quota"),
-		Scheme:              ctrlCtx.Manager.GetScheme(),
-		AdmissionController: admissionController,
-		Decoder:             admissionDecoder,
+		Log:       ctrl.Log.WithName("webhooks").WithName("Quota"),
+		Scheme:    ctrlCtx.Manager.GetScheme(),
+		Validator: validator,
+		Decoder:   admissionDecoder,
 	}})
 
 	hookServer.Register("/validate", &webhook.Admission{Handler: &Validator{

@@ -14,16 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package quota
+package controller
 
 import (
+	"github.com/loft-sh/kiosk/pkg/manager/quota"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
-	"github.com/loft-sh/kiosk/pkg/manager/controllers"
-	quotacontroller "github.com/loft-sh/kiosk/pkg/manager/quota/controller"
-
 	"github.com/loft-sh/kiosk/kube/pkg/quota/v1/generic"
+	"github.com/loft-sh/kiosk/pkg/manager/controllers"
 	kubectrlmgrconfigv1alpha1 "k8s.io/kube-controller-manager/config/v1alpha1"
 )
 
@@ -52,11 +51,11 @@ func Register(ctrlCtx *controllers.Context) error {
 	RecommendedDefaultResourceQuotaControllerConfiguration(controllerConfig)
 
 	listerFuncForResource := generic.ListerFuncForResourceFunc(ctrlCtx.SharedInformers.ForResource)
-	quotaConfiguration := NewQuotaConfiguration(listerFuncForResource)
+	quotaConfiguration := quota.NewQuotaConfiguration(listerFuncForResource)
 
-	ctrlOptions := &quotacontroller.AccountQuotaControllerOptions{
+	ctrlOptions := &AccountQuotaControllerOptions{
 		Manager:                   ctrlCtx.Manager,
-		ResyncPeriod:              quotacontroller.StaticResyncPeriodFunc(controllerConfig.ResourceQuotaSyncPeriod.Duration),
+		ResyncPeriod:              StaticResyncPeriodFunc(controllerConfig.ResourceQuotaSyncPeriod.Duration),
 		InformerFactory:           ctrlCtx.ObjectOrMetadataInformers,
 		ReplenishmentResyncPeriod: controllers.ResyncPeriod(),
 		DiscoveryFunc:             ctrlCtx.DiscoveryFunc,
@@ -66,7 +65,7 @@ func Register(ctrlCtx *controllers.Context) error {
 	}
 
 	// Create the controller from options
-	controller, err := quotacontroller.NewAccountQuotaController(ctrlOptions)
+	controller, err := NewAccountQuotaController(ctrlOptions)
 	if err != nil {
 		return err
 	}

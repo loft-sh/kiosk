@@ -35,7 +35,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	k8s.io/kubectl v0.20.2
 	sigs.k8s.io/apiserver-builder-alpha v1.18.0
-	sigs.k8s.io/controller-runtime v0.8.2
+	sigs.k8s.io/controller-runtime v0.8.3
 )
 
 go 1.13

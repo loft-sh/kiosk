@@ -195,20 +195,105 @@ func (r *TemplateInstanceReconciler) replaceHelmValuesParameters(ctx context.Con
 	return string(retValues), nil
 }
 
+func (r *TemplateInstanceReconciler) resolvePredefinedVariable(ctx context.Context, templateInstance *configv1alpha1.TemplateInstance, value string) (bool, string, error) {
+	lowerValue := strings.ToLower(value)
+	var (
+		isNamespace           = lowerValue == "namespace"
+		isNamespaceAnnotation = strings.HasPrefix(lowerValue, "namespace.metadata.annotations.")
+		isNamespaceLabel      = strings.HasPrefix(lowerValue, "namespace.metadata.labels.")
+		isAccount             = lowerValue == "account"
+		isAccountAnnotation   = strings.HasPrefix(lowerValue, "account.metadata.annotations.")
+		isAccountLabel        = strings.HasPrefix(lowerValue, "account.metadata.labels.")
+	)
+
+	// targets namespace?
+	if isNamespace {
+		return true, templateInstance.Namespace, nil
+	} else if isNamespaceAnnotation || isNamespaceLabel {
+		namespace := &corev1.Namespace{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: templateInstance.Namespace}, namespace)
+		if err != nil {
+			return false, "", errors.Wrap(err, "get template instance namespace")
+		} else if isNamespaceAnnotation && namespace.Annotations == nil {
+			return false, "", errors.Errorf("namespace %s has no annotations, however ${%s} parameter is used", namespace.Name, value)
+		} else if isNamespaceLabel && namespace.Labels == nil {
+			return false, "", errors.Errorf("namespace %s has no labels, however ${%s} parameter is used", namespace.Name, value)
+		}
+
+		var (
+			identifier string
+			retVal     string
+			ok         bool
+		)
+		if isNamespaceAnnotation {
+			identifier = value[len("namespace.metadata.annotations."):]
+			retVal, ok = namespace.Annotations[identifier]
+		} else {
+			identifier = value[len("namespace.metadata.labels."):]
+			retVal, ok = namespace.Labels[identifier]
+		}
+		if !ok {
+			return false, "", errors.Errorf("%s not found on namespace %s, however ${%s} parameter is used", identifier, namespace.Name, value)
+		}
+
+		return true, retVal, nil
+	}
+
+	// targets account?
+	if isAccount || isAccountAnnotation || isAccountLabel {
+		namespace := &corev1.Namespace{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: templateInstance.Namespace}, namespace)
+		if err != nil {
+			return false, "", errors.Wrap(err, "get template instance namespace")
+		} else if namespace.Labels == nil || namespace.Labels[constants.SpaceLabelAccount] == "" {
+			return false, "", errors.Errorf("space is not owned by an account, however ${%s} parameter is used", value)
+		}
+
+		accountName := namespace.Labels[constants.SpaceLabelAccount]
+		if isAccount {
+			return true, accountName, nil
+		}
+
+		account := &configv1alpha1.Account{}
+		err = r.Client.Get(ctx, types.NamespacedName{Name: accountName}, account)
+		if err != nil {
+			return false, "", errors.Errorf("account %s that owns namespace %s does not exist, however ${%s} parameter is used", accountName, namespace.Name, value)
+		} else if isAccountAnnotation && account.Annotations == nil {
+			return false, "", errors.Errorf("account %s has no annotations, however ${%s} parameter is used", account.Name, value)
+		} else if isAccountLabel && account.Labels == nil {
+			return false, "", errors.Errorf("account %s has no labels, however ${%s} parameter is used", account.Name, value)
+		}
+
+		var (
+			identifier string
+			retVal     string
+			ok         bool
+		)
+		if isAccountAnnotation {
+			identifier = value[len("account.metadata.annotations."):]
+			retVal, ok = account.Annotations[identifier]
+		} else {
+			identifier = value[len("account.metadata.labels."):]
+			retVal, ok = account.Labels[identifier]
+		}
+		if !ok {
+			return false, "", errors.Errorf("%s not found on account %s, however ${%s} parameter is used", identifier, account.Name, value)
+		}
+
+		return true, retVal, nil
+	}
+
+	return false, "", nil
+}
+
 func (r *TemplateInstanceReconciler) replaceVariable(ctx context.Context, template *configv1alpha1.Template, templateInstance *configv1alpha1.TemplateInstance, value string) (interface{}, error) {
 	return parameters.ParseString(value, func(value string) (string, error) {
-		if value == "NAMESPACE" {
-			return templateInstance.Namespace, nil
-		} else if value == "ACCOUNT" {
-			namespace := &corev1.Namespace{}
-			err := r.Client.Get(ctx, types.NamespacedName{Name: templateInstance.Namespace}, namespace)
-			if err != nil {
-				return "", errors.Wrap(err, "get template instance namespace")
-			} else if namespace.Labels == nil || namespace.Labels[constants.SpaceLabelAccount] == "" {
-				return "", errors.Errorf("space is not owned by an account, however ${ACCOUNT} parameter is used")
-			}
-
-			return namespace.Labels[constants.SpaceLabelAccount], nil
+		// check if predefined variable
+		wasPredefined, retValue, err := r.resolvePredefinedVariable(ctx, templateInstance, value)
+		if err != nil {
+			return "", err
+		} else if wasPredefined {
+			return retValue, nil
 		}
 
 		// check if value is in template instance

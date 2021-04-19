@@ -39,11 +39,10 @@ type Context struct {
 // invoked; this is so that multiple controllers don't get into lock-step and all
 // hammer the apiserver with list requests simultaneously.
 func ResyncPeriod() func() time.Duration {
-	duration := 12 * time.Hour
-
+	duration := 12
 	return func() time.Duration {
 		factor := rand.Float64() + 1
-		return time.Duration(float64(duration) * factor)
+		return time.Hour * time.Duration(float64(duration)*factor)
 	}
 }
 

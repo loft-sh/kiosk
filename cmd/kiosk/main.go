@@ -23,25 +23,29 @@ import (
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/apiserver"
 	_ "github.com/loft-sh/kiosk/pkg/apiserver/registry"
+	"github.com/loft-sh/kiosk/pkg/leaderelection"
 	"github.com/loft-sh/kiosk/pkg/manager/blockingcacheclient"
+	"github.com/loft-sh/kiosk/pkg/manager/quota/controller"
 	"github.com/loft-sh/kiosk/pkg/openapi"
 	"github.com/loft-sh/kiosk/pkg/store/apiservice"
 	"github.com/loft-sh/kiosk/pkg/store/crd"
 	"github.com/loft-sh/kiosk/pkg/store/validatingwebhookconfiguration"
 	"github.com/loft-sh/kiosk/pkg/util/certhelper"
 	"github.com/loft-sh/kiosk/pkg/util/log"
+	"github.com/loft-sh/kiosk/pkg/util/secret"
+	"github.com/pkg/errors"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
+	"math/rand"
 	"os"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"time"
 
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/manager/controllers"
-	"github.com/loft-sh/kiosk/pkg/manager/quota"
 	"github.com/loft-sh/kiosk/pkg/manager/webhooks"
 	"k8s.io/apimachinery/pkg/runtime"
 	genericfeatures "k8s.io/apiserver/pkg/features"
@@ -77,18 +81,13 @@ func init() {
 }
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	// set global logger
 	if os.Getenv("DEBUG") == "true" {
 		ctrl.SetLogger(log.NewLog(0))
 	} else {
 		ctrl.SetLogger(log.NewLog(2))
-	}
-
-	// Make sure the certificates are there
-	err := certhelper.WriteCertificates()
-	if err != nil {
-		setupLog.Error(err, "unable to generate certificates")
-		os.Exit(1)
 	}
 
 	// retrieve in cluster config
@@ -99,8 +98,22 @@ func main() {
 	config.Burst = 100
 	config.Timeout = 0
 
+	// create a new temporary client
+	uncachedClient, err := client2.New(config, client2.Options{Scheme: scheme})
+	if err != nil {
+		setupLog.Error(err, "unable to create client")
+		os.Exit(1)
+	}
+
+	// Make sure the certificates are there
+	err = secret.EnsureCertSecrets(context.Background(), uncachedClient)
+	if err != nil {
+		setupLog.Error(err, "unable to generate certificates")
+		os.Exit(1)
+	}
+
 	// Make sure the needed crds are installed in the cluster
-	err = initialize(config)
+	err = installCRDS(uncachedClient)
 	if err != nil {
 		klog.Fatal(err)
 	}
@@ -119,12 +132,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// create an uncached client for api routes
-	uncachedClient, err := client2.New(mgr.GetConfig(), client2.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-
 	// Inject the cached, uncached client and scheme
 	injectClient(mgr.GetClient(), uncachedClient, scheme)
 
@@ -138,20 +145,6 @@ func main() {
 	stopChan := make(chan struct{})
 	ctx := signals.SetupSignalHandler()
 	ctrlCtx := controllers.NewControllerContext(mgr, stopChan)
-
-	// Register generic controllers
-	err = controllers.Register(mgr)
-	if err != nil {
-		setupLog.Error(err, "unable to register controller")
-		os.Exit(1)
-	}
-
-	// Register quota controller
-	err = quota.Register(ctrlCtx)
-	if err != nil {
-		setupLog.Error(err, "unable to register quota controller")
-		os.Exit(1)
-	}
 
 	// Register webhooks
 	err = webhooks.Register(ctrlCtx)
@@ -195,42 +188,56 @@ func main() {
 			panic(err)
 		}
 	}()
+	
+	// start leader election for controllers
+	go func() {
+		err = leaderelection.StartLeaderElection(ctx, scheme, config, func() error {
+			// setup ValidatingWebhookConfiguration
+			if os.Getenv("UPDATE_WEBHOOK") != "false" {
+				err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
+				if err != nil {
+					setupLog.Error(err, "unable to set up validating webhook configuration")
+					os.Exit(1)
+				}
+			}
 
-	// setup validatingwebhookconfiguration
-	if os.Getenv("UPDATE_WEBHOOK") != "false" {
-		err = validatingwebhookconfiguration.EnsureValidatingWebhookConfiguration(context.Background(), mgr.GetClient())
-		if err != nil {
-			setupLog.Error(err, "unable to set up validating webhook configuration")
-			os.Exit(1)
-		}
-	}
+			// setup APIService
+			if os.Getenv("UPDATE_APISERVICE") != "false" {
+				err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
+				if err != nil {
+					setupLog.Error(err, "unable to set up apiservice")
+					os.Exit(1)
+				}
+			}
+			
+			// Register generic controllers
+			err = controllers.Register(mgr)
+			if err != nil {
+				return errors.Wrap(err, "unable to register controller")
+			}
 
-	// setup apiservice
-	if os.Getenv("UPDATE_APISERVICE") != "false" {
-		err = apiservice.EnsureAPIService(context.Background(), mgr.GetClient())
+			// Register quota controller
+			err = controller.Register(ctrlCtx)
+			if err != nil {
+				return errors.Wrap(err, "unable to register quota controller")
+			}
+			
+			return nil
+		})
 		if err != nil {
-			setupLog.Error(err, "unable to set up apiservice")
-			os.Exit(1)
+			klog.Fatalf("Error starting leader election: %v", err)
 		}
-	}
+	}()
 
 	// Wait till stopChan is closed
 	<-stopChan
 }
 
-func initialize(config *rest.Config) error {
-	klog.Info("Initialize...")
-	defer klog.Info("Done initializing...")
-
-	client, err := client2.New(config, client2.Options{Scheme: scheme})
-	if err != nil {
-		return err
-	}
-
+func installCRDS(uncachedClient client2.Client) error {
 	klog.Info("Installing crds...")
 
-	builder := crd.NewBuilder(client)
-	_, err = builder.CreateCRDs(context.Background(), apis.TypeDefinitions...)
+	builder := crd.NewBuilder(uncachedClient)
+	_, err := builder.CreateCRDs(context.Background(), apis.TypeDefinitions...)
 	return err
 }
 

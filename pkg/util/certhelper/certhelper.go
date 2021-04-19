@@ -12,6 +12,7 @@ import (
 	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
 	"io/ioutil"
 	"math/big"
+	mathrand "math/rand"
 	"os"
 	"path/filepath"
 	"time"
@@ -105,7 +106,7 @@ func generateCertificate(folder string, service string) error {
 	}
 
 	template := &x509.Certificate{
-		SerialNumber: big.NewInt(1),
+		SerialNumber: big.NewInt(generateSerialNumber()),
 		Subject: pkix.Name{
 			Organization: []string{"kiosk"},
 		},
@@ -129,11 +130,14 @@ func generateCertificate(folder string, service string) error {
 	return writeCert(folder, cert, priv)
 }
 
-func WriteCertificates() error {
-	err := generateCertificate(WebhookCertFolder, WebhookServiceName)
-	if err != nil {
-		return err
-	}
+func GenerateWebhookCertificate() error {
+	return generateCertificate(WebhookCertFolder, WebhookServiceName)
+}
 
+func GenerateAPIServiceCertificate() error {
 	return generateCertificate(APIServiceCertFolder, APIServiceName)
+}
+
+func generateSerialNumber() int64 {
+	return mathrand.Int63n(999999999999999)
 }

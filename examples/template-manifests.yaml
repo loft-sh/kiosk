@@ -21,9 +21,10 @@ resources:
       kind: LimitRange
       metadata:
         name: space-limit-range
-        annotations:
+        annotations: 
           # Parameters can also be used inside a string
-          example-parameter: "Hello from ${NAMESPACE} - ${WILL_NOT_BE_REPLACED}"
+          # with ${namespace.metadata.annotations.myAnnotation}
+          example-parameter: "Hello from ${namespace} - ${WILL_NOT_BE_REPLACED}"
       spec:
         limits:
           - default:

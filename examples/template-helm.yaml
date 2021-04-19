@@ -12,4 +12,6 @@ resources:
     values: |
       redisPort: 6379
       # Use a predefined parameter here
-      myOtherValue: ${NAMESPACE}
+      # You can also use annotations on the namespace 
+      # with ${namespace.metadata.annotations.myAnnotation}
+      myOtherValue: ${namespace}

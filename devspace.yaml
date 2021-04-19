@@ -77,3 +77,4 @@ profiles:
               name: ./chart
             values:
               image: kiosksh/kiosktest
+              replicaCount: 3
