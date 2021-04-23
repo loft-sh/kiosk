@@ -29,6 +29,7 @@ webhook:
 
 apiservice:
   create: true
+  port: 8443
 
 serviceAccount:
   name: serviceaccount

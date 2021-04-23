@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -100,8 +101,11 @@ func StartApiServerWithOptions(opts *StartOptions) error {
 
 	signalCh := genericapiserver.SetupSignalHandler()
 	// To disable providers, manually specify the list provided by getKnownProviders()
-	cmd, _ := NewCommandStartServer(opts.EtcdPath, opts.Apis, signalCh,
+	cmd, _, err := NewCommandStartServer(opts.EtcdPath, opts.Apis, signalCh,
 		opts.Title, opts.Version, opts.TweakConfigFuncs...)
+	if err != nil {
+		return err
+	}
 
 	errors := []error{}
 	for _, ff := range opts.FlagConfigFuncs {
@@ -122,7 +126,7 @@ func StartApiServerWithOptions(opts *StartOptions) error {
 	return nil
 }
 
-func NewServerOptions(etcdPath string, b []*builders.APIGroupBuilder) *ServerOptions {
+func NewServerOptions(etcdPath string, b []*builders.APIGroupBuilder) (*ServerOptions, error) {
 	versions := []schema.GroupVersion{}
 	for _, b := range b {
 		versions = append(versions, b.GetLegacyCodec()...)
@@ -144,7 +148,18 @@ func NewServerOptions(etcdPath string, b []*builders.APIGroupBuilder) *ServerOpt
 
 	o.RecommendedOptions.SecureServing.ServerCert.CertKey.CertFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.crt")
 	o.RecommendedOptions.SecureServing.ServerCert.CertKey.KeyFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.key")
-	o.RecommendedOptions.SecureServing.BindPort = 8443
+
+	var err error
+	apiServicePort := 8443
+	apiServicePortEnv := os.Getenv("APISERVICE_PORT")
+	if apiServicePortEnv != "" {
+		apiServicePort, err = strconv.Atoi(apiServicePortEnv)
+		if err != nil {
+			return nil, fmt.Errorf("parsing api service port %s: %v", apiServicePortEnv, err)
+		}
+	}
+
+	o.RecommendedOptions.SecureServing.BindPort = apiServicePort
 
 	o.RecommendedOptions.Authorization.RemoteKubeConfigFileOptional = true
 	o.RecommendedOptions.Authentication.RemoteKubeConfigFileOptional = true
@@ -153,13 +168,16 @@ func NewServerOptions(etcdPath string, b []*builders.APIGroupBuilder) *ServerOpt
 		return o.WithLoopback()
 	}()
 
-	return o
+	return o, nil
 }
 
 // NewCommandStartMaster provides a CLI handler for 'start master' command
 func NewCommandStartServer(etcdPath string, builders []*builders.APIGroupBuilder,
-	stopCh <-chan struct{}, title, version string, tweakConfigFuncs ...func(apiServer *apiserver.Config) error) (*cobra.Command, *ServerOptions) {
-	o := NewServerOptions(etcdPath, builders)
+	stopCh <-chan struct{}, title, version string, tweakConfigFuncs ...func(apiServer *apiserver.Config) error) (*cobra.Command, *ServerOptions, error) {
+	o, err := NewServerOptions(etcdPath, builders)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// for pluginName := range AggregatedAdmissionPlugins {
 	//	o.RecommendedOptions.Admission.RecommendedPluginOrder = append(o.RecommendedOptions.Admission.RecommendedPluginOrder, pluginName)
@@ -207,7 +225,7 @@ func NewCommandStartServer(etcdPath string, builders []*builders.APIGroupBuilder
 	klog.InitFlags(klogFlags)
 	flags.AddGoFlagSet(klogFlags)
 
-	return cmd, o
+	return cmd, o, nil
 }
 
 func (o ServerOptions) Validate(args []string) error {
