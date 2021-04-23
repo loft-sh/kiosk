@@ -2,6 +2,7 @@ package leaderelection
 
 import (
 	"context"
+	"github.com/loft-sh/kiosk/pkg/util/clienthelper"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,10 +41,16 @@ func StartLeaderElection(ctx context.Context, scheme *runtime.Scheme, restConfig
 		return err
 	}
 
+	// Retrieve the current namespace
+	currentNamespace, err := clienthelper.CurrentNamespace()
+	if err != nil {
+		return err
+	}
+
 	// Lock required for leader election
 	rl := resourcelock.ConfigMapLock{
 		ConfigMapMeta: metav1.ObjectMeta{
-			Namespace: "kube-system",
+			Namespace: currentNamespace,
 			Name:      "kiosk-controller",
 		},
 		Client: leaderElectionClient.CoreV1(),

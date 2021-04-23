@@ -28,7 +28,7 @@ spec:
           containerPort: 9443
           protocol: TCP
         - name: apiservice
-          containerPort: 8443
+          containerPort: {{ .Values.apiService.port }}
           protocol: TCP
         command:
         {{- range $f := .Values.kiosk.command }}
@@ -65,7 +65,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthz
-            port: 8443
+            port: {{ .Values.apiService.port }}
             scheme: HTTPS
           failureThreshold: 10
           initialDelaySeconds: 5
@@ -75,7 +75,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /healthz
-            port: 8443
+            port: {{ .Values.apiService.port }}
             scheme: HTTPS
           failureThreshold: 10
           initialDelaySeconds: 5

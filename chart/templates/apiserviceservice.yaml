@@ -28,7 +28,7 @@ spec:
     - name: apiservice
       port: 443
       protocol: TCP
-      targetPort: 8443
+      targetPort: {{ .Values.apiService.port }}
   selector:
     app: {{ template "kiosk.fullname" . }}
     release: {{ .Release.Name }}
