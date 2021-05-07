@@ -22,8 +22,10 @@ spec:
     spec:
       terminationGracePeriodSeconds: 10
       serviceAccountName: {{ template "kiosk.serviceAccountName" . }}
+      {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}
+      {{- end }}
       containers:
       - ports:
         - name: webhook
