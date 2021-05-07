@@ -440,12 +440,6 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, fmt.Errorf("new object is not a space")
 	}
 
-	if createValidation != nil {
-		err = createValidation(ctx, newSpace)
-		if err != nil {
-			return nil, false, err
-		}
-	}
 	if updateValidation != nil {
 		err = updateValidation(ctx, newSpace, oldObj)
 		if err != nil {
