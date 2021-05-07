@@ -286,28 +286,30 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 		}
 	}
 
-	proxyTransport := CreateNodeDialer()
-	admissionConfig := &admission.Config{
-		ExternalInformers:    kubeInformerFactory,
-		LoopbackClientConfig: serverConfig.LoopbackClientConfig,
-	}
-	serviceResolver := buildServiceResolver(false, serverConfig.LoopbackClientConfig.Host, kubeInformerFactory)
-	pluginInitializers, admissionPostStartHook, err := admissionConfig.New(proxyTransport, serverConfig.EgressSelector, serviceResolver)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create admission plugin initializer: %v", err)
-	}
-	if err := serverConfig.AddPostStartHook("start-kube-apiserver-admission-initializer", admissionPostStartHook); err != nil {
-		return nil, err
-	}
+	if os.Getenv("DISABLE_WEBHOOKS") != "true" {
+		proxyTransport := CreateNodeDialer()
+		admissionConfig := &admission.Config{
+			ExternalInformers:    kubeInformerFactory,
+			LoopbackClientConfig: serverConfig.LoopbackClientConfig,
+		}
+		serviceResolver := buildServiceResolver(false, serverConfig.LoopbackClientConfig.Host, kubeInformerFactory)
+		pluginInitializers, admissionPostStartHook, err := admissionConfig.New(proxyTransport, serverConfig.EgressSelector, serviceResolver)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create admission plugin initializer: %v", err)
+		}
+		if err := serverConfig.AddPostStartHook("start-kube-apiserver-admission-initializer", admissionPostStartHook); err != nil {
+			return nil, err
+		}
 
-	err = o.RecommendedOptions.Admission.ApplyTo(
-		&serverConfig.Config,
-		kubeInformerFactory,
-		serverConfig.LoopbackClientConfig,
-		utilfeature.DefaultFeatureGate,
-		pluginInitializers...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize admission: %v", err)
+		err = o.RecommendedOptions.Admission.ApplyTo(
+			&serverConfig.Config,
+			kubeInformerFactory,
+			serverConfig.LoopbackClientConfig,
+			utilfeature.DefaultFeatureGate,
+			pluginInitializers...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize admission: %v", err)
+		}
 	}
 
 	err = applyOptions(
@@ -334,7 +336,7 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 		InsecureServingInfo: insecureServingInfo,
 		PostStartHooks:      make(map[string]genericapiserver.PostStartHookFunc),
 	}
-	
+
 	o.RecommendedOptions.Authentication.ApplyTo(&serverConfig.Authentication, serverConfig.Config.SecureServing, serverConfig.Config.OpenAPIConfig)
 	o.RecommendedOptions.Authorization.ApplyTo(&serverConfig.Authorization)
 
@@ -350,7 +352,7 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 func CreateNodeDialer() *http.Transport {
 	// Setup nodeTunneler if needed
 	var proxyDialerFn utilnet.DialFunc
-	
+
 	// Proxying to pods and services is IP-based... don't expect to be able to verify the hostname
 	proxyTLSClientConfig := &tls.Config{InsecureSkipVerify: true}
 	proxyTransport := utilnet.SetTransportDefaults(&http.Transport{
@@ -425,8 +427,7 @@ func (o *ServerOptions) RunServer(stopCh <-chan struct{}, title, version string,
 	}
 
 	aggregatedAPIServerConfig.Init()
-	
-	
+
 	genericConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(GetOpenApiDefinition, openapinamer.NewDefinitionNamer(builders.Scheme))
 	genericConfig.OpenAPIConfig.Info.Title = title
 	genericConfig.OpenAPIConfig.Info.Version = version
