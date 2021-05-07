@@ -30,10 +30,12 @@ require (
 	k8s.io/component-base v0.20.2
 	k8s.io/gengo v0.0.0-20201113003025-83324d819ded
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.4.0
 	k8s.io/kube-aggregator v0.20.2
 	k8s.io/kube-controller-manager v0.20.2
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	k8s.io/kubectl v0.20.2
+	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
 	sigs.k8s.io/apiserver-builder-alpha v1.18.0
 	sigs.k8s.io/controller-runtime v0.8.3
 )

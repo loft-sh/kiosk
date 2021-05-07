@@ -6,6 +6,8 @@ replicaCount: 1
 
 env: {}
 
+nodeSelector: {}
+
 readinessProbe:
   enabled: true
 

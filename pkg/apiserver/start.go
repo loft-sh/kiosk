@@ -18,10 +18,14 @@ package apiserver
 
 import (
 	"bytes"
+	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/loft-sh/kiosk/pkg/apiserver/admission"
 	"github.com/loft-sh/kiosk/pkg/util/certhelper"
+	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -40,11 +44,14 @@ import (
 	genericfilters "k8s.io/apiserver/pkg/server/filters"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 	"k8s.io/apiserver/pkg/util/feature"
+	utilfeature "k8s.io/apiserver/pkg/util/feature"
+	"k8s.io/apiserver/pkg/util/webhook"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
+	aggregatorapiserver "k8s.io/kube-aggregator/pkg/apiserver"
 	openapi "k8s.io/kube-openapi/pkg/common"
 	"sigs.k8s.io/apiserver-builder-alpha/pkg/apiserver"
 	"sigs.k8s.io/apiserver-builder-alpha/pkg/builders"
@@ -279,6 +286,32 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 		}
 	}
 
+	if os.Getenv("DISABLE_WEBHOOKS") != "true" {
+		proxyTransport := CreateNodeDialer()
+		admissionConfig := &admission.Config{
+			ExternalInformers:    kubeInformerFactory,
+			LoopbackClientConfig: serverConfig.LoopbackClientConfig,
+		}
+		serviceResolver := buildServiceResolver(false, serverConfig.LoopbackClientConfig.Host, kubeInformerFactory)
+		pluginInitializers, admissionPostStartHook, err := admissionConfig.New(proxyTransport, serverConfig.EgressSelector, serviceResolver)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create admission plugin initializer: %v", err)
+		}
+		if err := serverConfig.AddPostStartHook("start-kube-apiserver-admission-initializer", admissionPostStartHook); err != nil {
+			return nil, err
+		}
+
+		err = o.RecommendedOptions.Admission.ApplyTo(
+			&serverConfig.Config,
+			kubeInformerFactory,
+			serverConfig.LoopbackClientConfig,
+			utilfeature.DefaultFeatureGate,
+			pluginInitializers...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize admission: %v", err)
+		}
+	}
+
 	err = applyOptions(
 		&serverConfig.Config,
 		// o.RecommendedOptions.Etcd.ApplyTo,
@@ -313,6 +346,39 @@ func (o ServerOptions) Config(tweakConfigFuncs ...func(config *apiserver.Config)
 		}
 	}
 	return config, nil
+}
+
+// CreateNodeDialer creates the dialer infrastructure to connect to the nodes.
+func CreateNodeDialer() *http.Transport {
+	// Setup nodeTunneler if needed
+	var proxyDialerFn utilnet.DialFunc
+
+	// Proxying to pods and services is IP-based... don't expect to be able to verify the hostname
+	proxyTLSClientConfig := &tls.Config{InsecureSkipVerify: true}
+	proxyTransport := utilnet.SetTransportDefaults(&http.Transport{
+		DialContext:     proxyDialerFn,
+		TLSClientConfig: proxyTLSClientConfig,
+	})
+	return proxyTransport
+}
+
+func buildServiceResolver(enabledAggregatorRouting bool, hostname string, informer informers.SharedInformerFactory) webhook.ServiceResolver {
+	var serviceResolver webhook.ServiceResolver
+	if enabledAggregatorRouting {
+		serviceResolver = aggregatorapiserver.NewEndpointServiceResolver(
+			informer.Core().V1().Services().Lister(),
+			informer.Core().V1().Endpoints().Lister(),
+		)
+	} else {
+		serviceResolver = aggregatorapiserver.NewClusterIPServiceResolver(
+			informer.Core().V1().Services().Lister(),
+		)
+	}
+	// resolve kubernetes.default.svc locally
+	if localHost, err := url.Parse(hostname); err == nil {
+		serviceResolver = aggregatorapiserver.NewLoopbackServiceResolver(serviceResolver, localHost)
+	}
+	return serviceResolver
 }
 
 func (o *ServerOptions) buildLoopback() (*rest.Config, informers.SharedInformerFactory, error) {
