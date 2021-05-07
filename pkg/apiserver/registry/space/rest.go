@@ -440,6 +440,19 @@ func (r *spaceStorage) Update(ctx context.Context, name string, objInfo rest.Upd
 		return nil, false, fmt.Errorf("new object is not a space")
 	}
 
+	if createValidation != nil {
+		err = createValidation(ctx, newSpace)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	if updateValidation != nil {
+		err = updateValidation(ctx, newSpace, oldObj)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
 	namespace := ConvertSpace(newSpace)
 	err = r.client.Update(ctx, namespace, &client.UpdateOptions{
 		Raw: options,
@@ -470,6 +483,13 @@ func (r *spaceStorage) Delete(ctx context.Context, name string, deleteValidation
 	err = r.client.Get(ctx, types.NamespacedName{Name: name}, namespace)
 	if err != nil {
 		return nil, false, err
+	}
+
+	if deleteValidation != nil {
+		err = deleteValidation(ctx, ConvertNamespace(namespace))
+		if err != nil {
+			return nil, false, err
+		}
 	}
 
 	// we have to use a background context here, because it might

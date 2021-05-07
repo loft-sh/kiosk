@@ -157,6 +157,13 @@ func (r *accountREST) Create(ctx context.Context, obj runtime.Object, createVali
 	if !ok {
 		return nil, fmt.Errorf("not an account: %#v", obj)
 	}
+	if createValidation != nil {
+		err := createValidation(ctx, account)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	configAccount, err := ConvertTenancyAccount(account)
 	if err != nil {
 		return nil, err
@@ -189,6 +196,19 @@ func (r *accountREST) Update(ctx context.Context, name string, objInfo rest.Upda
 		return nil, false, fmt.Errorf("New object is not an account")
 	}
 
+	if createValidation != nil {
+		err := createValidation(ctx, newAccount)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	if updateValidation != nil {
+		err := updateValidation(ctx, newAccount, oldObj)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
 	newConfigAccount, err := ConvertTenancyAccount(newAccount)
 	if err != nil {
 		return nil, false, err
@@ -213,6 +233,17 @@ func (r *accountREST) Delete(ctx context.Context, name string, deleteValidation 
 		return nil, false, err
 	}
 
+	account, err := ConvertConfigAccount(configAccount)
+	if err != nil {
+		return nil, false, err
+	}
+	if deleteValidation != nil {
+		err = deleteValidation(ctx, account)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
 	// we have to use a background context here, because it might
 	// be possible that the user is cancelling the request and we want
 	// to fully delete the account and its children
@@ -223,7 +254,7 @@ func (r *accountREST) Delete(ctx context.Context, name string, deleteValidation 
 		return nil, false, err
 	}
 
-	account, err := ConvertConfigAccount(configAccount)
+	account, err = ConvertConfigAccount(configAccount)
 	if err != nil {
 		return nil, false, err
 	}
