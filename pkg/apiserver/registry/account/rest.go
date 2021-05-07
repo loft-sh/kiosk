@@ -196,12 +196,6 @@ func (r *accountREST) Update(ctx context.Context, name string, objInfo rest.Upda
 		return nil, false, fmt.Errorf("New object is not an account")
 	}
 
-	if createValidation != nil {
-		err := createValidation(ctx, newAccount)
-		if err != nil {
-			return nil, false, err
-		}
-	}
 	if updateValidation != nil {
 		err := updateValidation(ctx, newAccount, oldObj)
 		if err != nil {
