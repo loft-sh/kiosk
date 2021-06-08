@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,6 +36,9 @@ func NewFakeManager() *FakeManager {
 	}
 }
 
+func (fm *FakeManager) GetControllerOptions() v1alpha1.ControllerConfigurationSpec {
+	return v1alpha1.ControllerConfigurationSpec{}
+}
 func (fm *FakeManager) AddMetricsExtraHandler(path string, handler http.Handler) error {
 	return nil
 }
