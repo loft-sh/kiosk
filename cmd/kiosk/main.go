@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
+	"fmt"
+	apiserver "github.com/loft-sh/apiserver/pkg/server"
 	"github.com/loft-sh/kiosk/pkg/apis"
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
-	"github.com/loft-sh/kiosk/pkg/apiserver"
 	_ "github.com/loft-sh/kiosk/pkg/apiserver/registry"
 	"github.com/loft-sh/kiosk/pkg/leaderelection"
 	"github.com/loft-sh/kiosk/pkg/manager/blockingcacheclient"
@@ -40,8 +41,10 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"math/rand"
 	"os"
+	"path/filepath"
 	client2 "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+	"strconv"
 	"time"
 
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
@@ -120,7 +123,7 @@ func main() {
 
 	// create the manager
 	mgr, err := ctrl.NewManager(config, ctrl.Options{
-		ClientBuilder:      blockingcacheclient.NewCacheClientBuilder(),
+		NewClient:          blockingcacheclient.NewCacheClient,
 		Scheme:             scheme,
 		MetricsBindAddress: ":8080",
 		CertDir:            certhelper.WebhookCertFolder,
@@ -170,7 +173,6 @@ func main() {
 
 	// Start the api server
 	go func() {
-		version := "v0"
 		if os.Getenv("SERVER_SIDE_APPLY_ENABLED") != "true" {
 			err := featureutil.DefaultMutableFeatureGate.Set(string(genericfeatures.ServerSideApply) + "=false")
 			if err != nil {
@@ -178,17 +180,32 @@ func main() {
 			}
 		}
 
-		err = apiserver.StartApiServerWithOptions(&apiserver.StartOptions{
-			Apis:        apis.GetAllApiBuilders(),
-			Openapidefs: openapi.GetOpenAPIDefinitions,
-			Title:       "Api",
-			Version:     version,
+		err = apiserver.StartAPIServer(&apiserver.StartOptions{
+			Apis:                  apis.GetAllApiBuilders(),
+			GetOpenAPIDefinitions: openapi.GetOpenAPIDefinitions,
+			TweakServerOptions: func(o *apiserver.ServerOptions) {
+				o.DisableWebhooks = os.Getenv("DISABLE_WEBHOOKS") == "true"
+				o.RecommendedOptions.SecureServing.ServerCert.CertKey.CertFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.crt")
+				o.RecommendedOptions.SecureServing.ServerCert.CertKey.KeyFile = filepath.Join(certhelper.APIServiceCertFolder, "tls.key")
+
+				var err error
+				apiServicePort := 8443
+				apiServicePortEnv := os.Getenv("APISERVICE_PORT")
+				if apiServicePortEnv != "" {
+					apiServicePort, err = strconv.Atoi(apiServicePortEnv)
+					if err != nil {
+						panic(fmt.Sprintf("parsing api service port %s: %v", apiServicePortEnv, err))
+					}
+				}
+
+				o.RecommendedOptions.SecureServing.BindPort = apiServicePort
+			},
 		})
 		if err != nil {
 			panic(err)
 		}
 	}()
-	
+
 	// start leader election for controllers
 	go func() {
 		err = leaderelection.StartLeaderElection(ctx, scheme, config, func() error {
@@ -209,7 +226,7 @@ func main() {
 					os.Exit(1)
 				}
 			}
-			
+
 			// Register generic controllers
 			err = controllers.Register(mgr)
 			if err != nil {
@@ -221,7 +238,7 @@ func main() {
 			if err != nil {
 				return errors.Wrap(err, "unable to register quota controller")
 			}
-			
+
 			return nil
 		})
 		if err != nil {

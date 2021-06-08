@@ -1,4 +1,0 @@
-syntax = 'proto2';
-
-// Dummy proto file
-package sigs.k8s.io.apiserver_builder_alpha.pkg.builders;
