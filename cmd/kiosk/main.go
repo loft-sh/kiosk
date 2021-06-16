@@ -34,7 +34,9 @@ import (
 	"github.com/loft-sh/kiosk/pkg/util/certhelper"
 	"github.com/loft-sh/kiosk/pkg/util/log"
 	"github.com/loft-sh/kiosk/pkg/util/secret"
+	"github.com/loft-sh/kiosk/pkg/watch"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/klog"
@@ -170,6 +172,16 @@ func main() {
 
 	// Make sure the manager is synced
 	mgr.GetCache().WaitForCacheSync(ctx)
+
+	// Start watch registries
+	err = watch.NamespaceRegistry.Start(ctx, mgr.GetCache(), &corev1.Namespace{})
+	if err != nil {
+		klog.Fatalf("start namespace informer: %v", err)
+	}
+	err = watch.AccountRegistry.Start(ctx, mgr.GetCache(), &configv1alpha1.Account{})
+	if err != nil {
+		klog.Fatalf("start account informer: %v", err)
+	}
 
 	// Start the api server
 	go func() {

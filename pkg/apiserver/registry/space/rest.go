@@ -28,6 +28,7 @@ import (
 	"github.com/loft-sh/kiosk/pkg/authorization"
 	"github.com/loft-sh/kiosk/pkg/constants"
 	"github.com/loft-sh/kiosk/pkg/util/loghelper"
+	kioskwatch "github.com/loft-sh/kiosk/pkg/watch"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -36,6 +37,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apiserver/pkg/authentication/user"
 	authorizer "k8s.io/apiserver/pkg/authorization/authorizer"
 	"k8s.io/apiserver/pkg/endpoints/filters"
@@ -144,6 +146,27 @@ func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.Li
 	}
 
 	return spaceList, nil
+}
+
+var _ = rest.Watcher(&spaceStorage{})
+
+func (r *spaceStorage) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
+	userInfo, ok := request.UserFrom(ctx)
+	if !ok {
+		return nil, fmt.Errorf("user is missing in context")
+	}
+	if options == nil {
+		options = &metainternalversion.ListOptions{}
+	}
+
+	w := &watcher{
+		userInfo:      userInfo,
+		labelSelector: options.LabelSelector,
+		authorizer:    r.authorizer,
+		result:        make(chan watch.Event),
+	}
+	kioskwatch.NamespaceRegistry.Subscribe(w)
+	return w, nil
 }
 
 var _ = rest.Getter(&spaceStorage{})

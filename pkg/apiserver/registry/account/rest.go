@@ -23,28 +23,35 @@ import (
 	config "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	"github.com/loft-sh/kiosk/pkg/authorization"
+	kioskwatch "github.com/loft-sh/kiosk/pkg/watch"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metainternalversion "k8s.io/apimachinery/pkg/apis/meta/internalversion"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/apiserver/pkg/authorization/authorizer"
+	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"time"
 )
 
 type accountREST struct {
-	client client.Client
-	filter authorization.FilteredLister
+	client     client.Client
+	filter     authorization.FilteredLister
+	authorizer authorizer.Authorizer
 }
 
 // NewAccountREST creates a new account storage that implements the rest interface
 func NewAccountREST(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage {
 	ruleClient := authorization.NewRuleClient(cachedClient)
+	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
 	return &accountREST{
-		client: uncachedClient,
-		filter: authorization.NewFilteredLister(uncachedClient, rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)),
+		client:     uncachedClient,
+		authorizer: authorizer,
+		filter:     authorization.NewFilteredLister(uncachedClient, authorizer),
 	}
 }
 
@@ -133,6 +140,27 @@ func (r *accountREST) List(ctx context.Context, options *metainternalversion.Lis
 	}
 
 	return accountList, nil
+}
+
+var _ = rest.Watcher(&accountREST{})
+
+func (r *accountREST) Watch(ctx context.Context, options *metainternalversion.ListOptions) (watch.Interface, error) {
+	userInfo, ok := request.UserFrom(ctx)
+	if !ok {
+		return nil, fmt.Errorf("user is missing in context")
+	}
+	if options == nil {
+		options = &metainternalversion.ListOptions{}
+	}
+
+	w := &watcher{
+		userInfo:      userInfo,
+		labelSelector: options.LabelSelector,
+		authorizer:    r.authorizer,
+		result:        make(chan watch.Event),
+	}
+	kioskwatch.AccountRegistry.Subscribe(w)
+	return w, nil
 }
 
 var _ = rest.Getter(&accountREST{})

@@ -1,4 +1,4 @@
-version: v1beta7
+version: v1beta10
 images:
   controller:
     image: kiosksh/kiosktest
@@ -44,14 +44,12 @@ profiles:
         path: deployments[0].helm.values.kiosk.resources
         value:
           limits:
-            memory: 100Gi
-            cpu: "1000"
+            memory: 4Gi
+            cpu: "4"
     replace:
       dev:
-        interactive:
-          defaultEnabled: true
-          terminal:
-            imageName: controller
+        terminal:
+          imageName: controller
         sync:
           - imageName: controller
             excludePaths:
