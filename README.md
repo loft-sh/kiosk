@@ -4,6 +4,7 @@
 
 ![Latest Release](https://img.shields.io/github/v/release/kiosk-sh/kiosk?style=for-the-badge&label=Latest%20Release&color=%23D1374D)
 ![License: Apache-2.0](https://img.shields.io/github/license/kiosk-sh/kiosk?style=for-the-badge&color=%23D1374D)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Floft-sh%2Fkiosk.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Floft-sh%2Fkiosk?ref=badge_shield)
 
 ## Multi-Tenancy Extension For Kubernetes
 - **Accounts & Account Users** to separate tenants in a shared Kubernetes cluster
@@ -1068,3 +1069,7 @@ For more detailed information, see our [Contributing Guide](CONTRIBUTING.md).
 
 ## About kiosk
 kiosk is an open-source project licensed under Apache-2.0 license. The project will be contributed to [CNCF](https://cncf.io/) once it reaches the required level of popularity and maturity. The first version of kiosk was developed by [DevSpace Technologies](https://devspace.cloud/) as core component for their DevSpace Cloud on-premise edition.  
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Floft-sh%2Fkiosk.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Floft-sh%2Fkiosk?ref=badge_large)
