@@ -19,10 +19,10 @@ package account
 import (
 	"context"
 	"fmt"
-	"github.com/loft-sh/kiosk/kube/plugin/pkg/auth/authorizer/rbac"
 	config "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	"github.com/loft-sh/kiosk/pkg/authorization"
+	"github.com/loft-sh/kiosk/pkg/authorization/rbac"
 	kioskwatch "github.com/loft-sh/kiosk/pkg/watch"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -46,8 +46,7 @@ type accountREST struct {
 
 // NewAccountREST creates a new account storage that implements the rest interface
 func NewAccountREST(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage {
-	ruleClient := authorization.NewRuleClient(cachedClient)
-	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
+	authorizer := rbac.New(cachedClient)
 	return &accountREST{
 		client:     uncachedClient,
 		authorizer: authorizer,
@@ -128,7 +127,8 @@ func (r *accountREST) List(ctx context.Context, options *metainternalversion.Lis
 	}
 
 	accountList := &tenancy.AccountList{
-		Items: []tenancy.Account{},
+		ListMeta: configAccountList.ListMeta,
+		Items:    []tenancy.Account{},
 	}
 	for _, n := range configAccountList.Items {
 		account, err := ConvertConfigAccount(&n)

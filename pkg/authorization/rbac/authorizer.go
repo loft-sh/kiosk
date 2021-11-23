@@ -19,32 +19,24 @@ import (
 	"context"
 	"fmt"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	rbacv1helpers "github.com/loft-sh/kiosk/kube/pkg/apis/rbac/v1"
-	rbacregistryvalidation "github.com/loft-sh/kiosk/kube/pkg/registry/rbac/validation"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
-	"k8s.io/apiserver/pkg/authentication/user"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
 	rbaclisters "k8s.io/client-go/listers/rbac/v1"
 )
 
-type RequestToRuleMapper interface {
-	// RulesFor returns all known PolicyRules and any errors that happened while locating those rules.
-	// Any rule returned is still valid, since rules are deny by default.  If you can pass with the rules
-	// supplied, you do not have to fail the request.  If you cannot, you should indicate the error along
-	// with your denial.
-	RulesFor(subject user.Info, namespace string) ([]rbacv1.PolicyRule, error)
-
-	// VisitRulesFor invokes visitor() with each rule that applies to a given user in a given namespace,
-	// and each error encountered resolving those rules. Rule may be nil if err is non-nil.
-	// If visitor() returns false, visiting is short-circuited.
-	VisitRulesFor(user user.Info, namespace string, visitor func(source fmt.Stringer, rule *rbacv1.PolicyRule, err error) bool)
+type RBACAuthorizer struct {
+	AuthorizationRuleResolver *DefaultRuleResolver
 }
 
-type RBACAuthorizer struct {
-	authorizationRuleResolver RequestToRuleMapper
+func New(client client.Client) *RBACAuthorizer {
+	return &RBACAuthorizer{
+		AuthorizationRuleResolver: NewDefaultRuleResolver(client),
+	}
 }
 
 // authorizingVisitor short-circuits once allowed, and collects any resolution errors encountered
@@ -71,7 +63,7 @@ func (v *authorizingVisitor) visit(source fmt.Stringer, rule *rbacv1.PolicyRule,
 func (r *RBACAuthorizer) Authorize(ctx context.Context, requestAttributes authorizer.Attributes) (authorizer.Decision, string, error) {
 	ruleCheckingVisitor := &authorizingVisitor{requestAttributes: requestAttributes}
 
-	r.authorizationRuleResolver.VisitRulesFor(requestAttributes.GetUser(), requestAttributes.GetNamespace(), ruleCheckingVisitor.visit)
+	r.AuthorizationRuleResolver.VisitRulesFor(ctx, requestAttributes.GetUser(), requestAttributes.GetNamespace(), ruleCheckingVisitor.visit)
 	if ruleCheckingVisitor.allowed {
 		return authorizer.DecisionAllow, ruleCheckingVisitor.reason, nil
 	}
@@ -120,55 +112,6 @@ func (r *RBACAuthorizer) Authorize(ctx context.Context, requestAttributes author
 		reason = fmt.Sprintf("RBAC: %v", utilerrors.NewAggregate(ruleCheckingVisitor.errors))
 	}
 	return authorizer.DecisionNoOpinion, reason, nil
-}
-
-func (r *RBACAuthorizer) RulesFor(user user.Info, namespace string) ([]authorizer.ResourceRuleInfo, []authorizer.NonResourceRuleInfo, bool, error) {
-	var (
-		resourceRules    []authorizer.ResourceRuleInfo
-		nonResourceRules []authorizer.NonResourceRuleInfo
-	)
-
-	policyRules, err := r.authorizationRuleResolver.RulesFor(user, namespace)
-	for _, policyRule := range policyRules {
-		if len(policyRule.Resources) > 0 {
-			r := authorizer.DefaultResourceRuleInfo{
-				Verbs:         policyRule.Verbs,
-				APIGroups:     policyRule.APIGroups,
-				Resources:     policyRule.Resources,
-				ResourceNames: policyRule.ResourceNames,
-			}
-			var resourceRule authorizer.ResourceRuleInfo = &r
-			resourceRules = append(resourceRules, resourceRule)
-		}
-		if len(policyRule.NonResourceURLs) > 0 {
-			r := authorizer.DefaultNonResourceRuleInfo{
-				Verbs:           policyRule.Verbs,
-				NonResourceURLs: policyRule.NonResourceURLs,
-			}
-			var nonResourceRule authorizer.NonResourceRuleInfo = &r
-			nonResourceRules = append(nonResourceRules, nonResourceRule)
-		}
-	}
-	return resourceRules, nonResourceRules, false, err
-}
-
-func New(roles rbacregistryvalidation.RoleGetter, roleBindings rbacregistryvalidation.RoleBindingLister, clusterRoles rbacregistryvalidation.ClusterRoleGetter, clusterRoleBindings rbacregistryvalidation.ClusterRoleBindingLister) *RBACAuthorizer {
-	authorizer := &RBACAuthorizer{
-		authorizationRuleResolver: rbacregistryvalidation.NewDefaultRuleResolver(
-			roles, roleBindings, clusterRoles, clusterRoleBindings,
-		),
-	}
-	return authorizer
-}
-
-func RulesAllow(requestAttributes authorizer.Attributes, rules ...rbacv1.PolicyRule) bool {
-	for i := range rules {
-		if RuleAllows(requestAttributes, &rules[i]) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func RuleAllows(requestAttributes authorizer.Attributes, rule *rbacv1.PolicyRule) bool {

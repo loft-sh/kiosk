@@ -3,6 +3,8 @@ package account
 import (
 	"context"
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/authorization"
+	"github.com/loft-sh/kiosk/pkg/authorization/rbac"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -115,7 +117,15 @@ func TestListAccount(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
-	accountStorage := NewAccountREST(fakeClient, fakeClient, scheme).(*accountREST)
+	a := &rbac.RBACAuthorizer{AuthorizationRuleResolver: &rbac.DefaultRuleResolver{
+		ListAll: true,
+		Client: fakeClient,
+	}}
+	accountStorage := &accountREST{
+		client:     fakeClient,
+		authorizer: a,
+		filter:     authorization.NewFilteredLister(fakeClient, a),
+	}
 
 	// Get empty list
 	obj, err := accountStorage.List(userCtx, &metainternalversion.ListOptions{})

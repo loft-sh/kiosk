@@ -43,9 +43,12 @@ profiles:
       - op: add
         path: deployments[0].helm.values.kiosk.resources
         value:
+          requests:
+            memory: "0"
+            cpu: "0"
           limits:
-            memory: 4Gi
-            cpu: "4"
+            memory: "0"
+            cpu: "0"
     replace:
       dev:
         terminal:
