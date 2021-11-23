@@ -2,6 +2,8 @@ package space
 
 import (
 	tenancyv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/tenancy/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/authorization"
+	"github.com/loft-sh/kiosk/pkg/authorization/rbac"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
@@ -39,6 +41,19 @@ var clusterAdminBinding = &rbacv1.ClusterRoleBinding{
 		Kind:     "ClusterRole",
 		APIGroup: rbacv1.GroupName,
 	},
+}
+
+func NewTestSpaceREST(fakeClient client.Client, scheme *runtime.Scheme) *spaceStorage {
+	a := &rbac.RBACAuthorizer{AuthorizationRuleResolver: &rbac.DefaultRuleResolver{
+		ListAll: true,
+		Client: fakeClient,
+	}}
+	return &spaceStorage{
+		client:     fakeClient,
+		authorizer: a,
+		scheme:     scheme,
+		filter:     authorization.NewFilteredLister(fakeClient, a),
+	}
 }
 
 func clientWithDefaultRoles(scheme *runtime.Scheme, objs ...runtime.Object) *testingutil.FakeIndexClient {
@@ -83,7 +98,7 @@ func TestGetSpace(t *testing.T) {
 	})
 	ctx := context.TODO()
 	userCtx := request.WithUser(ctx, &user.DefaultInfo{Name: "foo"})
-	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewTestSpaceREST(fakeClient, scheme)
 
 	// We are not allowed to retrieve it so this should return a not found
 	_, err := spaceStorage.Get(withRequestInfo(userCtx, "get", "test"), "test", &metav1.GetOptions{})
@@ -135,7 +150,7 @@ func TestListSpaces(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "list", "")
-	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewTestSpaceREST(fakeClient, scheme)
 
 	// Get empty list
 	obj, err := spaceStorage.List(userCtx, &metainternalversion.ListOptions{})
@@ -232,7 +247,7 @@ func TestCreateSpace(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "create", "")
-	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewTestSpaceREST(fakeClient, scheme)
 
 	// Try to create if we are not allowed to
 	_, err := spaceStorage.Create(userCtx, &tenancy.Space{
@@ -330,7 +345,7 @@ func TestSpaceUpdate(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "update", "test")
-	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewTestSpaceREST(fakeClient, scheme)
 
 	_, updated, err := spaceStorage.Update(userCtx, "test", &fakeUpdater{out: &tenancy.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -377,7 +392,7 @@ func TestSpaceDelete(t *testing.T) {
 		})
 	ctx := context.TODO()
 	userCtx := withRequestInfo(request.WithUser(ctx, &user.DefaultInfo{Name: "foo"}), "delete", "test")
-	spaceStorage := NewSpaceREST(fakeClient, fakeClient, scheme).(*spaceStorage)
+	spaceStorage := NewTestSpaceREST(fakeClient, scheme)
 
 	_, deleted, err := spaceStorage.Delete(userCtx, "test", fakeDeleteValidation, &metav1.DeleteOptions{})
 	if err == nil || kerrors.IsForbidden(err) == false || deleted == true {

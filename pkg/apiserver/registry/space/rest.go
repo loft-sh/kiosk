@@ -20,12 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/loft-sh/kiosk/kube/plugin/pkg/auth/authorizer/rbac"
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy"
 	"github.com/loft-sh/kiosk/pkg/apis/tenancy/validation"
 	"github.com/loft-sh/kiosk/pkg/apiserver/registry/util"
 	"github.com/loft-sh/kiosk/pkg/authorization"
+	"github.com/loft-sh/kiosk/pkg/authorization/rbac"
 	"github.com/loft-sh/kiosk/pkg/constants"
 	"github.com/loft-sh/kiosk/pkg/util/loghelper"
 	kioskwatch "github.com/loft-sh/kiosk/pkg/watch"
@@ -56,8 +56,7 @@ type spaceStorage struct {
 
 // NewSpaceREST creates a new space storage that implements the rest interface
 func NewSpaceREST(cachedClient client.Client, uncachedClient client.Client, scheme *runtime.Scheme) rest.Storage {
-	ruleClient := authorization.NewRuleClient(cachedClient)
-	authorizer := rbac.New(ruleClient, ruleClient, ruleClient, ruleClient)
+	authorizer := rbac.New(cachedClient)
 	return &spaceStorage{
 		client:     uncachedClient,
 		authorizer: authorizer,
@@ -139,7 +138,8 @@ func (r *spaceStorage) List(ctx context.Context, options *metainternalversion.Li
 	}
 
 	spaceList := &tenancy.SpaceList{
-		Items: []tenancy.Space{},
+		ListMeta: namespaces.ListMeta,
+		Items:    []tenancy.Space{},
 	}
 	for _, n := range namespaces.Items {
 		spaceList.Items = append(spaceList.Items, *ConvertNamespace(&n))

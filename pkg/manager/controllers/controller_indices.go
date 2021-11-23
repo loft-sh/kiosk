@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	configv1alpha1 "github.com/loft-sh/kiosk/pkg/apis/config/v1alpha1"
+	"github.com/loft-sh/kiosk/pkg/authorization/rbac"
 	"github.com/loft-sh/kiosk/pkg/constants"
 	subjectpkg "github.com/loft-sh/kiosk/pkg/util/subject"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +34,40 @@ var (
 
 // AddManagerIndices adds the needed manager indices for faster listing of resources
 func AddManagerIndices(indexer client.FieldIndexer) error {
+	// Index role bindings by subjects
+	if err := indexer.IndexField(context.TODO(), &rbacv1.RoleBinding{}, constants.IndexBySubjects, func(rawObj client.Object) []string {
+		// grab the namespace object, extract the owner...
+		rb := rawObj.(*rbacv1.RoleBinding)
+		subjects := []string{}
+		for _, subject := range rb.Subjects {
+			subjectID := rbac.ConvertSubject(rb.Namespace, &subject)
+			if subjectID != "" {
+				subjects = append(subjects, subjectID)
+			}
+		}
+
+		return subjects
+	}); err != nil {
+		return err
+	}
+
+	// Index cluster role bindings by subjects
+	if err := indexer.IndexField(context.TODO(), &rbacv1.ClusterRoleBinding{}, constants.IndexBySubjects, func(rawObj client.Object) []string {
+		// grab the namespace object, extract the owner...
+		crb := rawObj.(*rbacv1.ClusterRoleBinding)
+		subjects := []string{}
+		for _, subject := range crb.Subjects {
+			subjectID := subjectpkg.ConvertSubject("", &subject)
+			if subjectID != "" {
+				subjects = append(subjects, subjectID)
+			}
+		}
+
+		return subjects
+	}); err != nil {
+		return err
+	}
+
 	// Index account by subjects
 	if err := indexer.IndexField(context.TODO(), &configv1alpha1.Account{}, constants.IndexBySubjects, func(rawObj client.Object) []string {
 		// grab the namespace object, extract the owner...
