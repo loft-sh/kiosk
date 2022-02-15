@@ -45,3 +45,8 @@ service:
   type: ClusterIP
   port: 443
   targetPort: 9443
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true

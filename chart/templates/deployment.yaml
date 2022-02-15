@@ -42,6 +42,11 @@ spec:
         - name: apiservice
           containerPort: {{ .Values.apiservice.port }}
           protocol: TCP
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        {{- end }}
         command:
         {{- range $f := .Values.kiosk.command }}
         - {{ $f | quote }}
