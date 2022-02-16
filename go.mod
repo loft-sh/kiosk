@@ -21,21 +21,21 @@ require (
 	github.com/ugorji/go v1.1.4 // indirect
 	gomodules.xyz/jsonpatch v2.0.0+incompatible // indirect
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.21.1
+	k8s.io/api v0.22.6
 	k8s.io/apiextensions-apiserver v0.21.1
-	k8s.io/apimachinery v0.21.1
+	k8s.io/apimachinery v0.22.6
 	k8s.io/apiserver v0.21.1
 	k8s.io/cli-runtime v0.21.1
-	k8s.io/client-go v0.21.1
+	k8s.io/client-go v0.22.6
 	k8s.io/component-base v0.21.1
 	k8s.io/gengo v0.0.0-20201214224949-b6c5ce23f027
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kube-aggregator v0.21.1
 	k8s.io/kube-controller-manager v0.21.1
-	k8s.io/kube-openapi v0.0.0-20210527164424-3c818078ee3d
+	k8s.io/kube-openapi v0.0.0-20211109043538-20434351676c
 	k8s.io/kubectl v0.21.1
-	k8s.io/utils v0.0.0-20210527160623-6fdb442a123b
+	k8s.io/utils v0.0.0-20210819203725-bdf08cb9a70a
 	sigs.k8s.io/controller-runtime v0.9.0
 )
 
