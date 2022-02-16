@@ -47,6 +47,8 @@ service:
   targetPort: 9443
 
 metrics:
-  enabled: true
+  enabled: false
   serviceMonitor:
-    enabled: true
+    enabled: false
+
+imagePullPolicy: Always
