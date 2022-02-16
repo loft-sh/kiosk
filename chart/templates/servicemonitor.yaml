@@ -1,0 +1,30 @@
+{{- if .Values.metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kiosk
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "kiosk.fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "kiosk.fullname" . }}
+      release: {{ .Release.Name }}
+  endpoints:
+  - port: metrics
+    {{- if .Values.metrics.serviceMonitor.interval }}
+    interval: {{ .Values.metrics.serviceMonitor.interval }}
+    {{- end }}
+{{- if .Values.metrics.serviceMonitor.metricRelabelings }}
+    metricRelabelings:
+{{ tpl (toYaml .Values.metrics.serviceMonitor.metricRelabelings | indent 8) . }}
+{{- end }}
+{{- if .Values.metrics.serviceMonitor.relabelings }}
+    relabelings:
+{{ toYaml .Values.metrics.serviceMonitor.relabelings | indent 8 }}
+{{- end }}
+{{- end }}

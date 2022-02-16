@@ -15,6 +15,11 @@ spec:
       port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
+    {{- if .Values.metrics.enabled }}
+    - name: metrics
+      port: 8080
+      protocol: TCP
+    {{- end }}
   selector:
     app: {{ template "kiosk.fullname" . }}
     release: {{ .Release.Name }}

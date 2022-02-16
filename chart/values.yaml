@@ -41,7 +41,38 @@ serviceAccount:
 nameOverride: ""
 fullnameOverride: ""
 
+imagePullPolicy: Always
+
 service:
   type: ClusterIP
   port: 443
   targetPort: 9443
+
+metrics:
+  enabled: false
+  ## Create a servicemonitor for the operator
+  ##
+  serviceMonitor:
+    enabled: false
+    ## Scrape interval. If not set, the Prometheus default scrape interval is used.
+    ##
+    interval: ""
+    ## Scrape timeout. If not set, the Prometheus default scrape timeout is used.
+    scrapeTimeout: ""
+
+    ## Metric relabel configs to apply to samples before ingestion.
+    ##
+    metricRelabelings: []
+    # - action: keep
+    #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
+    #   sourceLabels: [__name__]
+
+    #   relabel configs to apply to samples before ingestion.
+    ##
+    relabelings: []
+    # - sourceLabels: [__meta_kubernetes_pod_node_name]
+    #   separator: ;
+    #   regex: ^(.*)$
+    #   targetLabel: nodename
+    #   replacement: $1
+    #   action: replace
