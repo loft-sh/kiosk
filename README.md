@@ -1,3 +1,5 @@
+**This product is no longer actively maintained, but thank you for all those who have used it! We have archived the repo to provide clear guidance on current expectations.**
+
 <h1><img src="docs/website/static/img/kiosk-logo-horizontal.svg" alt=kiosk></h1>
 
 ### **[Getting Started](#getting-started)** • **[Architecture](#architecture)** • **[Contributing](#contributing)**
